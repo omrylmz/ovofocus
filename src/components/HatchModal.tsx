@@ -72,10 +72,21 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
     const rotation = useSharedValue(0);
     const particleOpacity = useSharedValue(0);
     const backgroundOpacity = useSharedValue(0);
-    const textOpacity = useSharedValue(0);
     const shinePosition = useSharedValue(-100);
     const auraPulse = useSharedValue(0);
     const bounceValue = useSharedValue(0);
+
+    // Staggered text animations
+    const congratsOpacity = useSharedValue(0);
+    const congratsTranslateY = useSharedValue(20);
+    const nameOpacity = useSharedValue(0);
+    const nameTranslateY = useSharedValue(20);
+    const rarityOpacity = useSharedValue(0);
+    const rarityScale = useSharedValue(0.8);
+    const descOpacity = useSharedValue(0);
+    const descTranslateY = useSharedValue(15);
+    const buttonOpacity = useSharedValue(0);
+    const buttonTranslateY = useSharedValue(20);
 
     useEffect(() => {
         if (visible && animal) {
@@ -126,8 +137,22 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
                 withTiming(0, { duration: 100 })
             );
 
-            // Text fade in
-            textOpacity.value = withDelay(400, withTiming(1, { duration: 300 }));
+            // Staggered text entrance
+            const textBaseDelay = 400;
+            congratsOpacity.value = withDelay(textBaseDelay, withTiming(1, { duration: 250 }));
+            congratsTranslateY.value = withDelay(textBaseDelay, withSpring(0, { damping: 12 }));
+
+            nameOpacity.value = withDelay(textBaseDelay + 100, withTiming(1, { duration: 250 }));
+            nameTranslateY.value = withDelay(textBaseDelay + 100, withSpring(0, { damping: 12 }));
+
+            rarityOpacity.value = withDelay(textBaseDelay + 200, withTiming(1, { duration: 250 }));
+            rarityScale.value = withDelay(textBaseDelay + 200, withSpring(1, { damping: 8, stiffness: 200 }));
+
+            descOpacity.value = withDelay(textBaseDelay + 300, withTiming(1, { duration: 250 }));
+            descTranslateY.value = withDelay(textBaseDelay + 300, withSpring(0, { damping: 12 }));
+
+            buttonOpacity.value = withDelay(textBaseDelay + 450, withTiming(1, { duration: 300 }));
+            buttonTranslateY.value = withDelay(textBaseDelay + 450, withSpring(0, { damping: 12 }));
 
             // Shine effect - sweeps across the animal
             shinePosition.value = withDelay(500, withRepeat(
@@ -155,10 +180,20 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
             rotation.value = 0;
             particleOpacity.value = 0;
             backgroundOpacity.value = 0;
-            textOpacity.value = 0;
             shinePosition.value = -100;
             auraPulse.value = 0;
             bounceValue.value = 0;
+            // Reset staggered text
+            congratsOpacity.value = 0;
+            congratsTranslateY.value = 20;
+            nameOpacity.value = 0;
+            nameTranslateY.value = 20;
+            rarityOpacity.value = 0;
+            rarityScale.value = 0.8;
+            descOpacity.value = 0;
+            descTranslateY.value = 15;
+            buttonOpacity.value = 0;
+            buttonTranslateY.value = 20;
         }
     }, [visible, animal]);
 
@@ -179,8 +214,29 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
         opacity: backgroundOpacity.value,
     }));
 
-    const textStyle = useAnimatedStyle(() => ({
-        opacity: textOpacity.value,
+    const congratsStyle = useAnimatedStyle(() => ({
+        opacity: congratsOpacity.value,
+        transform: [{ translateY: congratsTranslateY.value }],
+    }));
+
+    const nameStyle = useAnimatedStyle(() => ({
+        opacity: nameOpacity.value,
+        transform: [{ translateY: nameTranslateY.value }],
+    }));
+
+    const rarityStyle = useAnimatedStyle(() => ({
+        opacity: rarityOpacity.value,
+        transform: [{ scale: rarityScale.value }],
+    }));
+
+    const descStyle = useAnimatedStyle(() => ({
+        opacity: descOpacity.value,
+        transform: [{ translateY: descTranslateY.value }],
+    }));
+
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+        transform: [{ translateY: buttonTranslateY.value }],
     }));
 
     const shineStyle = useAnimatedStyle(() => ({
@@ -243,18 +299,24 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
                         </View>
                     </Animated.View>
 
-                    {/* Text */}
-                    <Animated.View style={[styles.textContainer, textStyle]}>
-                        <Text style={styles.congratsText}>{t('congratulations', language)}</Text>
-                        <Text style={styles.animalName}>{getAnimalName(animal.id, language)}</Text>
-                        <View style={[styles.rarityBadge, { backgroundColor: rarityColor }]}>
+                    {/* Text with staggered animation */}
+                    <View style={styles.textContainer}>
+                        <Animated.Text style={[styles.congratsText, congratsStyle]}>
+                            {t('congratulations', language)}
+                        </Animated.Text>
+                        <Animated.Text style={[styles.animalName, nameStyle]}>
+                            {getAnimalName(animal.id, language)}
+                        </Animated.Text>
+                        <Animated.View style={[styles.rarityBadge, { backgroundColor: rarityColor }, rarityStyle]}>
                             <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
-                        </View>
-                        <Text style={styles.description}>{getAnimalDescription(animal.id, language)}</Text>
-                    </Animated.View>
+                        </Animated.View>
+                        <Animated.Text style={[styles.description, descStyle]}>
+                            {getAnimalDescription(animal.id, language)}
+                        </Animated.Text>
+                    </View>
 
-                    {/* Close button */}
-                    <View style={styles.buttonContainer}>
+                    {/* Close button with animation */}
+                    <Animated.View style={[styles.buttonContainer, buttonStyle]}>
                         <PixelButton
                             title={t('addToCollection', language)}
                             onPress={onClose}
@@ -262,7 +324,7 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
                             size="large"
                             icon="📦"
                         />
-                    </View>
+                    </Animated.View>
                 </View>
             </Animated.View>
         </Modal>

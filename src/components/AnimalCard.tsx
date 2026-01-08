@@ -24,6 +24,9 @@ interface AnimalCardProps {
     language?: Language;
 }
 
+// Level thresholds for progression
+const LEVEL_THRESHOLDS = [1, 3, 6, 10, 15];
+
 // Calculate level based on count
 function getLevel(count: number): number {
     if (count >= 15) return 5;
@@ -31,6 +34,17 @@ function getLevel(count: number): number {
     if (count >= 6) return 3;
     if (count >= 3) return 2;
     return 1;
+}
+
+// Get progress to next level
+function getLevelProgress(count: number, level: number): { current: number; next: number } | null {
+    if (level >= 5) return null; // Max level
+    const nextThreshold = LEVEL_THRESHOLDS[level];
+    const prevThreshold = LEVEL_THRESHOLDS[level - 1];
+    return {
+        current: count - prevThreshold,
+        next: nextThreshold - prevThreshold,
+    };
 }
 
 // Get level badge text
@@ -216,7 +230,7 @@ export function AnimalCard({
                     </View>
                 )}
 
-                {/* Level indicator for leveled animals */}
+                {/* Level indicator for medium/large cards */}
                 {collected && level > 1 && size !== 'small' && (
                     <View style={styles.levelContainer}>
                         {Array.from({ length: level }).map((_, i) => (
@@ -228,6 +242,21 @@ export function AnimalCard({
                                 ]}
                             />
                         ))}
+                    </View>
+                )}
+
+                {/* Compact level badge for small cards */}
+                {collected && size === 'small' && (
+                    <View style={[
+                        styles.smallLevelBadge,
+                        isMaxLevel && { backgroundColor: rarityColor }
+                    ]}>
+                        <Text style={[
+                            styles.smallLevelText,
+                            isMaxLevel && styles.maxLevelSmallText
+                        ]}>
+                            {isMaxLevel ? '★' : `L${level}`}
+                        </Text>
                     </View>
                 )}
             </Animated.View>
@@ -338,5 +367,25 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
+    },
+    smallLevelBadge: {
+        position: 'absolute',
+        bottom: 2,
+        left: 2,
+        backgroundColor: theme.colors.surfaceLight,
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        borderRadius: theme.borderRadius.sm,
+        minWidth: 18,
+        alignItems: 'center',
+    },
+    smallLevelText: {
+        fontSize: 8,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.textSecondary,
+    },
+    maxLevelSmallText: {
+        fontSize: 10,
+        color: '#000',
     },
 });

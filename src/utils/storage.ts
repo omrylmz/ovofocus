@@ -6,6 +6,8 @@ const STORAGE_KEYS = {
     COLLECTION: '@ovofocus/collection',
     STATS: '@ovofocus/stats',
     SETTINGS: '@ovofocus/settings',
+    FAVORITES: '@ovofocus/favorites',
+    DAILY_PROGRESS: '@ovofocus/daily_progress',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -31,6 +33,16 @@ export interface Settings {
     notificationsEnabled: boolean;
     language: Language;
     debugMode: boolean; // for testing with shorter duration
+    hasSeenGestureHints: boolean;
+    maxPausesPerSession: number;
+    hasCompletedOnboarding: boolean;
+    dailyGoal: number; // number of sessions per day
+}
+
+export interface DailyProgress {
+    date: string; // YYYY-MM-DD
+    completedSessions: number;
+    goalAchieved: boolean;
 }
 
 const defaultStats: Stats = {
@@ -51,6 +63,10 @@ const defaultSettings: Settings = {
     notificationsEnabled: true,
     language: getDeviceLanguage(),
     debugMode: false,
+    hasSeenGestureHints: false,
+    maxPausesPerSession: 3,
+    hasCompletedOnboarding: false,
+    dailyGoal: 3,
 };
 
 // Collection
@@ -156,11 +172,80 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
     return updated;
 }
 
+// Favorites
+export async function getFavorites(): Promise<string[]> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.FAVORITES);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function setFavorites(favoriteIds: string[]): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favoriteIds));
+}
+
+export async function toggleFavorite(animalId: string): Promise<string[]> {
+    const favorites = await getFavorites();
+    const index = favorites.indexOf(animalId);
+    if (index === -1) {
+        favorites.push(animalId);
+    } else {
+        favorites.splice(index, 1);
+    }
+    await setFavorites(favorites);
+    return favorites;
+}
+
+// Daily Progress
+function getTodayString(): string {
+    return new Date().toISOString().split('T')[0];
+}
+
+export async function getDailyProgress(): Promise<DailyProgress> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.DAILY_PROGRESS);
+        if (data) {
+            const progress: DailyProgress = JSON.parse(data);
+            // Check if it's still today
+            if (progress.date === getTodayString()) {
+                return progress;
+            }
+        }
+        // Return fresh progress for today
+        return {
+            date: getTodayString(),
+            completedSessions: 0,
+            goalAchieved: false,
+        };
+    } catch {
+        return {
+            date: getTodayString(),
+            completedSessions: 0,
+            goalAchieved: false,
+        };
+    }
+}
+
+export async function incrementDailyProgress(dailyGoal: number): Promise<DailyProgress> {
+    const progress = await getDailyProgress();
+    const updated: DailyProgress = {
+        date: getTodayString(),
+        completedSessions: progress.completedSessions + 1,
+        goalAchieved: progress.completedSessions + 1 >= dailyGoal,
+    };
+    await AsyncStorage.setItem(STORAGE_KEYS.DAILY_PROGRESS, JSON.stringify(updated));
+    return updated;
+}
+
 // Debug
 export async function clearAllData(): Promise<void> {
     await AsyncStorage.multiRemove([
         STORAGE_KEYS.COLLECTION,
         STORAGE_KEYS.STATS,
         STORAGE_KEYS.SETTINGS,
+        STORAGE_KEYS.FAVORITES,
+        STORAGE_KEYS.DAILY_PROGRESS,
     ]);
 }

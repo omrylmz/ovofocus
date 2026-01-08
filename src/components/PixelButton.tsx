@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
-    TouchableOpacity,
     Text,
     StyleSheet,
     ViewStyle,
     TextStyle,
     Pressable,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { theme } from '../styles/theme';
 
 interface PixelButtonProps {
@@ -18,6 +18,8 @@ interface PixelButtonProps {
     style?: ViewStyle;
     textStyle?: TextStyle;
     icon?: string;
+    hapticEnabled?: boolean;
+    hapticStyle?: Haptics.ImpactFeedbackStyle;
 }
 
 export function PixelButton({
@@ -29,7 +31,15 @@ export function PixelButton({
     style,
     textStyle,
     icon,
+    hapticEnabled = true,
+    hapticStyle = Haptics.ImpactFeedbackStyle.Light,
 }: PixelButtonProps) {
+    const handlePress = useCallback(() => {
+        if (hapticEnabled && !disabled) {
+            Haptics.impactAsync(hapticStyle);
+        }
+        onPress();
+    }, [hapticEnabled, hapticStyle, disabled, onPress]);
     const getVariantStyles = () => {
         switch (variant) {
             case 'primary':
@@ -80,7 +90,7 @@ export function PixelButton({
 
     return (
         <Pressable
-            onPress={onPress}
+            onPress={handlePress}
             disabled={disabled}
             style={({ pressed }) => [
                 styles.container,
@@ -168,7 +178,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     pressed: {
-        opacity: 0.8,
-        transform: [{ scale: 0.98 }],
+        opacity: 0.9,
+        transform: [{ scale: 0.95 }, { translateY: 2 }],
     },
 });

@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
@@ -9,15 +8,23 @@ import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
 import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
 import { PixelButton } from '../src/components/PixelButton';
-import { getRarityLabelI18n } from '../src/i18n/translations';
+import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
+
+type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
+type SortOption = 'rarity' | 'recent' | 'name';
 
 export default function CollectionScreen() {
     const router = useRouter();
-    const { state, i18n } = useGame();
+    const { state, toggleFavorite, i18n } = useGame();
 
     // State for animal detail modal
     const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+
+    // Filter and search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
+    const [activeSort, setActiveSort] = useState<SortOption>('rarity');
 
     // Group collected animals by ID with counts and first collected date
     const collectionData = useMemo(() => {
@@ -74,6 +81,53 @@ export default function CollectionScreen() {
         return grouped;
     }, []);
 
+    // Filtered and sorted animals
+    const filteredAnimals = useMemo(() => {
+        let result = [...animals];
+
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(animal => {
+                const name = getAnimalName(animal.id, state.settings.language).toLowerCase();
+                return name.includes(query) || animal.emoji.includes(query);
+            });
+        }
+
+        // Apply collection filter
+        if (activeFilter === 'collected') {
+            result = result.filter(a => collectionData.has(a.id));
+        } else if (activeFilter === 'uncollected') {
+            result = result.filter(a => !collectionData.has(a.id));
+        } else if (activeFilter === 'favorites') {
+            result = result.filter(a => state.favorites.includes(a.id));
+        }
+
+        // Apply sorting
+        if (activeSort === 'name') {
+            result.sort((a, b) => {
+                const nameA = getAnimalName(a.id, state.settings.language);
+                const nameB = getAnimalName(b.id, state.settings.language);
+                return nameA.localeCompare(nameB);
+            });
+        } else if (activeSort === 'recent') {
+            result.sort((a, b) => {
+                const dateA = collectionData.get(a.id)?.firstCollected;
+                const dateB = collectionData.get(b.id)?.firstCollected;
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+            });
+        }
+        // 'rarity' sort maintains original order (legendary -> common)
+
+        return result;
+    }, [searchQuery, activeFilter, activeSort, collectionData, state.favorites, state.settings.language]);
+
+    // Check if we're in filtered mode (not default view)
+    const isFilteredView = searchQuery.trim() || activeFilter !== 'all' || activeSort !== 'rarity';
+
     // Handle long press on animal card
     const handleAnimalLongPress = useCallback((animal: Animal) => {
         const data = collectionData.get(animal.id);
@@ -98,6 +152,75 @@ export default function CollectionScreen() {
         setShowDetailModal(false);
         setSelectedAnimal(null);
     }, []);
+
+    const handleToggleFavorite = useCallback(() => {
+        if (selectedAnimal) {
+            toggleFavorite(selectedAnimal.id);
+        }
+    }, [selectedAnimal, toggleFavorite]);
+
+    // Filter chip component
+    const FilterChip = ({ label, value, active }: { label: string; value: FilterOption; active: boolean }) => (
+        <Pressable
+            style={[styles.filterChip, active && styles.filterChipActive]}
+            onPress={() => {
+                setActiveFilter(value);
+                if (state.settings.hapticsEnabled) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+            }}
+        >
+            <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+        </Pressable>
+    );
+
+    // Sort chip component
+    const SortChip = ({ label, value, active }: { label: string; value: SortOption; active: boolean }) => (
+        <Pressable
+            style={[styles.sortChip, active && styles.sortChipActive]}
+            onPress={() => {
+                setActiveSort(value);
+                if (state.settings.hapticsEnabled) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+            }}
+        >
+            <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+        </Pressable>
+    );
+
+    // Render filtered grid (flat list, no rarity sections)
+    const renderFilteredGrid = () => {
+        if (filteredAnimals.length === 0) {
+            return (
+                <View style={styles.noResultsContainer}>
+                    <Text style={styles.noResultsEmoji}>🔍</Text>
+                    <Text style={styles.noResultsText}>{i18n('noResults')}</Text>
+                </View>
+            );
+        }
+
+        return (
+            <View style={styles.animalGrid}>
+                {filteredAnimals.map(animal => {
+                    const data = collectionData.get(animal.id);
+                    const isCollected = data && data.count > 0;
+
+                    return (
+                        <AnimalCard
+                            key={animal.id}
+                            animal={animal}
+                            collected={isCollected || false}
+                            count={data?.count || 0}
+                            size="small"
+                            language={state.settings.language}
+                            onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                        />
+                    );
+                })}
+            </View>
+        );
+    };
 
     const renderRaritySection = (rarity: Rarity) => {
         const animalsInRarity = animalsByRarity[rarity];
@@ -145,6 +268,41 @@ export default function CollectionScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                    <Text style={styles.searchIcon}>🔍</Text>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder={i18n('searchPlaceholder')}
+                        placeholderTextColor={theme.colors.textSecondary}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                    {searchQuery.length > 0 && (
+                        <Pressable onPress={() => setSearchQuery('')} style={styles.searchClear}>
+                            <Text style={styles.searchClearText}>✕</Text>
+                        </Pressable>
+                    )}
+                </View>
+
+                {/* Filter Chips */}
+                <View style={styles.filterRow}>
+                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} />
+                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} />
+                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} />
+                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} />
+                </View>
+
+                {/* Sort Chips */}
+                <View style={styles.sortRow}>
+                    <Text style={styles.sortLabel}>Sort:</Text>
+                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} />
+                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} />
+                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} />
+                </View>
+
                 {/* Overall Progress */}
                 <View style={styles.progressCard}>
                     <Text style={styles.progressTitle}>{i18n('collectionProgress')}</Text>
@@ -180,8 +338,12 @@ export default function CollectionScreen() {
                     </View>
                 </View>
 
-                {/* Collection by Rarity */}
-                {(['legendary', 'epic', 'rare', 'common'] as Rarity[]).map(renderRaritySection)}
+                {/* Collection Display */}
+                {isFilteredView ? (
+                    renderFilteredGrid()
+                ) : (
+                    (['legendary', 'epic', 'rare', 'common'] as Rarity[]).map(renderRaritySection)
+                )}
 
                 {/* Empty state */}
                 {state.collection.length === 0 && (
@@ -208,6 +370,8 @@ export default function CollectionScreen() {
                 count={selectedAnimalData?.count || 0}
                 firstCollectedDate={selectedAnimalData?.firstCollected || undefined}
                 onClose={closeDetailModal}
+                onSetFavorite={handleToggleFavorite}
+                isFavorite={selectedAnimal ? state.favorites.includes(selectedAnimal.id) : false}
                 language={state.settings.language}
             />
         </SafeAreaView>
@@ -221,6 +385,96 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: theme.spacing.lg,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        paddingHorizontal: theme.spacing.md,
+        marginBottom: theme.spacing.md,
+    },
+    searchIcon: {
+        fontSize: 16,
+        marginRight: theme.spacing.sm,
+    },
+    searchInput: {
+        flex: 1,
+        height: 44,
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+    },
+    searchClear: {
+        padding: theme.spacing.sm,
+    },
+    searchClearText: {
+        fontSize: 14,
+        color: theme.colors.textSecondary,
+    },
+    filterRow: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
+    },
+    filterChip: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.round,
+        backgroundColor: theme.colors.surface,
+    },
+    filterChipActive: {
+        backgroundColor: theme.colors.accent,
+    },
+    filterChipText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    filterChipTextActive: {
+        color: theme.colors.background,
+        fontWeight: theme.fontWeight.bold,
+    },
+    sortRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    sortLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+    },
+    sortChip: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.sm,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.colors.surface,
+    },
+    sortChipActive: {
+        borderColor: theme.colors.secondary,
+        backgroundColor: theme.colors.surface,
+    },
+    sortChipText: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+    },
+    sortChipTextActive: {
+        color: theme.colors.secondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    noResultsContainer: {
+        alignItems: 'center',
+        paddingVertical: theme.spacing.xxl,
+    },
+    noResultsEmoji: {
+        fontSize: 48,
+        marginBottom: theme.spacing.md,
+    },
+    noResultsText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.textSecondary,
     },
     progressCard: {
         backgroundColor: theme.colors.surface,

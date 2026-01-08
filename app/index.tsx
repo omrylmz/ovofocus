@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -20,16 +20,22 @@ import { useAppState } from '../src/hooks/useAppState';
 import { Egg } from '../src/components/Egg';
 import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
+import { StreakCelebration } from '../src/components/StreakCelebration';
+import { OnboardingFlow } from '../src/components/OnboardingFlow';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { state, startSession, completeSession, failSession, resetSession, i18n } = useGame();
+    const { state, startSession, pauseSession, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
     const [showHatchModal, setShowHatchModal] = useState(false);
     const [hatchedAnimal, setHatchedAnimal] = useState<Animal | null>(null);
     const [encouragementText, setEncouragementText] = useState<string | null>(null);
+    const [showGestureHints, setShowGestureHints] = useState(false);
+    const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+    const [celebrationStreak, setCelebrationStreak] = useState(0);
     const backgroundTimeRef = useRef<number | null>(null);
+    const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
 
     // Debug mode: 10 seconds, Normal: 25 minutes
     const duration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
@@ -43,6 +49,10 @@ export default function HomeScreen() {
         if (state.settings.hapticsEnabled) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
+
+        // Store previous best before completion
+        const prevBest = previousBestStreakRef.current;
+
         const animal = await completeSession(state.settings.focusDuration);
         setHatchedAnimal(animal);
         setShowHatchModal(true);
@@ -51,13 +61,27 @@ export default function HomeScreen() {
         if (state.settings.notificationsEnabled) {
             sendSessionCompleteNotification(animal, state.settings.language);
         }
-    }, [completeSession, state.settings]);
+
+        // Check for new best streak after state updates
+        // The new streak would be currentStreak + 1 (before state update)
+        // We'll use a timeout to check after state has updated
+        setTimeout(() => {
+            // If new streak > previous best, celebrate!
+            const newStreak = state.stats.currentStreak + 1;
+            if (newStreak > prevBest && newStreak > 1) {
+                setCelebrationStreak(newStreak);
+                setShowStreakCelebration(true);
+                previousBestStreakRef.current = newStreak;
+            }
+        }, 100);
+    }, [completeSession, state.settings, state.stats.currentStreak]);
 
     const {
         formattedTime,
         isRunning,
         progress,
         start: startTimer,
+        pause: pauseTimer,
         stop: stopTimer,
         reset: resetTimer,
         elapsedMinutes,
@@ -237,14 +261,55 @@ export default function HomeScreen() {
         if (state.settings.hapticsEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
+        // Show gesture hints on first session
+        if (!state.settings.hasSeenGestureHints) {
+            setTimeout(() => setShowGestureHints(true), 1000);
+        }
+    };
+
+    const handlePause = () => {
+        pauseTimer();
+        pauseSession();
+        if (state.settings.hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    };
+
+    const handleResume = () => {
+        startTimer();
+        resumeSession();
+        if (state.settings.hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
     };
 
     const handleGiveUp = () => {
-        stopTimer();
-        failSession(elapsedMinutes);
-        if (state.settings.hapticsEnabled) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        }
+        Alert.alert(
+            i18n('giveUpConfirmTitle'),
+            i18n('giveUpConfirmMessage'),
+            [
+                {
+                    text: i18n('keepFocusing'),
+                    style: 'cancel',
+                },
+                {
+                    text: i18n('giveUp'),
+                    style: 'destructive',
+                    onPress: () => {
+                        stopTimer();
+                        failSession(elapsedMinutes);
+                        if (state.settings.hapticsEnabled) {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleDismissGestureHints = () => {
+        setShowGestureHints(false);
+        setGestureHintsSeen();
     };
 
     const handleReset = () => {
@@ -284,6 +349,22 @@ export default function HomeScreen() {
                 <View style={styles.statItem}>
                     <Text style={styles.statValue}>🔥 {state.stats.currentStreak}</Text>
                     <Text style={styles.statLabel}>{i18n('streak')}</Text>
+                    {state.stats.currentStreak > 0 && state.stats.currentStreak === state.stats.bestStreak && (
+                        <View style={styles.bestBadge}>
+                            <Text style={styles.bestBadgeText}>{i18n('best')}</Text>
+                        </View>
+                    )}
+                </View>
+                <View style={styles.statItem}>
+                    <View style={styles.dailyGoalContainer}>
+                        <Text style={[
+                            styles.dailyGoalValue,
+                            state.dailyProgress.goalAchieved && styles.dailyGoalAchieved
+                        ]}>
+                            {state.dailyProgress.goalAchieved ? '✓' : `${state.dailyProgress.completedSessions}/${state.settings.dailyGoal}`}
+                        </Text>
+                    </View>
+                    <Text style={styles.statLabel}>{i18n('dailyGoalProgress')}</Text>
                 </View>
             </View>
 
@@ -346,13 +427,48 @@ export default function HomeScreen() {
                         />
                     )}
 
-                    {state.sessionState === 'active' && (
-                        <PixelButton
-                            title={i18n('giveUp')}
-                            onPress={handleGiveUp}
-                            variant="danger"
-                            size="medium"
-                        />
+                    {state.sessionState === 'active' && !state.isPaused && (
+                        <View style={styles.activeButtonsRow}>
+                            <PixelButton
+                                title={i18n('pause')}
+                                onPress={handlePause}
+                                variant="secondary"
+                                size="medium"
+                                icon="⏸️"
+                                disabled={state.pauseCount >= state.settings.maxPausesPerSession}
+                            />
+                            <View style={styles.buttonSpacer} />
+                            <PixelButton
+                                title={i18n('giveUp')}
+                                onPress={handleGiveUp}
+                                variant="ghost"
+                                size="medium"
+                            />
+                        </View>
+                    )}
+
+                    {state.sessionState === 'active' && state.isPaused && (
+                        <View style={styles.pausedContainer}>
+                            <Text style={styles.pausedText}>{i18n('paused')}</Text>
+                            <Text style={styles.pauseCountText}>
+                                {state.settings.maxPausesPerSession - state.pauseCount} {i18n('pausesRemaining')}
+                            </Text>
+                            <View style={styles.pausedButtonsRow}>
+                                <PixelButton
+                                    title={i18n('resume')}
+                                    onPress={handleResume}
+                                    variant="primary"
+                                    size="large"
+                                    icon="▶️"
+                                />
+                            </View>
+                            <PixelButton
+                                title={i18n('giveUp')}
+                                onPress={handleGiveUp}
+                                variant="ghost"
+                                size="small"
+                            />
+                        </View>
                     )}
 
                     {(state.sessionState === 'failed' || state.sessionState === 'completed') && (
@@ -381,6 +497,50 @@ export default function HomeScreen() {
                 onClose={handleModalClose}
                 language={state.settings.language}
             />
+
+            {/* Streak Celebration */}
+            <StreakCelebration
+                visible={showStreakCelebration}
+                streakCount={celebrationStreak}
+                onComplete={() => setShowStreakCelebration(false)}
+                language={state.settings.language}
+            />
+
+            {/* Onboarding Flow */}
+            <OnboardingFlow
+                visible={!state.settings.hasCompletedOnboarding && !state.isLoading}
+                onComplete={setOnboardingComplete}
+                language={state.settings.language}
+            />
+
+            {/* Gesture Hints Overlay */}
+            {showGestureHints && (
+                <View style={styles.gestureHintsOverlay}>
+                    <View style={styles.gestureHintsContent}>
+                        <Text style={styles.gestureHintsTitle}>💡 Tips</Text>
+                        <View style={styles.gestureHintItem}>
+                            <Text style={styles.gestureHintIcon}>👆</Text>
+                            <Text style={styles.gestureHintText}>{i18n('gestureHintTap')}</Text>
+                        </View>
+                        <View style={styles.gestureHintItem}>
+                            <Text style={styles.gestureHintIcon}>👆👆</Text>
+                            <Text style={styles.gestureHintText}>{i18n('gestureHintDoubleTap')}</Text>
+                        </View>
+                        <View style={styles.gestureHintItem}>
+                            <Text style={styles.gestureHintIcon}>👇</Text>
+                            <Text style={styles.gestureHintText}>{i18n('gestureHintLongPress')}</Text>
+                        </View>
+                        <View style={styles.gestureHintsButton}>
+                            <PixelButton
+                                title={i18n('gotIt')}
+                                onPress={handleDismissGestureHints}
+                                variant="primary"
+                                size="medium"
+                            />
+                        </View>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
 }
@@ -426,6 +586,37 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: theme.spacing.xs,
+    },
+    bestBadge: {
+        backgroundColor: theme.colors.legendary,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 2,
+        borderRadius: theme.borderRadius.sm,
+        marginTop: theme.spacing.xs,
+    },
+    bestBadgeText: {
+        fontSize: 10,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.background,
+    },
+    dailyGoalContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 3,
+        borderColor: theme.colors.surfaceLight,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.colors.surface,
+    },
+    dailyGoalValue: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    dailyGoalAchieved: {
+        color: theme.colors.success,
+        fontSize: theme.fontSize.lg,
     },
     content: {
         flex: 1,
@@ -494,6 +685,69 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         marginTop: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    activeButtonsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    buttonSpacer: {
+        width: theme.spacing.md,
+    },
+    pausedContainer: {
+        alignItems: 'center',
+    },
+    pausedText: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.warning,
+        marginBottom: theme.spacing.xs,
+    },
+    pauseCountText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.lg,
+    },
+    pausedButtonsRow: {
+        marginBottom: theme.spacing.md,
+    },
+    gestureHintsOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    gestureHintsContent: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.xl,
+        padding: theme.spacing.xl,
+        marginHorizontal: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    gestureHintsTitle: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.lg,
+    },
+    gestureHintItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        width: '100%',
+    },
+    gestureHintIcon: {
+        fontSize: 24,
+        marginRight: theme.spacing.md,
+    },
+    gestureHintText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        flex: 1,
+    },
+    gestureHintsButton: {
+        marginTop: theme.spacing.lg,
     },
     debugBadge: {
         position: 'absolute',

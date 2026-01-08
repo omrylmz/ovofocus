@@ -25,6 +25,62 @@ export const translations = {
         startFocus: 'Start Focus',
         giveUp: 'Give Up',
         tryAgain: 'Try Again',
+        pause: 'Pause',
+        resume: 'Resume',
+        paused: 'Paused',
+        pausesRemaining: 'pauses left',
+
+        // Give Up Confirmation
+        giveUpConfirmTitle: 'Give Up?',
+        giveUpConfirmMessage: 'Your egg will break and progress will be lost. Are you sure?',
+        keepFocusing: 'Keep Focusing',
+
+        // Gesture Hints
+        gestureHintTap: 'Tap the egg for encouragement',
+        gestureHintDoubleTap: 'Double-tap to see time remaining',
+        gestureHintLongPress: 'Long-press for motivation',
+        gotIt: 'Got it!',
+
+        // Stats
+        best: 'Best',
+
+        // Streak Celebration
+        newBestStreak: 'New Best Streak!',
+        sessions: 'sessions',
+        keepItUp: 'Keep up the amazing work!',
+
+        // Onboarding
+        skip: 'Skip',
+        next: 'Next',
+        letsStart: "Let's Start!",
+        onboardingWelcomeTitle: 'Welcome to Ovo Focus!',
+        onboardingWelcomeDesc: 'Transform your focus time into fun! Complete focus sessions to hatch mysterious eggs and collect adorable animals.',
+        onboardingFocusTitle: 'How It Works',
+        onboardingFocusDesc: 'Start a 25-minute focus session. Stay on the app and avoid distractions. If you leave too long, your egg breaks!',
+        onboardingCollectionTitle: 'Collect Animals',
+        onboardingCollectionDesc: 'Complete sessions to hatch eggs! Each animal has a rarity level: Common, Rare, Epic, or Legendary. Build your collection!',
+        onboardingStreakTitle: 'Build Streaks',
+        onboardingStreakDesc: 'Complete sessions in a row to build your streak! Longer streaks unlock better rewards and bragging rights.',
+        onboardingGesturesTitle: 'Egg Interactions',
+        onboardingGesturesDesc: 'Tap the egg for encouragement, double-tap to see time remaining, and long-press for motivation messages!',
+
+        // Daily Goals
+        dailyGoal: 'Daily Goal',
+        dailyGoalProgress: 'Today',
+        dailyGoalAchieved: 'Goal Achieved!',
+        dailyGoalSetting: 'Daily Goal (sessions)',
+
+        // Collection Filters
+        filterAll: 'All',
+        filterCollected: 'Collected',
+        filterUncollected: 'Missing',
+        filterFavorites: 'Favorites',
+        sortByRarity: 'By Rarity',
+        sortByRecent: 'Recent',
+        sortByName: 'A-Z',
+        searchPlaceholder: 'Search animals...',
+        keepFocusingToDiscover: 'Keep focusing to discover this animal!',
+        noResults: 'No animals found',
 
         // Egg States
         focus: 'Focus...',
@@ -172,6 +228,62 @@ export const translations = {
         startFocus: 'Odaklanmaya Başla',
         giveUp: 'Vazgeç',
         tryAgain: 'Tekrar Dene',
+        pause: 'Duraklat',
+        resume: 'Devam Et',
+        paused: 'Duraklatıldı',
+        pausesRemaining: 'duraklatma kaldı',
+
+        // Give Up Confirmation
+        giveUpConfirmTitle: 'Vazgeç?',
+        giveUpConfirmMessage: 'Yumurtan kırılacak ve ilerleme kaybolacak. Emin misin?',
+        keepFocusing: 'Odaklanmaya Devam Et',
+
+        // Gesture Hints
+        gestureHintTap: 'Cesaretlendirme için yumurtaya dokun',
+        gestureHintDoubleTap: 'Kalan süreyi görmek için çift dokun',
+        gestureHintLongPress: 'Motivasyon için uzun bas',
+        gotIt: 'Anladım!',
+
+        // Stats
+        best: 'En İyi',
+
+        // Streak Celebration
+        newBestStreak: 'Yeni En İyi Seri!',
+        sessions: 'seans',
+        keepItUp: 'Harika gidiyorsun, devam et!',
+
+        // Onboarding
+        skip: 'Atla',
+        next: 'İleri',
+        letsStart: 'Başlayalım!',
+        onboardingWelcomeTitle: "Ovo Focus'a Hoşgeldin!",
+        onboardingWelcomeDesc: 'Odaklanma sürenizi eğlenceye dönüştürün! Odaklanma seanslarını tamamlayarak gizemli yumurtaları kuluçkaya yatırın ve sevimli hayvanlar toplayın.',
+        onboardingFocusTitle: 'Nasıl Çalışır',
+        onboardingFocusDesc: '25 dakikalık bir odaklanma seansı başlatın. Uygulamada kalın ve dikkatinizi dağıtmayın. Çok uzun süre ayrılırsanız yumurtanız kırılır!',
+        onboardingCollectionTitle: 'Hayvan Topla',
+        onboardingCollectionDesc: 'Seansları tamamlayarak yumurta kuluçkalayın! Her hayvanın bir nadirlik seviyesi var: Yaygın, Nadir, Epik veya Efsanevi.',
+        onboardingStreakTitle: 'Seri Oluştur',
+        onboardingStreakDesc: 'Serileri oluşturmak için seansları arka arkaya tamamlayın! Daha uzun seriler daha iyi ödüller açar.',
+        onboardingGesturesTitle: 'Yumurta Etkileşimleri',
+        onboardingGesturesDesc: 'Cesaretlendirme için yumurtaya dokunun, kalan süreyi görmek için çift dokunun, motivasyon mesajları için uzun basın!',
+
+        // Daily Goals
+        dailyGoal: 'Günlük Hedef',
+        dailyGoalProgress: 'Bugün',
+        dailyGoalAchieved: 'Hedef Tamamlandı!',
+        dailyGoalSetting: 'Günlük Hedef (seans)',
+
+        // Collection Filters
+        filterAll: 'Tümü',
+        filterCollected: 'Toplanan',
+        filterUncollected: 'Eksik',
+        filterFavorites: 'Favoriler',
+        sortByRarity: 'Nadirliğe Göre',
+        sortByRecent: 'En Yeni',
+        sortByName: 'A-Z',
+        searchPlaceholder: 'Hayvan ara...',
+        keepFocusingToDiscover: 'Bu hayvanı keşfetmek için odaklanmaya devam et!',
+        noResults: 'Hayvan bulunamadı',
 
         // Egg States
         focus: 'Odaklan...',

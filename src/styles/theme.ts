@@ -77,6 +77,21 @@ export const theme = {
       elevation: 8,
     },
   },
+
+  animation: {
+    buttonPressScale: 0.95,
+    buttonPressTranslateY: 2,
+    timing: {
+      fast: 150,
+      medium: 300,
+      slow: 500,
+    },
+    spring: {
+      gentle: { damping: 15, stiffness: 300 },
+      bouncy: { damping: 8, stiffness: 200 },
+      stiff: { damping: 20, stiffness: 500 },
+    },
+  },
 };
 
 export type Theme = typeof theme;

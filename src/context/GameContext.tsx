@@ -4,12 +4,17 @@ import {
     CollectedAnimal,
     Stats,
     Settings,
+    DailyProgress,
     getCollection,
     addToCollection,
     getStats,
     incrementSession,
     getSettings,
     updateSettings,
+    getFavorites,
+    toggleFavorite as toggleFavoriteStorage,
+    getDailyProgress,
+    incrementDailyProgress,
 } from '../utils/storage';
 import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
 
@@ -22,27 +27,42 @@ interface GameState {
     collection: CollectedAnimal[];
     stats: Stats;
     settings: Settings;
+    dailyProgress: DailyProgress;
     isLoading: boolean;
+    isPaused: boolean;
+    pauseCount: number;
+    favorites: string[];
 }
 
 type GameAction =
     | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings } }
+    | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress } }
     | { type: 'START_SESSION' }
+    | { type: 'PAUSE_SESSION' }
+    | { type: 'RESUME_SESSION' }
     | { type: 'COMPLETE_SESSION'; payload: { animal: Animal; focusMinutes: number } }
     | { type: 'FAIL_SESSION'; payload: { focusMinutes: number } }
     | { type: 'RESET_SESSION' }
     | { type: 'ADD_TO_COLLECTION'; payload: CollectedAnimal }
     | { type: 'UPDATE_STATS'; payload: Stats }
-    | { type: 'UPDATE_SETTINGS'; payload: Partial<Settings> };
+    | { type: 'UPDATE_SETTINGS'; payload: Partial<Settings> }
+    | { type: 'UPDATE_DAILY_PROGRESS'; payload: DailyProgress }
+    | { type: 'TOGGLE_FAVORITE'; payload: string[] }
+    | { type: 'SET_GESTURE_HINTS_SEEN' }
+    | { type: 'SET_ONBOARDING_COMPLETE' };
 
 interface GameContextType {
     state: GameState;
     startSession: () => void;
+    pauseSession: () => void;
+    resumeSession: () => void;
     completeSession: (focusMinutes: number) => Promise<Animal>;
     failSession: (focusMinutes: number) => Promise<void>;
     resetSession: () => void;
     updateUserSettings: (settings: Partial<Settings>) => Promise<void>;
+    toggleFavorite: (animalId: string) => Promise<void>;
+    setGestureHintsSeen: () => Promise<void>;
+    setOnboardingComplete: () => Promise<void>;
     i18n: (key: TranslationKey) => string;
 }
 
@@ -68,8 +88,20 @@ const initialState: GameState = {
         notificationsEnabled: true,
         language: getDeviceLanguage(),
         debugMode: false,
+        hasSeenGestureHints: false,
+        maxPausesPerSession: 3,
+        hasCompletedOnboarding: false,
+        dailyGoal: 3,
+    },
+    dailyProgress: {
+        date: new Date().toISOString().split('T')[0],
+        completedSessions: 0,
+        goalAchieved: false,
     },
     isLoading: true,
+    isPaused: false,
+    pauseCount: 0,
+    favorites: [],
 };
 
 // Reducer
@@ -84,6 +116,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 collection: action.payload.collection,
                 stats: action.payload.stats,
                 settings: action.payload.settings,
+                favorites: action.payload.favorites,
+                dailyProgress: action.payload.dailyProgress,
                 isLoading: false,
             };
 
@@ -92,6 +126,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'active',
                 currentAnimal: null,
+                isPaused: false,
+                pauseCount: 0,
+            };
+
+        case 'PAUSE_SESSION':
+            return {
+                ...state,
+                isPaused: true,
+                pauseCount: state.pauseCount + 1,
+            };
+
+        case 'RESUME_SESSION':
+            return {
+                ...state,
+                isPaused: false,
             };
 
         case 'COMPLETE_SESSION':
@@ -113,6 +162,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'idle',
                 currentAnimal: null,
+                isPaused: false,
+                pauseCount: 0,
             };
 
         case 'ADD_TO_COLLECTION':
@@ -133,6 +184,30 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 settings: { ...state.settings, ...action.payload },
             };
 
+        case 'UPDATE_DAILY_PROGRESS':
+            return {
+                ...state,
+                dailyProgress: action.payload,
+            };
+
+        case 'TOGGLE_FAVORITE':
+            return {
+                ...state,
+                favorites: action.payload,
+            };
+
+        case 'SET_GESTURE_HINTS_SEEN':
+            return {
+                ...state,
+                settings: { ...state.settings, hasSeenGestureHints: true },
+            };
+
+        case 'SET_ONBOARDING_COMPLETE':
+            return {
+                ...state,
+                settings: { ...state.settings, hasCompletedOnboarding: true },
+            };
+
         default:
             return state;
     }
@@ -149,12 +224,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function loadData() {
             try {
-                const [collection, stats, settings] = await Promise.all([
+                const [collection, stats, settings, favorites, dailyProgress] = await Promise.all([
                     getCollection(),
                     getStats(),
                     getSettings(),
+                    getFavorites(),
+                    getDailyProgress(),
                 ]);
-                dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings } });
+                dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings, favorites, dailyProgress } });
             } catch (error) {
                 console.error('Failed to load data:', error);
                 dispatch({ type: 'SET_LOADING', payload: false });
@@ -165,6 +242,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const startSession = () => {
         dispatch({ type: 'START_SESSION' });
+    };
+
+    const pauseSession = () => {
+        dispatch({ type: 'PAUSE_SESSION' });
+    };
+
+    const resumeSession = () => {
+        dispatch({ type: 'RESUME_SESSION' });
     };
 
     const completeSession = async (focusMinutes: number): Promise<Animal> => {
@@ -180,6 +265,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         const updatedStats = await incrementSession(true, focusMinutes);
         dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+
+        // Update daily progress
+        const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
+        dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
 
         return animal;
     };
@@ -200,6 +289,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
         await updateSettings(newSettings);
     };
 
+    const toggleFavorite = async (animalId: string) => {
+        const updatedFavorites = await toggleFavoriteStorage(animalId);
+        dispatch({ type: 'TOGGLE_FAVORITE', payload: updatedFavorites });
+    };
+
+    const setGestureHintsSeen = async () => {
+        dispatch({ type: 'SET_GESTURE_HINTS_SEEN' });
+        await updateSettings({ hasSeenGestureHints: true });
+    };
+
+    const setOnboardingComplete = async () => {
+        dispatch({ type: 'SET_ONBOARDING_COMPLETE' });
+        await updateSettings({ hasCompletedOnboarding: true });
+    };
+
     // Translation helper
     const i18n = useCallback((key: TranslationKey): string => {
         return t(key, state.settings.language);
@@ -210,10 +314,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
             value={{
                 state,
                 startSession,
+                pauseSession,
+                resumeSession,
                 completeSession,
                 failSession,
                 resetSession,
                 updateUserSettings,
+                toggleFavorite,
+                setGestureHintsSeen,
+                setOnboardingComplete,
                 i18n,
             }}
         >

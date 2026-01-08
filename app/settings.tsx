@@ -111,6 +111,22 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
+                {/* Daily Goal */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n('dailyGoalSetting')}</Text>
+                    <View style={styles.durationGrid}>
+                        {[1, 2, 3, 4, 5, 6].map(goal => (
+                            <PixelButton
+                                key={goal}
+                                title={`${goal}`}
+                                onPress={() => updateUserSettings({ dailyGoal: goal })}
+                                variant={state.settings.dailyGoal === goal ? 'primary' : 'ghost'}
+                                size="small"
+                            />
+                        ))}
+                    </View>
+                </View>
+
                 {/* Sound & Haptics */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n('notifications')}</Text>
