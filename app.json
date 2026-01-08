@@ -33,6 +33,13 @@
     "plugins": [
       "expo-router",
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "404b76be-991f-49e5-b348-983fde881174"
+      }
+    },
+    "owner": "omrylmz"
   }
 }
