@@ -1,22 +1,37 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
-import { animals, Rarity, getRarityColor } from '../src/data/animals';
+import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
+import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
 import { PixelButton } from '../src/components/PixelButton';
-import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
+import { getRarityLabelI18n } from '../src/i18n/translations';
 
 export default function CollectionScreen() {
     const router = useRouter();
     const { state, i18n } = useGame();
 
-    // Group collected animals by ID with counts
-    const collectionMap = useMemo(() => {
-        const map = new Map<string, number>();
+    // State for animal detail modal
+    const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+
+    // Group collected animals by ID with counts and first collected date
+    const collectionData = useMemo(() => {
+        const map = new Map<string, { count: number; firstCollected: string | null }>();
         state.collection.forEach(animal => {
-            map.set(animal.id, (map.get(animal.id) || 0) + 1);
+            const existing = map.get(animal.id);
+            if (existing) {
+                existing.count++;
+            } else {
+                map.set(animal.id, {
+                    count: 1,
+                    firstCollected: animal.collectedAt || null
+                });
+            }
         });
         return map;
     }, [state.collection]);
@@ -59,6 +74,31 @@ export default function CollectionScreen() {
         return grouped;
     }, []);
 
+    // Handle long press on animal card
+    const handleAnimalLongPress = useCallback((animal: Animal) => {
+        const data = collectionData.get(animal.id);
+        if (data && data.count > 0) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setSelectedAnimal(animal);
+            setShowDetailModal(true);
+        }
+    }, [collectionData]);
+
+    // Handle tap on animal card
+    const handleAnimalPress = useCallback((animal: Animal) => {
+        const data = collectionData.get(animal.id);
+        if (data && data.count > 0) {
+            // For collected animals, show detail on tap
+            setSelectedAnimal(animal);
+            setShowDetailModal(true);
+        }
+    }, [collectionData]);
+
+    const closeDetailModal = useCallback(() => {
+        setShowDetailModal(false);
+        setSelectedAnimal(null);
+    }, []);
+
     const renderRaritySection = (rarity: Rarity) => {
         const animalsInRarity = animalsByRarity[rarity];
         const rarityStats = stats.byRarity[rarity];
@@ -76,20 +116,31 @@ export default function CollectionScreen() {
                     </Text>
                 </View>
                 <View style={styles.animalGrid}>
-                    {animalsInRarity.map(animal => (
-                        <AnimalCard
-                            key={animal.id}
-                            animal={animal}
-                            collected={collectionMap.has(animal.id)}
-                            count={collectionMap.get(animal.id) || 0}
-                            size="small"
-                            language={state.settings.language}
-                        />
-                    ))}
+                    {animalsInRarity.map(animal => {
+                        const data = collectionData.get(animal.id);
+                        const isCollected = data && data.count > 0;
+
+                        return (
+                            <AnimalCard
+                                key={animal.id}
+                                animal={animal}
+                                collected={isCollected || false}
+                                count={data?.count || 0}
+                                size="small"
+                                language={state.settings.language}
+                                onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                            />
+                        );
+                    })}
                 </View>
             </View>
         );
     };
+
+    // Get selected animal data for modal
+    const selectedAnimalData = selectedAnimal
+        ? collectionData.get(selectedAnimal.id)
+        : null;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -149,6 +200,16 @@ export default function CollectionScreen() {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Animal Detail Modal */}
+            <AnimalDetailModal
+                visible={showDetailModal}
+                animal={selectedAnimal}
+                count={selectedAnimalData?.count || 0}
+                firstCollectedDate={selectedAnimalData?.firstCollected || undefined}
+                onClose={closeDetailModal}
+                language={state.settings.language}
+            />
         </SafeAreaView>
     );
 }

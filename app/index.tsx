@@ -2,13 +2,16 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withRepeat,
     withSequence,
+    withSpring,
     Easing,
+    runOnJS,
 } from 'react-native-reanimated';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
@@ -25,11 +28,16 @@ export default function HomeScreen() {
     const { state, startSession, completeSession, failSession, resetSession, i18n } = useGame();
     const [showHatchModal, setShowHatchModal] = useState(false);
     const [hatchedAnimal, setHatchedAnimal] = useState<Animal | null>(null);
+    const [encouragementText, setEncouragementText] = useState<string | null>(null);
     const backgroundTimeRef = useRef<number | null>(null);
 
     // Debug mode: 10 seconds, Normal: 25 minutes
     const duration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
 
+    // Egg interaction animations
+    const eggScale = useSharedValue(1);
+    const eggRotation = useSharedValue(0);
+    const sparkleOpacity = useSharedValue(0);
 
     const handleTimerComplete = useCallback(async () => {
         if (state.settings.hapticsEnabled) {
@@ -108,6 +116,119 @@ export default function HomeScreen() {
         textShadowColor: theme.colors.accent,
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: timerGlow.value * 20,
+    }));
+
+    // Egg interaction handlers
+    const showEncouragement = useCallback(() => {
+        const messages = state.settings.language === 'tr'
+            ? ['Harika! 💪', 'Devam et! ✨', 'Başarıyorsun! 🌟', 'Odaklan! 🎯', 'Süpersin! 💫']
+            : ['Great! 💪', 'Keep going! ✨', "You're doing it! 🌟", 'Stay focused! 🎯', 'Amazing! 💫'];
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        setEncouragementText(randomMessage);
+        setTimeout(() => setEncouragementText(null), 1500);
+    }, [state.settings.language]);
+
+    const handleEggTap = useCallback(() => {
+        if (state.sessionState === 'active') {
+            if (state.settings.hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            showEncouragement();
+        }
+    }, [state.sessionState, state.settings.hapticsEnabled, showEncouragement]);
+
+    const handleEggDoubleTap = useCallback(() => {
+        if (state.sessionState === 'active') {
+            if (state.settings.hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            // Show remaining time in a nice format
+            const remaining = Math.ceil((1 - progress) * duration);
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            const timeText = state.settings.language === 'tr'
+                ? `${mins}dk ${secs}sn kaldı!`
+                : `${mins}m ${secs}s left!`;
+            setEncouragementText(timeText);
+            setTimeout(() => setEncouragementText(null), 2000);
+        }
+    }, [state.sessionState, state.settings, progress, duration]);
+
+    const handleEggLongPress = useCallback(() => {
+        if (state.sessionState === 'idle') {
+            // Long press to start on idle
+            handleStart();
+        } else if (state.sessionState === 'active') {
+            if (state.settings.hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            }
+            const motivationalMessages = state.settings.language === 'tr'
+                ? ['Yumurtan büyüyor! 🥚✨', 'İçeride bir şey kıpırdıyor...', 'Neredeyse çatlayacak! 🐣']
+                : ['Your egg is growing! 🥚✨', 'Something is stirring inside...', 'Almost ready to hatch! 🐣'];
+            const msg = motivationalMessages[Math.floor(progress * motivationalMessages.length)];
+            setEncouragementText(msg);
+            setTimeout(() => setEncouragementText(null), 2500);
+        }
+    }, [state.sessionState, state.settings, progress]);
+
+    // Gesture configuration
+    const tapGesture = Gesture.Tap()
+        .onEnd(() => {
+            'worklet';
+            eggScale.value = withSequence(
+                withSpring(1.05, { damping: 10 }),
+                withSpring(1, { damping: 12 })
+            );
+            runOnJS(handleEggTap)();
+        });
+
+    const doubleTapGesture = Gesture.Tap()
+        .numberOfTaps(2)
+        .onEnd(() => {
+            'worklet';
+            eggScale.value = withSequence(
+                withSpring(1.1, { damping: 8 }),
+                withSpring(1, { damping: 10 })
+            );
+            sparkleOpacity.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withTiming(0, { duration: 500 })
+            );
+            runOnJS(handleEggDoubleTap)();
+        });
+
+    const longPressGesture = Gesture.LongPress()
+        .minDuration(500)
+        .onStart(() => {
+            'worklet';
+            eggScale.value = withSpring(0.95, { damping: 15 });
+        })
+        .onEnd(() => {
+            'worklet';
+            eggScale.value = withSequence(
+                withSpring(1.15, { damping: 6 }),
+                withSpring(1, { damping: 10 })
+            );
+            eggRotation.value = withSequence(
+                withTiming(-5, { duration: 50 }),
+                withTiming(5, { duration: 50 }),
+                withTiming(0, { duration: 50 })
+            );
+            runOnJS(handleEggLongPress)();
+        });
+
+    // Combine gestures (double tap takes priority over single tap)
+    const composedGesture = Gesture.Exclusive(doubleTapGesture, tapGesture, longPressGesture);
+
+    const eggContainerStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: eggScale.value },
+            { rotate: `${eggRotation.value}deg` },
+        ],
+    }));
+
+    const sparkleStyle = useAnimatedStyle(() => ({
+        opacity: sparkleOpacity.value,
     }));
 
     const handleStart = () => {
@@ -190,12 +311,28 @@ export default function HomeScreen() {
                     </View>
                 )}
 
-                {/* Egg */}
-                <Egg
-                    sessionState={state.sessionState}
-                    progress={progress}
-                    language={state.settings.language}
-                />
+                {/* Interactive Egg with Gestures */}
+                <GestureDetector gesture={composedGesture}>
+                    <Animated.View style={[styles.eggWrapper, eggContainerStyle]}>
+                        {/* Sparkle overlay for double tap */}
+                        <Animated.View style={[styles.sparkleOverlay, sparkleStyle]}>
+                            <Text style={styles.sparkleText}>✨ 💫 ⭐ 💫 ✨</Text>
+                        </Animated.View>
+
+                        <Egg
+                            sessionState={state.sessionState}
+                            progress={progress}
+                            language={state.settings.language}
+                        />
+                    </Animated.View>
+                </GestureDetector>
+
+                {/* Encouragement text */}
+                {encouragementText && (
+                    <Animated.View style={styles.encouragementContainer}>
+                        <Text style={styles.encouragementText}>{encouragementText}</Text>
+                    </Animated.View>
+                )}
 
                 {/* Buttons */}
                 <View style={styles.buttonContainer}>
@@ -328,6 +465,32 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.semibold,
         width: 40,
         textAlign: 'right',
+    },
+    eggWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sparkleOverlay: {
+        position: 'absolute',
+        top: -30,
+        zIndex: 10,
+    },
+    sparkleText: {
+        fontSize: 24,
+    },
+    encouragementContainer: {
+        position: 'absolute',
+        bottom: 180,
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.round,
+        ...theme.shadows.medium,
+    },
+    encouragementText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.accent,
+        fontWeight: theme.fontWeight.bold,
     },
     buttonContainer: {
         marginTop: theme.spacing.xl,

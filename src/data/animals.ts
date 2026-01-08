@@ -27,6 +27,12 @@ export const animals: Animal[] = [
     { id: 'mouse', name: 'Fare', emoji: '🐭', rarity: 'common', description: 'Küçük ve hızlı bir fare.' },
     { id: 'pig', name: 'Domuz', emoji: '🐷', rarity: 'common', description: 'Pembe ve sevimli.' },
     { id: 'frog', name: 'Kurbağa', emoji: '🐸', rarity: 'common', description: 'Yeşil bir kurbağa.' },
+    { id: 'turtle', name: 'Kaplumbağa', emoji: '🐢', rarity: 'common', description: 'Sakin ve sabırlı.' },
+    { id: 'duck', name: 'Ördek', emoji: '🦆', rarity: 'common', description: 'Neşeli bir ördek.' },
+    { id: 'cow', name: 'İnek', emoji: '🐮', rarity: 'common', description: 'Verimli bir çiftlik ineği.' },
+    { id: 'sheep', name: 'Koyun', emoji: '🐑', rarity: 'common', description: 'Yumuşak tüylü koyun.' },
+    { id: 'rooster', name: 'Horoz', emoji: '🐓', rarity: 'common', description: 'Sabahçı horoz.' },
+    { id: 'snail', name: 'Salyangoz', emoji: '🐌', rarity: 'common', description: 'Yavaş ama kararlı.' },
 
     // Rare animals (25% chance)
     { id: 'fox', name: 'Tilki', emoji: '🦊', rarity: 'rare', description: 'Kurnaz bir orman tilkisi.' },
@@ -35,17 +41,26 @@ export const animals: Animal[] = [
     { id: 'penguin', name: 'Penguen', emoji: '🐧', rarity: 'rare', description: 'Soğuk seven bir penguen.' },
     { id: 'owl', name: 'Baykuş', emoji: '🦉', rarity: 'rare', description: 'Bilge bir gece kuşu.' },
     { id: 'hedgehog', name: 'Kirpi', emoji: '🦔', rarity: 'rare', description: 'Dikenleri yumuşak bir kirpi.' },
+    { id: 'lion', name: 'Aslan', emoji: '🦁', rarity: 'rare', description: 'Ormanların kralı.' },
+    { id: 'elephant', name: 'Fil', emoji: '🐘', rarity: 'rare', description: 'Bilge ve güçlü.' },
+    { id: 'dolphin', name: 'Yunus', emoji: '🐬', rarity: 'rare', description: 'Akıllı deniz dostum.' },
+    { id: 'tiger', name: 'Kaplan', emoji: '🐯', rarity: 'rare', description: 'Cesur bir avcı.' },
 
     // Epic animals (12% chance)
     { id: 'unicorn', name: 'Unicorn', emoji: '🦄', rarity: 'epic', description: 'Sihirli bir tek boynuzlu at!' },
     { id: 'dragon', name: 'Ejderha', emoji: '🐉', rarity: 'epic', description: 'Ateş püskürten ejderha!' },
     { id: 'phoenix', name: 'Anka Kuşu', emoji: '🔥', rarity: 'epic', description: 'Küllerinden doğan anka!' },
     { id: 'wolf', name: 'Kurt', emoji: '🐺', rarity: 'epic', description: 'Yalnız ve güçlü bir kurt.' },
+    { id: 'gryphon', name: 'Grifon', emoji: '🦅', rarity: 'epic', description: 'Kartal başlı aslan.' },
+    { id: 'kraken', name: 'Kraken', emoji: '🦑', rarity: 'epic', description: 'Derin denizlerin korkulan yaratığı.' },
+    { id: 'pegasus', name: 'Pegasus', emoji: '🐴', rarity: 'epic', description: 'Kanatlı sihirli at.' },
 
     // Legendary animals (3% chance)
     { id: 'golden_dragon', name: 'Altın Ejderha', emoji: '✨', rarity: 'legendary', description: 'Efsanevi altın ejderha!' },
     { id: 'rainbow_unicorn', name: 'Gökkuşağı Unicorn', emoji: '🌈', rarity: 'legendary', description: 'Çok nadir gökkuşağı unicorn!' },
     { id: 'cosmic_owl', name: 'Kozmik Baykuş', emoji: '🌌', rarity: 'legendary', description: 'Yıldızlardan gelen baykuş.' },
+    { id: 'celestial_lion', name: 'Göksel Aslan', emoji: '🌟', rarity: 'legendary', description: 'Yıldızlardan gelen aslan.' },
+    { id: 'void_serpent', name: 'Boşluk Yılanı', emoji: '🌀', rarity: 'legendary', description: 'Karanlıkların efendisi.' },
 ];
 
 // Get random animal based on rarity weights
