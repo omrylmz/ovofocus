@@ -22,6 +22,7 @@ interface AnimalCardProps {
     onPress?: () => void;
     size?: 'small' | 'medium' | 'large';
     language?: Language;
+    entranceDelay?: number;  // For staggered entrance animations
 }
 
 // Level thresholds for progression
@@ -60,6 +61,7 @@ export function AnimalCard({
     onPress,
     size = 'medium',
     language = 'en',
+    entranceDelay,
 }: AnimalCardProps) {
     const scale = useSharedValue(1);
     const rotation = useSharedValue(0);
@@ -67,10 +69,28 @@ export function AnimalCard({
     const shinePosition = useSharedValue(-50);
     const glowOpacity = useSharedValue(0);
 
+    // Entrance animation values
+    const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
+    const entranceTranslateY = useSharedValue(entranceDelay !== undefined ? 20 : 0);
+
     const level = getLevel(count);
     const isMaxLevel = level >= 5;
     const rarityColor = getRarityColor(animal.rarity);
     const sizeStyles = getSizeStyles(size);
+
+    // Entrance animation for staggered card appearance
+    useEffect(() => {
+        if (entranceDelay !== undefined) {
+            entranceOpacity.value = withDelay(
+                entranceDelay,
+                withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) })
+            );
+            entranceTranslateY.value = withDelay(
+                entranceDelay,
+                withSpring(0, { damping: 12, stiffness: 200 })
+            );
+        }
+    }, [entranceDelay]);
 
     // Idle animation for collected animals
     useEffect(() => {
@@ -148,6 +168,14 @@ export function AnimalCard({
         ],
     }));
 
+    // Entrance animation style
+    const entranceStyle = useAnimatedStyle(() => ({
+        opacity: entranceOpacity.value,
+        transform: [
+            { translateY: entranceTranslateY.value },
+        ],
+    }));
+
     const shineStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: shinePosition.value }],
     }));
@@ -157,13 +185,14 @@ export function AnimalCard({
     }));
 
     return (
-        <Pressable
-            onPress={handlePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            disabled={!onPress && !collected}
-        >
-            <Animated.View
+        <Animated.View style={entranceStyle}>
+            <Pressable
+                onPress={handlePress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                disabled={!onPress && !collected}
+            >
+                <Animated.View
                 style={[
                     styles.container,
                     sizeStyles.container,
@@ -260,7 +289,8 @@ export function AnimalCard({
                     </View>
                 )}
             </Animated.View>
-        </Pressable>
+            </Pressable>
+        </Animated.View>
     );
 }
 

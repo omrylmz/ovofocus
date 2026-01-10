@@ -1,45 +1,46 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    withRepeat,
-    withSequence,
-    withSpring,
-    Easing,
-    runOnJS,
-} from 'react-native-reanimated';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTimer } from '../src/hooks/useTimer';
 import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
-import { Egg } from '../src/components/Egg';
 import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
 import { StreakCelebration } from '../src/components/StreakCelebration';
 import { OnboardingFlow } from '../src/components/OnboardingFlow';
 import { QuickReturnToast } from '../src/components/QuickReturnToast';
 import { ShieldSelector } from '../src/components/ShieldSelector';
+import { AnimatedBackground } from '../src/components/AnimatedBackground';
+import { FloatingParticles } from '../src/components/FloatingParticles';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
 import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal } from '../src/utils/storage';
 
+// Extracted session components
+import {
+    SessionHeader,
+    SessionStatsBar,
+    TimerDisplay,
+    SessionControls,
+    PowerUpControls,
+    InteractiveEgg,
+} from '../src/components/session';
+
 export default function HomeScreen() {
     const router = useRouter();
     const { state, startSession, pauseSession, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
+
+    // Modal states
     const [showHatchModal, setShowHatchModal] = useState(false);
     const [hatchedAnimal, setHatchedAnimal] = useState<Animal | null>(null);
-    const [encouragementText, setEncouragementText] = useState<string | null>(null);
     const [showGestureHints, setShowGestureHints] = useState(false);
     const [showStreakCelebration, setShowStreakCelebration] = useState(false);
     const [celebrationStreak, setCelebrationStreak] = useState(0);
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
 
-    // New UX improvement states
+    // Power-up states
     const [showQuickReturnToast, setShowQuickReturnToast] = useState(false);
     const [showShieldSelector, setShowShieldSelector] = useState(false);
     const [shieldInventory, setShieldInventory] = useState<ShieldItem[]>([]);
@@ -49,33 +50,21 @@ export default function HomeScreen() {
     // Debug mode: 10 seconds, Normal: 25 minutes
     const duration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
 
-    // Egg interaction animations
-    const eggScale = useSharedValue(1);
-    const eggRotation = useSharedValue(0);
-    const sparkleOpacity = useSharedValue(0);
-
     const handleTimerComplete = useCallback(async () => {
         if (state.settings.hapticsEnabled) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
 
-        // Store previous best before completion
         const prevBest = previousBestStreakRef.current;
-
         const animal = await completeSession(state.settings.focusDuration);
         setHatchedAnimal(animal);
         setShowHatchModal(true);
 
-        // Send notification
         if (state.settings.notificationsEnabled) {
             sendSessionCompleteNotification(animal, state.settings.language);
         }
 
-        // Check for new best streak after state updates
-        // The new streak would be currentStreak + 1 (before state update)
-        // We'll use a timeout to check after state has updated
         setTimeout(() => {
-            // If new streak > previous best, celebrate!
             const newStreak = state.stats.currentStreak + 1;
             if (newStreak > prevBest && newStreak > 1) {
                 setCelebrationStreak(newStreak);
@@ -84,7 +73,6 @@ export default function HomeScreen() {
             }
         }, 100);
 
-        // Grant shield from hatched animal
         await handleGrantShield(animal);
     }, [completeSession, state.settings, state.stats.currentStreak]);
 
@@ -102,15 +90,12 @@ export default function HomeScreen() {
         onComplete: handleTimerComplete,
     });
 
-    // Tolerance system with all UX improvements
     const {
         warningLevel,
         effectiveTolerance,
         timeInBackground,
         isQuickReturn,
         toleranceExceeded,
-        progressMultiplier,
-        streakBonus,
         resetTolerance,
     } = useToleranceSystem({
         baseTolerance: state.settings.toleranceSeconds,
@@ -161,7 +146,7 @@ export default function HomeScreen() {
         }
     }, [toleranceExceeded, state.sessionState, isRunning]);
 
-    // Handle shield activation
+    // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
         const used = await useShield(shield.animalId);
         if (used) {
@@ -174,7 +159,6 @@ export default function HomeScreen() {
         }
     };
 
-    // Handle emergency pause
     const handleEmergencyPause = () => {
         if (!emergencyPauseUsed && state.sessionState === 'active' && !state.isPaused) {
             pauseTimer();
@@ -186,161 +170,21 @@ export default function HomeScreen() {
         }
     };
 
-    // Grant shield when completing a session
     const handleGrantShield = async (animal: Animal) => {
         await grantShieldFromAnimal(animal.id, animal.name, animal.rarity);
         const updated = await getShieldInventory();
         setShieldInventory(updated);
     };
 
-    // Glow animation for timer
-    const timerGlow = useSharedValue(0);
-
-    useEffect(() => {
-        if (isRunning) {
-            timerGlow.value = withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-        } else {
-            timerGlow.value = withTiming(0, { duration: 300 });
-        }
-    }, [isRunning]);
-
-    const timerGlowStyle = useAnimatedStyle(() => ({
-        textShadowColor: theme.colors.accent,
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: timerGlow.value * 20,
-    }));
-
-    // Egg interaction handlers
-    const showEncouragement = useCallback(() => {
-        const messages = state.settings.language === 'tr'
-            ? ['Harika! 💪', 'Devam et! ✨', 'Başarıyorsun! 🌟', 'Odaklan! 🎯', 'Süpersin! 💫']
-            : ['Great! 💪', 'Keep going! ✨', "You're doing it! 🌟", 'Stay focused! 🎯', 'Amazing! 💫'];
-        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        setEncouragementText(randomMessage);
-        setTimeout(() => setEncouragementText(null), 1500);
-    }, [state.settings.language]);
-
-    const handleEggTap = useCallback(() => {
-        if (state.sessionState === 'active') {
-            if (state.settings.hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            showEncouragement();
-        }
-    }, [state.sessionState, state.settings.hapticsEnabled, showEncouragement]);
-
-    const handleEggDoubleTap = useCallback(() => {
-        if (state.sessionState === 'active') {
-            if (state.settings.hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
-            // Show remaining time in a nice format
-            const remaining = Math.ceil((1 - progress) * duration);
-            const mins = Math.floor(remaining / 60);
-            const secs = remaining % 60;
-            const timeText = state.settings.language === 'tr'
-                ? `${mins}dk ${secs}sn kaldı!`
-                : `${mins}m ${secs}s left!`;
-            setEncouragementText(timeText);
-            setTimeout(() => setEncouragementText(null), 2000);
-        }
-    }, [state.sessionState, state.settings, progress, duration]);
-
-    const handleEggLongPress = useCallback(() => {
-        if (state.sessionState === 'idle') {
-            // Long press to start on idle
-            handleStart();
-        } else if (state.sessionState === 'active') {
-            if (state.settings.hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            }
-            const motivationalMessages = state.settings.language === 'tr'
-                ? ['Yumurtan büyüyor! 🥚✨', 'İçeride bir şey kıpırdıyor...', 'Neredeyse çatlayacak! 🐣']
-                : ['Your egg is growing! 🥚✨', 'Something is stirring inside...', 'Almost ready to hatch! 🐣'];
-            const msg = motivationalMessages[Math.floor(progress * motivationalMessages.length)];
-            setEncouragementText(msg);
-            setTimeout(() => setEncouragementText(null), 2500);
-        }
-    }, [state.sessionState, state.settings, progress]);
-
-    // Gesture configuration
-    const tapGesture = Gesture.Tap()
-        .onEnd(() => {
-            'worklet';
-            eggScale.value = withSequence(
-                withSpring(1.05, { damping: 10 }),
-                withSpring(1, { damping: 12 })
-            );
-            runOnJS(handleEggTap)();
-        });
-
-    const doubleTapGesture = Gesture.Tap()
-        .numberOfTaps(2)
-        .onEnd(() => {
-            'worklet';
-            eggScale.value = withSequence(
-                withSpring(1.1, { damping: 8 }),
-                withSpring(1, { damping: 10 })
-            );
-            sparkleOpacity.value = withSequence(
-                withTiming(1, { duration: 200 }),
-                withTiming(0, { duration: 500 })
-            );
-            runOnJS(handleEggDoubleTap)();
-        });
-
-    const longPressGesture = Gesture.LongPress()
-        .minDuration(500)
-        .onStart(() => {
-            'worklet';
-            eggScale.value = withSpring(0.95, { damping: 15 });
-        })
-        .onEnd(() => {
-            'worklet';
-            eggScale.value = withSequence(
-                withSpring(1.15, { damping: 6 }),
-                withSpring(1, { damping: 10 })
-            );
-            eggRotation.value = withSequence(
-                withTiming(-5, { duration: 50 }),
-                withTiming(5, { duration: 50 }),
-                withTiming(0, { duration: 50 })
-            );
-            runOnJS(handleEggLongPress)();
-        });
-
-    // Combine gestures (double tap takes priority over single tap)
-    const composedGesture = Gesture.Exclusive(doubleTapGesture, tapGesture, longPressGesture);
-
-    const eggContainerStyle = useAnimatedStyle(() => ({
-        transform: [
-            { scale: eggScale.value },
-            { rotate: `${eggRotation.value}deg` },
-        ],
-    }));
-
-    const sparkleStyle = useAnimatedStyle(() => ({
-        opacity: sparkleOpacity.value,
-    }));
-
     const handleStart = () => {
         startSession();
         startTimer();
-        // Reset UX improvement states for new session
         setEmergencyPauseUsed(false);
         setActiveShieldBonus(0);
         resetTolerance();
         if (state.settings.hapticsEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        // Show gesture hints on first session
         if (!state.settings.hasSeenGestureHints) {
             setTimeout(() => setShowGestureHints(true), 1000);
         }
@@ -367,10 +211,7 @@ export default function HomeScreen() {
             i18n('giveUpConfirmTitle'),
             i18n('giveUpConfirmMessage'),
             [
-                {
-                    text: i18n('keepFocusing'),
-                    style: 'cancel',
-                },
+                { text: i18n('keepFocusing'), style: 'cancel' },
                 {
                     text: i18n('giveUp'),
                     style: 'destructive',
@@ -405,190 +246,103 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Animated Background */}
+            <AnimatedBackground sessionState={state.sessionState} progress={progress} />
+
+            {/* Floating Particles */}
+            <FloatingParticles
+                count={20}
+                isActive={state.sessionState === 'active'}
+                progress={progress}
+            />
+
             {/* Header */}
-            <View style={styles.header}>
-                <Pressable onPress={() => router.push('/collection')} style={styles.headerButton}>
-                    <Text style={styles.headerButtonText}>📦 {i18n('collection')}</Text>
-                </Pressable>
-                <Pressable onPress={() => router.push('/settings')} style={styles.headerButton}>
-                    <Text style={styles.headerButtonText}>⚙️</Text>
-                </Pressable>
-            </View>
+            <SessionHeader
+                currentStreak={state.stats.currentStreak}
+                dailyCompletedSessions={state.dailyProgress.completedSessions}
+                dailyGoal={state.settings.dailyGoal}
+                collectionLabel={`📦 ${i18n('collection')}`}
+                onCollectionPress={() => router.push('/collection')}
+                onSettingsPress={() => router.push('/settings')}
+            />
 
             {/* Stats bar */}
-            <View style={styles.statsBar}>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{state.stats.completedSessions}</Text>
-                    <Text style={styles.statLabel}>{i18n('session')}</Text>
-                </View>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{state.collection.length}</Text>
-                    <Text style={styles.statLabel}>{i18n('animals')}</Text>
-                </View>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>🔥 {state.stats.currentStreak}</Text>
-                    <Text style={styles.statLabel}>{i18n('streak')}</Text>
-                    {state.stats.currentStreak > 0 && state.stats.currentStreak === state.stats.bestStreak && (
-                        <View style={styles.bestBadge}>
-                            <Text style={styles.bestBadgeText}>{i18n('best')}</Text>
-                        </View>
-                    )}
-                </View>
-                <View style={styles.statItem}>
-                    <View style={styles.dailyGoalContainer}>
-                        <Text style={[
-                            styles.dailyGoalValue,
-                            state.dailyProgress.goalAchieved && styles.dailyGoalAchieved
-                        ]}>
-                            {state.dailyProgress.goalAchieved ? '✓' : `${state.dailyProgress.completedSessions}/${state.settings.dailyGoal}`}
-                        </Text>
-                    </View>
-                    <Text style={styles.statLabel}>{i18n('dailyGoalProgress')}</Text>
-                </View>
-            </View>
+            <SessionStatsBar
+                completedSessions={state.stats.completedSessions}
+                collectionCount={state.collection.length}
+                currentStreak={state.stats.currentStreak}
+                bestStreak={state.stats.bestStreak}
+                dailyProgress={state.dailyProgress}
+                dailyGoal={state.settings.dailyGoal}
+                labels={{
+                    session: i18n('session'),
+                    animals: i18n('animals'),
+                    streak: i18n('streak'),
+                    best: i18n('best'),
+                    dailyGoalProgress: i18n('dailyGoalProgress'),
+                }}
+            />
 
             {/* Main content */}
             <View style={styles.content}>
                 {/* Timer */}
-                <Animated.Text style={[styles.timer, timerGlowStyle]}>
-                    {formattedTime}
-                </Animated.Text>
+                <TimerDisplay
+                    formattedTime={formattedTime}
+                    isRunning={isRunning}
+                    progress={progress}
+                    sessionState={state.sessionState}
+                />
 
-                {/* Progress bar */}
-                {state.sessionState === 'active' && (
-                    <View style={styles.progressContainer}>
-                        <View style={styles.progressBar}>
-                            <View
-                                style={[
-                                    styles.progressFill,
-                                    { width: `${progress * 100}%` }
-                                ]}
-                            />
-                        </View>
-                        <Text style={styles.progressText}>
-                            {Math.round(progress * 100)}%
-                        </Text>
-                    </View>
-                )}
+                {/* Interactive Egg */}
+                <InteractiveEgg
+                    sessionState={state.sessionState}
+                    progress={progress}
+                    duration={duration}
+                    warningLevel={warningLevel as 0 | 1 | 2 | 3}
+                    language={state.settings.language}
+                    hapticsEnabled={state.settings.hapticsEnabled}
+                    hasSeenGestureHints={state.settings.hasSeenGestureHints}
+                    onStart={handleStart}
+                    onShowGestureHints={() => setShowGestureHints(true)}
+                />
 
-                {/* Interactive Egg with Gestures */}
-                <GestureDetector gesture={composedGesture}>
-                    <Animated.View style={[styles.eggWrapper, eggContainerStyle]}>
-                        {/* Sparkle overlay for double tap */}
-                        <Animated.View style={[styles.sparkleOverlay, sparkleStyle]}>
-                            <Text style={styles.sparkleText}>✨ 💫 ⭐ 💫 ✨</Text>
-                        </Animated.View>
+                {/* Session Controls */}
+                <SessionControls
+                    sessionState={state.sessionState}
+                    isPaused={state.isPaused}
+                    pauseCount={state.pauseCount}
+                    maxPauses={state.settings.maxPausesPerSession}
+                    onStart={handleStart}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onGiveUp={handleGiveUp}
+                    onReset={handleReset}
+                    labels={{
+                        startFocus: i18n('startFocus'),
+                        pause: i18n('pause'),
+                        giveUp: i18n('giveUp'),
+                        paused: i18n('paused'),
+                        pausesRemaining: i18n('pausesRemaining'),
+                        resume: i18n('resume'),
+                        tryAgain: i18n('tryAgain'),
+                    }}
+                />
 
-                        <Egg
-                            sessionState={state.sessionState}
-                            progress={progress}
-                            language={state.settings.language}
-                            warningLevel={warningLevel}
-                        />
-                    </Animated.View>
-                </GestureDetector>
-
-                {/* Encouragement text */}
-                {encouragementText && (
-                    <Animated.View style={styles.encouragementContainer}>
-                        <Text style={styles.encouragementText}>{encouragementText}</Text>
-                    </Animated.View>
-                )}
-
-                {/* Buttons */}
-                <View style={styles.buttonContainer}>
-                    {state.sessionState === 'idle' && (
-                        <PixelButton
-                            title={i18n('startFocus')}
-                            onPress={handleStart}
-                            variant="primary"
-                            size="large"
-                            icon="🥚"
-                        />
-                    )}
-
-                    {state.sessionState === 'active' && !state.isPaused && (
-                        <View style={styles.activeButtonsRow}>
-                            <PixelButton
-                                title={i18n('pause')}
-                                onPress={handlePause}
-                                variant="secondary"
-                                size="medium"
-                                icon="⏸️"
-                                disabled={state.pauseCount >= state.settings.maxPausesPerSession}
-                            />
-                            <View style={styles.buttonSpacer} />
-                            <PixelButton
-                                title={i18n('giveUp')}
-                                onPress={handleGiveUp}
-                                variant="ghost"
-                                size="medium"
-                            />
-                        </View>
-                    )}
-
-                    {/* Emergency Pause & Shield buttons - shown during active session */}
-                    {state.sessionState === 'active' && !state.isPaused && (
-                        <View style={styles.powerUpRow}>
-                            <Pressable
-                                style={[styles.emergencyButton, emergencyPauseUsed && styles.buttonDisabled]}
-                                onPress={handleEmergencyPause}
-                                disabled={emergencyPauseUsed}
-                            >
-                                <Text style={styles.emergencyButtonText}>🛡️ {i18n('emergencyPause')}</Text>
-                            </Pressable>
-                            <View style={styles.buttonSpacer} />
-                            <Pressable
-                                style={[styles.shieldButton, shieldInventory.length === 0 && styles.buttonDisabled]}
-                                onPress={() => setShowShieldSelector(true)}
-                                disabled={shieldInventory.length === 0}
-                            >
-                                <Text style={styles.shieldButtonText}>⚔️ {i18n('activateShield')} ({shieldInventory.length})</Text>
-                            </Pressable>
-                        </View>
-                    )}
-
-                    {/* Active Shield Indicator */}
-                    {activeShieldBonus > 0 && state.sessionState === 'active' && (
-                        <View style={styles.shieldActiveIndicator}>
-                            <Text style={styles.shieldActiveText}>🛡️ {i18n('shieldActive')}: +{activeShieldBonus}s</Text>
-                        </View>
-                    )}
-
-                    {state.sessionState === 'active' && state.isPaused && (
-                        <View style={styles.pausedContainer}>
-                            <Text style={styles.pausedText}>{i18n('paused')}</Text>
-                            <Text style={styles.pauseCountText}>
-                                {state.settings.maxPausesPerSession - state.pauseCount} {i18n('pausesRemaining')}
-                            </Text>
-                            <View style={styles.pausedButtonsRow}>
-                                <PixelButton
-                                    title={i18n('resume')}
-                                    onPress={handleResume}
-                                    variant="primary"
-                                    size="large"
-                                    icon="▶️"
-                                />
-                            </View>
-                            <PixelButton
-                                title={i18n('giveUp')}
-                                onPress={handleGiveUp}
-                                variant="ghost"
-                                size="small"
-                            />
-                        </View>
-                    )}
-
-                    {(state.sessionState === 'failed' || state.sessionState === 'completed') && (
-                        <PixelButton
-                            title={i18n('tryAgain')}
-                            onPress={handleReset}
-                            variant="secondary"
-                            size="large"
-                            icon="🔄"
-                        />
-                    )}
-                </View>
+                {/* Power-up Controls */}
+                <PowerUpControls
+                    sessionState={state.sessionState}
+                    isPaused={state.isPaused}
+                    emergencyPauseUsed={emergencyPauseUsed}
+                    activeShieldBonus={activeShieldBonus}
+                    shieldCount={shieldInventory.length}
+                    onEmergencyPause={handleEmergencyPause}
+                    onOpenShieldSelector={() => setShowShieldSelector(true)}
+                    labels={{
+                        emergencyPause: i18n('emergencyPause'),
+                        activateShield: i18n('activateShield'),
+                        shieldActive: i18n('shieldActive'),
+                    }}
+                />
             </View>
 
             {/* Debug mode indicator */}
@@ -649,6 +403,7 @@ export default function HomeScreen() {
                     </View>
                 </View>
             )}
+
             {/* Quick Return Toast */}
             <QuickReturnToast
                 visible={showQuickReturnToast}
@@ -673,166 +428,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
-    },
-    headerButtonText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.text,
-        fontWeight: theme.fontWeight.medium,
-    },
-    statsBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingVertical: theme.spacing.lg,
-        marginHorizontal: theme.spacing.lg,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.lg,
-        marginTop: theme.spacing.md,
-    },
-    statItem: {
-        alignItems: 'center',
-    },
-    statValue: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-    },
-    statLabel: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-        marginTop: theme.spacing.xs,
-    },
-    bestBadge: {
-        backgroundColor: theme.colors.legendary,
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: 2,
-        borderRadius: theme.borderRadius.sm,
-        marginTop: theme.spacing.xs,
-    },
-    bestBadgeText: {
-        fontSize: 10,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.background,
-    },
-    dailyGoalContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 3,
-        borderColor: theme.colors.surfaceLight,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.colors.surface,
-    },
-    dailyGoalValue: {
-        fontSize: theme.fontSize.sm,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-    },
-    dailyGoalAchieved: {
-        color: theme.colors.success,
-        fontSize: theme.fontSize.lg,
-    },
     content: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.lg,
-    },
-    timer: {
-        fontSize: theme.fontSize.timer,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        fontVariant: ['tabular-nums'],
-        marginBottom: theme.spacing.md,
-    },
-    progressContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '80%',
-        marginBottom: theme.spacing.lg,
-    },
-    progressBar: {
-        flex: 1,
-        height: 8,
-        backgroundColor: theme.colors.surface,
-        borderRadius: 4,
-        overflow: 'hidden',
-        marginRight: theme.spacing.sm,
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: theme.colors.accent,
-        borderRadius: 4,
-    },
-    progressText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.accent,
-        fontWeight: theme.fontWeight.semibold,
-        width: 40,
-        textAlign: 'right',
-    },
-    eggWrapper: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    sparkleOverlay: {
-        position: 'absolute',
-        top: -30,
-        zIndex: 10,
-    },
-    sparkleText: {
-        fontSize: 24,
-    },
-    encouragementContainer: {
-        position: 'absolute',
-        bottom: 180,
-        backgroundColor: theme.colors.surface,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.round,
-        ...theme.shadows.medium,
-    },
-    encouragementText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.accent,
-        fontWeight: theme.fontWeight.bold,
-    },
-    buttonContainer: {
-        marginTop: theme.spacing.xl,
-        alignItems: 'center',
-    },
-    activeButtonsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    buttonSpacer: {
-        width: theme.spacing.md,
-    },
-    pausedContainer: {
-        alignItems: 'center',
-    },
-    pausedText: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.warning,
-        marginBottom: theme.spacing.xs,
-    },
-    pauseCountText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-        marginBottom: theme.spacing.lg,
-    },
-    pausedButtonsRow: {
-        marginBottom: theme.spacing.md,
     },
     gestureHintsOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -885,48 +485,5 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
-    },
-    // Power-up button styles
-    powerUpRow: {
-        flexDirection: 'row',
-        marginTop: theme.spacing.md,
-        alignItems: 'center',
-    },
-    emergencyButton: {
-        backgroundColor: theme.colors.warning,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.md,
-    },
-    emergencyButtonText: {
-        fontSize: theme.fontSize.sm,
-        fontWeight: theme.fontWeight.semibold,
-        color: theme.colors.background,
-    },
-    shieldButton: {
-        backgroundColor: theme.colors.epic,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.md,
-    },
-    shieldButtonText: {
-        fontSize: theme.fontSize.sm,
-        fontWeight: theme.fontWeight.semibold,
-        color: '#fff',
-    },
-    buttonDisabled: {
-        opacity: 0.4,
-    },
-    shieldActiveIndicator: {
-        backgroundColor: theme.colors.success,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.borderRadius.round,
-        marginTop: theme.spacing.sm,
-    },
-    shieldActiveText: {
-        fontSize: theme.fontSize.sm,
-        fontWeight: theme.fontWeight.semibold,
-        color: '#fff',
     },
 });

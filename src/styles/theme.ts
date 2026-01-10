@@ -92,6 +92,33 @@ export const theme = {
       stiff: { damping: 20, stiffness: 500 },
     },
   },
+
+  audio: {
+    volumes: {
+      low: 0.3,
+      medium: 0.5,
+      high: 0.7,
+    },
+    categories: {
+      ui: ['button_press'],
+      success: ['session_complete', 'streak_increase', 'celebration'],
+      warning: ['warning', 'egg_crack'],
+      interaction: ['pet', 'feed'],
+      ambient: ['quick_return', 'shield_equip', 'session_start'],
+    },
+  },
+
+  immersive: {
+    collection: {
+      particleColor: 'rgba(78, 205, 196, 0.5)',
+      backgroundGradient: ['#1A1A2E', '#1E2A40', '#162038'],
+      entranceStagger: 50,
+    },
+    session: {
+      particleColor: 'rgba(255, 230, 109, 0.6)',
+      backgroundGradient: ['#1A1A2E', '#2A1A3E', '#1A2A3E'],
+    },
+  },
 };
 
 export type Theme = typeof theme;

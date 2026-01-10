@@ -145,6 +145,19 @@ export const translations = {
         progressBonus: 'Progress protection',
         effectiveTolerance: 'Effective tolerance',
 
+        // Animal Interactions
+        happiness: 'Happiness',
+        pet: 'Pet',
+        feed: 'Feed',
+        interactionReady: 'Ready!',
+        pettedTimes: 'Petted',
+        fedTimes: 'Fed',
+        times: 'x',
+        happinessSad: 'Feeling sad',
+        happinessNeutral: 'Feeling okay',
+        happinessHappy: 'Feeling happy',
+        happinessEcstatic: 'Feeling amazing!',
+
         // Rarity
         common: 'Common',
         rare: 'Rare',
@@ -365,6 +378,19 @@ export const translations = {
         streakBonus: 'Seri bonusu',
         progressBonus: 'İlerleme koruması',
         effectiveTolerance: 'Etkin tolerans',
+
+        // Animal Interactions
+        happiness: 'Mutluluk',
+        pet: 'Sevdir',
+        feed: 'Besle',
+        interactionReady: 'Hazır!',
+        pettedTimes: 'Okşandı',
+        fedTimes: 'Beslendi',
+        times: 'x',
+        happinessSad: 'Üzgün hissediyor',
+        happinessNeutral: 'Normal hissediyor',
+        happinessHappy: 'Mutlu hissediyor',
+        happinessEcstatic: 'Harika hissediyor!',
 
         // Rarity
         common: 'Yaygın',

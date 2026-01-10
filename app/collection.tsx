@@ -8,6 +8,8 @@ import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
 import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
 import { PixelButton } from '../src/components/PixelButton';
+import { AnimatedBackground } from '../src/components/AnimatedBackground';
+import { FloatingParticles } from '../src/components/FloatingParticles';
 import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
 
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
@@ -202,7 +204,7 @@ export default function CollectionScreen() {
 
         return (
             <View style={styles.animalGrid}>
-                {filteredAnimals.map(animal => {
+                {filteredAnimals.map((animal, index) => {
                     const data = collectionData.get(animal.id);
                     const isCollected = data && data.count > 0;
 
@@ -215,6 +217,7 @@ export default function CollectionScreen() {
                             size="small"
                             language={state.settings.language}
                             onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                            entranceDelay={index * 50}
                         />
                     );
                 })}
@@ -239,7 +242,7 @@ export default function CollectionScreen() {
                     </Text>
                 </View>
                 <View style={styles.animalGrid}>
-                    {animalsInRarity.map(animal => {
+                    {animalsInRarity.map((animal, index) => {
                         const data = collectionData.get(animal.id);
                         const isCollected = data && data.count > 0;
 
@@ -252,6 +255,7 @@ export default function CollectionScreen() {
                                 size="small"
                                 language={state.settings.language}
                                 onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                                entranceDelay={index * 50}
                             />
                         );
                     })}
@@ -267,6 +271,10 @@ export default function CollectionScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Animated Background for collection immersion */}
+            <AnimatedBackground sessionState="idle" variant="collection" />
+            <FloatingParticles count={12} isActive={false} variant="collection" />
+
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>

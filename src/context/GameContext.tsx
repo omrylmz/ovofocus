@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
 import { Animal, getRandomAnimal } from '../data/animals';
+import { audioManager } from '../services/audioManager';
 import {
     CollectedAnimal,
     Stats,
     Settings,
     DailyProgress,
+    AnimalInteraction,
+    PetResult,
+    FeedResult,
     getCollection,
     addToCollection,
     getStats,
@@ -15,6 +19,12 @@ import {
     toggleFavorite as toggleFavoriteStorage,
     getDailyProgress,
     incrementDailyProgress,
+    getAnimalInteraction,
+    petAnimal as petAnimalStorage,
+    feedAnimal as feedAnimalStorage,
+    getPetCooldownRemaining,
+    getFeedCooldownRemaining,
+    getHappinessLevel,
 } from '../utils/storage';
 import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
 
@@ -64,6 +74,13 @@ interface GameContextType {
     setGestureHintsSeen: () => Promise<void>;
     setOnboardingComplete: () => Promise<void>;
     i18n: (key: TranslationKey) => string;
+    // Animal interaction functions
+    getInteraction: (animalId: string) => Promise<AnimalInteraction>;
+    petAnimal: (animalId: string) => Promise<PetResult>;
+    feedAnimal: (animalId: string) => Promise<FeedResult>;
+    getPetCooldown: (interaction: AnimalInteraction) => number;
+    getFeedCooldown: (interaction: AnimalInteraction) => number;
+    getHappinessLevel: (happiness: number) => 'sad' | 'neutral' | 'happy' | 'ecstatic';
 }
 
 // Initial state
@@ -233,6 +250,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     getDailyProgress(),
                 ]);
                 dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings, favorites, dailyProgress } });
+
+                // Sync audio manager with loaded settings
+                audioManager.setEnabled(settings.soundEnabled);
             } catch (error) {
                 console.error('Failed to load data:', error);
                 dispatch({ type: 'SET_LOADING', payload: false });
@@ -240,6 +260,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
         loadData();
     }, []);
+
+    // Sync audio manager when soundEnabled setting changes
+    useEffect(() => {
+        audioManager.setEnabled(state.settings.soundEnabled);
+    }, [state.settings.soundEnabled]);
 
     const startSession = () => {
         dispatch({ type: 'START_SESSION' });
@@ -305,6 +330,35 @@ export function GameProvider({ children }: { children: ReactNode }) {
         await updateSettings({ hasCompletedOnboarding: true });
     };
 
+    // Animal interaction functions
+    const getInteraction = async (animalId: string): Promise<AnimalInteraction> => {
+        return getAnimalInteraction(animalId);
+    };
+
+    const petAnimal = async (animalId: string): Promise<PetResult> => {
+        const result = await petAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('pet');
+        }
+        return result;
+    };
+
+    const feedAnimal = async (animalId: string): Promise<FeedResult> => {
+        const result = await feedAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('feed');
+        }
+        return result;
+    };
+
+    const getPetCooldown = (interaction: AnimalInteraction): number => {
+        return getPetCooldownRemaining(interaction);
+    };
+
+    const getFeedCooldown = (interaction: AnimalInteraction): number => {
+        return getFeedCooldownRemaining(interaction);
+    };
+
     // Translation helper
     const i18n = useCallback((key: TranslationKey): string => {
         return t(key, state.settings.language);
@@ -325,6 +379,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 setGestureHintsSeen,
                 setOnboardingComplete,
                 i18n,
+                // Animal interaction functions
+                getInteraction,
+                petAnimal,
+                feedAnimal,
+                getPetCooldown,
+                getFeedCooldown,
+                getHappinessLevel,
             }}
         >
             {children}

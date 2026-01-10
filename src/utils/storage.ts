@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
     FAVORITES: '@ovofocus/favorites',
     DAILY_PROGRESS: '@ovofocus/daily_progress',
     SHIELD_INVENTORY: '@ovofocus/shield_inventory',
+    ANIMAL_INTERACTIONS: '@ovofocus/animal_interactions',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -52,6 +53,15 @@ export interface ShieldItem {
     animalName: string;
     rarity: string;
     durationSeconds: number;
+}
+
+export interface AnimalInteraction {
+    animalId: string;
+    happiness: number;        // 0-100
+    lastPetTime: string | null;
+    lastFeedTime: string | null;
+    petCount: number;
+    feedCount: number;
 }
 
 const defaultStats: Stats = {
@@ -297,6 +307,169 @@ export async function grantShieldFromAnimal(animalId: string, animalName: string
     return addShield(shield);
 }
 
+// Animal Interactions
+const INTERACTION_CONSTANTS = {
+    PET_COOLDOWN_HOURS: 4,
+    FEED_COOLDOWN_HOURS: 8,
+    PET_HAPPINESS_BONUS: 10,
+    FEED_HAPPINESS_BONUS: 15,
+    DAILY_DECAY: 5,
+    MAX_HAPPINESS: 100,
+    MIN_HAPPINESS: 0,
+};
+
+function getDefaultInteraction(animalId: string): AnimalInteraction {
+    return {
+        animalId,
+        happiness: 50, // Start at neutral happiness
+        lastPetTime: null,
+        lastFeedTime: null,
+        petCount: 0,
+        feedCount: 0,
+    };
+}
+
+function calculateHappinessDecay(interaction: AnimalInteraction): number {
+    const lastInteractionTime = interaction.lastPetTime || interaction.lastFeedTime;
+    if (!lastInteractionTime) return interaction.happiness;
+
+    const lastTime = new Date(lastInteractionTime).getTime();
+    const now = Date.now();
+    const daysSinceInteraction = Math.floor((now - lastTime) / (1000 * 60 * 60 * 24));
+
+    if (daysSinceInteraction <= 0) return interaction.happiness;
+
+    const decay = daysSinceInteraction * INTERACTION_CONSTANTS.DAILY_DECAY;
+    return Math.max(INTERACTION_CONSTANTS.MIN_HAPPINESS, interaction.happiness - decay);
+}
+
+function getCooldownRemaining(lastTime: string | null, cooldownHours: number): number {
+    if (!lastTime) return 0;
+    const lastTimeMs = new Date(lastTime).getTime();
+    const cooldownMs = cooldownHours * 60 * 60 * 1000;
+    const remaining = cooldownMs - (Date.now() - lastTimeMs);
+    return Math.max(0, remaining);
+}
+
+export async function getAllInteractions(): Promise<AnimalInteraction[]> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.ANIMAL_INTERACTIONS);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function getAnimalInteraction(animalId: string): Promise<AnimalInteraction> {
+    const interactions = await getAllInteractions();
+    const existing = interactions.find(i => i.animalId === animalId);
+
+    if (existing) {
+        // Apply happiness decay
+        const decayedHappiness = calculateHappinessDecay(existing);
+        return { ...existing, happiness: decayedHappiness };
+    }
+
+    return getDefaultInteraction(animalId);
+}
+
+export async function updateAnimalInteraction(interaction: AnimalInteraction): Promise<AnimalInteraction[]> {
+    const interactions = await getAllInteractions();
+    const existingIndex = interactions.findIndex(i => i.animalId === interaction.animalId);
+
+    if (existingIndex >= 0) {
+        interactions[existingIndex] = interaction;
+    } else {
+        interactions.push(interaction);
+    }
+
+    await AsyncStorage.setItem(STORAGE_KEYS.ANIMAL_INTERACTIONS, JSON.stringify(interactions));
+    return interactions;
+}
+
+export interface PetResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number; // ms until next pet allowed
+}
+
+export async function petAnimal(animalId: string): Promise<PetResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastPetTime,
+        INTERACTION_CONSTANTS.PET_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.PET_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastPetTime: new Date().toISOString(),
+        petCount: interaction.petCount + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
+export interface FeedResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number; // ms until next feed allowed
+}
+
+export async function feedAnimal(animalId: string): Promise<FeedResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastFeedTime,
+        INTERACTION_CONSTANTS.FEED_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.FEED_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastFeedTime: new Date().toISOString(),
+        feedCount: interaction.feedCount + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
+export function getPetCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastPetTime, INTERACTION_CONSTANTS.PET_COOLDOWN_HOURS);
+}
+
+export function getFeedCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastFeedTime, INTERACTION_CONSTANTS.FEED_COOLDOWN_HOURS);
+}
+
+export function getHappinessLevel(happiness: number): 'sad' | 'neutral' | 'happy' | 'ecstatic' {
+    if (happiness <= 30) return 'sad';
+    if (happiness <= 60) return 'neutral';
+    if (happiness <= 80) return 'happy';
+    return 'ecstatic';
+}
+
+export { INTERACTION_CONSTANTS };
+
 // Debug
 export async function clearAllData(): Promise<void> {
     await AsyncStorage.multiRemove([
@@ -306,6 +479,7 @@ export async function clearAllData(): Promise<void> {
         STORAGE_KEYS.FAVORITES,
         STORAGE_KEYS.DAILY_PROGRESS,
         STORAGE_KEYS.SHIELD_INVENTORY,
+        STORAGE_KEYS.ANIMAL_INTERACTIONS,
     ]);
 }
 

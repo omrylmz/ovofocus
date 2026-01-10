@@ -1,0 +1,137 @@
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    interpolateColor,
+    Easing,
+} from 'react-native-reanimated';
+import { SessionState } from '../context/GameContext';
+
+const { width, height } = Dimensions.get('window');
+
+type BackgroundVariant = 'session' | 'collection';
+
+interface AnimatedBackgroundProps {
+    sessionState: SessionState;
+    progress?: number;
+    variant?: BackgroundVariant;
+}
+
+// Color palettes for different states
+const COLORS = {
+    idle: {
+        start: '#1A1A2E',
+        mid: '#16213E',
+        end: '#0F0F1A',
+    },
+    active: {
+        start: '#1A1A2E',
+        mid: '#2A1A3E',
+        end: '#1A2A3E',
+    },
+    completed: {
+        start: '#1A2E1A',
+        mid: '#163E2A',
+        end: '#1A3E16',
+    },
+    failed: {
+        start: '#2E1A1A',
+        mid: '#3E1616',
+        end: '#2E1A2A',
+    },
+};
+
+// Collection screen palette - calm blue-teal
+const COLLECTION_COLORS = {
+    start: '#1A1A2E',
+    mid: '#1E2A40',
+    end: '#162038',
+};
+
+export function AnimatedBackground({ sessionState, progress = 0, variant = 'session' }: AnimatedBackgroundProps) {
+    const colorProgress = useSharedValue(0);
+    const pulseValue = useSharedValue(0);
+
+    useEffect(() => {
+        // Gentle color cycling
+        colorProgress.value = withRepeat(
+            withTiming(1, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+
+        // Subtle pulse effect
+        pulseValue.value = withRepeat(
+            withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+    }, []);
+
+    const getColors = () => {
+        // Use collection colors for collection variant
+        if (variant === 'collection') {
+            return COLLECTION_COLORS;
+        }
+
+        switch (sessionState) {
+            case 'active':
+                return COLORS.active;
+            case 'completed':
+                return COLORS.completed;
+            case 'failed':
+                return COLORS.failed;
+            default:
+                return COLORS.idle;
+        }
+    };
+
+    const colors = getColors();
+
+    const animatedStyle = useAnimatedStyle(() => {
+        const backgroundColor = interpolateColor(
+            colorProgress.value,
+            [0, 0.5, 1],
+            [colors.start, colors.mid, colors.end]
+        );
+
+        return {
+            backgroundColor,
+            opacity: 0.95 + pulseValue.value * 0.05,
+        };
+    });
+
+    return (
+        <Animated.View style={[styles.container, animatedStyle]}>
+            {/* Gradient overlay for depth */}
+            <View style={styles.gradientTop} />
+            <View style={styles.gradientBottom} />
+        </Animated.View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: -1,
+    },
+    gradientTop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: height * 0.3,
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    },
+    gradientBottom: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: height * 0.4,
+        backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    },
+});
