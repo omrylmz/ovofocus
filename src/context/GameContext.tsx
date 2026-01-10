@@ -92,6 +92,7 @@ const initialState: GameState = {
         maxPausesPerSession: 3,
         hasCompletedOnboarding: false,
         dailyGoal: 3,
+        emergencyPauseDuration: 60,
     },
     dailyProgress: {
         date: new Date().toISOString().split('T')[0],

@@ -127,6 +127,24 @@ export const translations = {
         toleranceDesc: 'Time to return before egg breaks',
         seconds: 'sec',
 
+        // UX Improvements
+        welcomeBack: 'Welcome back! 🎉',
+        quickReturnBonus: 'Quick return!',
+        warningLevel1: 'Hurry back! ⚠️',
+        warningLevel2: 'Egg is cracking! 🥚',
+        warningLevel3: 'Almost broken!',
+        emergencyPause: 'Emergency Pause',
+        emergencyPauseActive: 'Emergency pause active',
+        emergencyPauseUsed: 'Emergency pause used',
+        activateShield: 'Use Shield',
+        shieldActive: 'Shield active',
+        selectShield: 'Select Shield',
+        shieldDuration: 'Adds',
+        noShieldsAvailable: 'No shields available',
+        streakBonus: 'Streak bonus',
+        progressBonus: 'Progress protection',
+        effectiveTolerance: 'Effective tolerance',
+
         // Rarity
         common: 'Common',
         rare: 'Rare',
@@ -329,6 +347,24 @@ export const translations = {
         tolerance: 'Arka Plan Toleransı',
         toleranceDesc: 'Yumurta kırılmadan geri dönme süresi',
         seconds: 'sn',
+
+        // UX Improvements
+        welcomeBack: 'Hoş geldin! 🎉',
+        quickReturnBonus: 'Hızlı dönüş!',
+        warningLevel1: 'Acele et! ⚠️',
+        warningLevel2: 'Yumurta çatlıyor! 🥚',
+        warningLevel3: 'Neredeyse kırılıyor!',
+        emergencyPause: 'Acil Duraklatma',
+        emergencyPauseActive: 'Acil duraklatma aktif',
+        emergencyPauseUsed: 'Acil duraklatma kullanıldı',
+        activateShield: 'Kalkan Kullan',
+        shieldActive: 'Kalkan aktif',
+        selectShield: 'Kalkan Seç',
+        shieldDuration: 'Ekler',
+        noShieldsAvailable: 'Kalkan yok',
+        streakBonus: 'Seri bonusu',
+        progressBonus: 'İlerleme koruması',
+        effectiveTolerance: 'Etkin tolerans',
 
         // Rarity
         common: 'Yaygın',

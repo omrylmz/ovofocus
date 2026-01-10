@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
     SETTINGS: '@ovofocus/settings',
     FAVORITES: '@ovofocus/favorites',
     DAILY_PROGRESS: '@ovofocus/daily_progress',
+    SHIELD_INVENTORY: '@ovofocus/shield_inventory',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -37,12 +38,20 @@ export interface Settings {
     maxPausesPerSession: number;
     hasCompletedOnboarding: boolean;
     dailyGoal: number; // number of sessions per day
+    emergencyPauseDuration: number; // extended pause duration in seconds
 }
 
 export interface DailyProgress {
     date: string; // YYYY-MM-DD
     completedSessions: number;
     goalAchieved: boolean;
+}
+
+export interface ShieldItem {
+    animalId: string;
+    animalName: string;
+    rarity: string;
+    durationSeconds: number;
 }
 
 const defaultStats: Stats = {
@@ -67,6 +76,7 @@ const defaultSettings: Settings = {
     maxPausesPerSession: 3,
     hasCompletedOnboarding: false,
     dailyGoal: 3,
+    emergencyPauseDuration: 60,
 };
 
 // Collection
@@ -239,6 +249,54 @@ export async function incrementDailyProgress(dailyGoal: number): Promise<DailyPr
     return updated;
 }
 
+// Shield Inventory
+export async function getShieldInventory(): Promise<ShieldItem[]> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.SHIELD_INVENTORY);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function addShield(shield: ShieldItem): Promise<ShieldItem[]> {
+    const inventory = await getShieldInventory();
+    // Check if we already have a shield from this animal
+    const existingIndex = inventory.findIndex(s => s.animalId === shield.animalId);
+    if (existingIndex === -1) {
+        inventory.push(shield);
+    }
+    await AsyncStorage.setItem(STORAGE_KEYS.SHIELD_INVENTORY, JSON.stringify(inventory));
+    return inventory;
+}
+
+export async function useShield(animalId: string): Promise<ShieldItem | null> {
+    const inventory = await getShieldInventory();
+    const shieldIndex = inventory.findIndex(s => s.animalId === animalId);
+    if (shieldIndex === -1) return null;
+
+    const shield = inventory[shieldIndex];
+    inventory.splice(shieldIndex, 1);
+    await AsyncStorage.setItem(STORAGE_KEYS.SHIELD_INVENTORY, JSON.stringify(inventory));
+    return shield;
+}
+
+export async function grantShieldFromAnimal(animalId: string, animalName: string, rarity: string): Promise<ShieldItem[]> {
+    const durationMap: Record<string, number> = {
+        legendary: 60,
+        epic: 30,
+        rare: 20,
+        common: 10,
+    };
+    const shield: ShieldItem = {
+        animalId,
+        animalName,
+        rarity,
+        durationSeconds: durationMap[rarity] || 10,
+    };
+    return addShield(shield);
+}
+
 // Debug
 export async function clearAllData(): Promise<void> {
     await AsyncStorage.multiRemove([
@@ -247,5 +305,7 @@ export async function clearAllData(): Promise<void> {
         STORAGE_KEYS.SETTINGS,
         STORAGE_KEYS.FAVORITES,
         STORAGE_KEYS.DAILY_PROGRESS,
+        STORAGE_KEYS.SHIELD_INVENTORY,
     ]);
 }
+

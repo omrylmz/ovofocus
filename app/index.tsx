@@ -16,14 +16,17 @@ import Animated, {
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTimer } from '../src/hooks/useTimer';
-import { useAppState } from '../src/hooks/useAppState';
+import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { Egg } from '../src/components/Egg';
 import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
 import { StreakCelebration } from '../src/components/StreakCelebration';
 import { OnboardingFlow } from '../src/components/OnboardingFlow';
+import { QuickReturnToast } from '../src/components/QuickReturnToast';
+import { ShieldSelector } from '../src/components/ShieldSelector';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
+import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal } from '../src/utils/storage';
 
 export default function HomeScreen() {
     const router = useRouter();
@@ -34,8 +37,14 @@ export default function HomeScreen() {
     const [showGestureHints, setShowGestureHints] = useState(false);
     const [showStreakCelebration, setShowStreakCelebration] = useState(false);
     const [celebrationStreak, setCelebrationStreak] = useState(0);
-    const backgroundTimeRef = useRef<number | null>(null);
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
+
+    // New UX improvement states
+    const [showQuickReturnToast, setShowQuickReturnToast] = useState(false);
+    const [showShieldSelector, setShowShieldSelector] = useState(false);
+    const [shieldInventory, setShieldInventory] = useState<ShieldItem[]>([]);
+    const [activeShieldBonus, setActiveShieldBonus] = useState(0);
+    const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
 
     // Debug mode: 10 seconds, Normal: 25 minutes
     const duration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
@@ -74,6 +83,9 @@ export default function HomeScreen() {
                 previousBestStreakRef.current = newStreak;
             }
         }, 100);
+
+        // Grant shield from hatched animal
+        await handleGrantShield(animal);
     }, [completeSession, state.settings, state.stats.currentStreak]);
 
     const {
@@ -90,33 +102,96 @@ export default function HomeScreen() {
         onComplete: handleTimerComplete,
     });
 
-    // Handle app going to background
-    useAppState({
-        onBackground: () => {
-            if (state.sessionState === 'active' && isRunning) {
-                backgroundTimeRef.current = Date.now();
-                console.log('App went to background, tolerance timer started');
-            }
-        },
-        onForeground: () => {
-            if (state.sessionState === 'active' && isRunning && backgroundTimeRef.current) {
-                const timeDiff = Date.now() - backgroundTimeRef.current;
-                backgroundTimeRef.current = null;
-
-                if (timeDiff > state.settings.toleranceSeconds * 1000) {
-                    // Too late!
-                    stopTimer();
-                    failSession(elapsedMinutes);
-                    if (state.settings.hapticsEnabled) {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                    }
-                    console.log(`Failed due to long backgrounding: ${Math.round(timeDiff / 1000)}s`);
-                } else {
-                    console.log(`Returned within tolerance: ${Math.round(timeDiff / 1000)}s`);
-                }
-            }
-        },
+    // Tolerance system with all UX improvements
+    const {
+        warningLevel,
+        effectiveTolerance,
+        timeInBackground,
+        isQuickReturn,
+        toleranceExceeded,
+        progressMultiplier,
+        streakBonus,
+        resetTolerance,
+    } = useToleranceSystem({
+        baseTolerance: state.settings.toleranceSeconds,
+        progress,
+        currentStreak: state.stats.currentStreak,
+        shieldBonus: activeShieldBonus,
+        isSessionActive: state.sessionState === 'active',
+        isPaused: state.isPaused,
     });
+
+    // Load shield inventory on mount
+    useEffect(() => {
+        getShieldInventory().then(setShieldInventory);
+    }, []);
+
+    // Handle quick return toast
+    useEffect(() => {
+        if (isQuickReturn && state.sessionState === 'active') {
+            setShowQuickReturnToast(true);
+            if (state.settings.hapticsEnabled) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        }
+    }, [isQuickReturn, state.sessionState, state.settings.hapticsEnabled]);
+
+    // Handle warning level haptic feedback
+    useEffect(() => {
+        if (warningLevel > 0 && state.sessionState === 'active' && state.settings.hapticsEnabled) {
+            const hapticTypes = {
+                1: Haptics.ImpactFeedbackStyle.Light,
+                2: Haptics.ImpactFeedbackStyle.Medium,
+                3: Haptics.ImpactFeedbackStyle.Heavy,
+            };
+            Haptics.impactAsync(hapticTypes[warningLevel as 1 | 2 | 3]);
+        }
+    }, [warningLevel, state.sessionState, state.settings.hapticsEnabled]);
+
+    // Handle tolerance exceeded - fail session
+    useEffect(() => {
+        if (toleranceExceeded && state.sessionState === 'active' && isRunning) {
+            stopTimer();
+            failSession(elapsedMinutes);
+            resetTolerance();
+            if (state.settings.hapticsEnabled) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            console.log(`Failed due to exceeding tolerance: ${timeInBackground}s > ${effectiveTolerance}s`);
+        }
+    }, [toleranceExceeded, state.sessionState, isRunning]);
+
+    // Handle shield activation
+    const handleActivateShield = async (shield: ShieldItem) => {
+        const used = await useShield(shield.animalId);
+        if (used) {
+            setActiveShieldBonus(used.durationSeconds);
+            setShieldInventory(prev => prev.filter(s => s.animalId !== shield.animalId));
+            setShowShieldSelector(false);
+            if (state.settings.hapticsEnabled) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        }
+    };
+
+    // Handle emergency pause
+    const handleEmergencyPause = () => {
+        if (!emergencyPauseUsed && state.sessionState === 'active' && !state.isPaused) {
+            pauseTimer();
+            pauseSession();
+            setEmergencyPauseUsed(true);
+            if (state.settings.hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            }
+        }
+    };
+
+    // Grant shield when completing a session
+    const handleGrantShield = async (animal: Animal) => {
+        await grantShieldFromAnimal(animal.id, animal.name, animal.rarity);
+        const updated = await getShieldInventory();
+        setShieldInventory(updated);
+    };
 
     // Glow animation for timer
     const timerGlow = useSharedValue(0);
@@ -258,6 +333,10 @@ export default function HomeScreen() {
     const handleStart = () => {
         startSession();
         startTimer();
+        // Reset UX improvement states for new session
+        setEmergencyPauseUsed(false);
+        setActiveShieldBonus(0);
+        resetTolerance();
         if (state.settings.hapticsEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -404,6 +483,7 @@ export default function HomeScreen() {
                             sessionState={state.sessionState}
                             progress={progress}
                             language={state.settings.language}
+                            warningLevel={warningLevel}
                         />
                     </Animated.View>
                 </GestureDetector>
@@ -444,6 +524,34 @@ export default function HomeScreen() {
                                 variant="ghost"
                                 size="medium"
                             />
+                        </View>
+                    )}
+
+                    {/* Emergency Pause & Shield buttons - shown during active session */}
+                    {state.sessionState === 'active' && !state.isPaused && (
+                        <View style={styles.powerUpRow}>
+                            <Pressable
+                                style={[styles.emergencyButton, emergencyPauseUsed && styles.buttonDisabled]}
+                                onPress={handleEmergencyPause}
+                                disabled={emergencyPauseUsed}
+                            >
+                                <Text style={styles.emergencyButtonText}>🛡️ {i18n('emergencyPause')}</Text>
+                            </Pressable>
+                            <View style={styles.buttonSpacer} />
+                            <Pressable
+                                style={[styles.shieldButton, shieldInventory.length === 0 && styles.buttonDisabled]}
+                                onPress={() => setShowShieldSelector(true)}
+                                disabled={shieldInventory.length === 0}
+                            >
+                                <Text style={styles.shieldButtonText}>⚔️ {i18n('activateShield')} ({shieldInventory.length})</Text>
+                            </Pressable>
+                        </View>
+                    )}
+
+                    {/* Active Shield Indicator */}
+                    {activeShieldBonus > 0 && state.sessionState === 'active' && (
+                        <View style={styles.shieldActiveIndicator}>
+                            <Text style={styles.shieldActiveText}>🛡️ {i18n('shieldActive')}: +{activeShieldBonus}s</Text>
                         </View>
                     )}
 
@@ -541,6 +649,21 @@ export default function HomeScreen() {
                     </View>
                 </View>
             )}
+            {/* Quick Return Toast */}
+            <QuickReturnToast
+                visible={showQuickReturnToast}
+                onDismiss={() => setShowQuickReturnToast(false)}
+                language={state.settings.language}
+            />
+
+            {/* Shield Selector Modal */}
+            <ShieldSelector
+                visible={showShieldSelector}
+                shields={shieldInventory}
+                onSelect={handleActivateShield}
+                onClose={() => setShowShieldSelector(false)}
+                language={state.settings.language}
+            />
         </SafeAreaView>
     );
 }
@@ -762,5 +885,48 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
+    },
+    // Power-up button styles
+    powerUpRow: {
+        flexDirection: 'row',
+        marginTop: theme.spacing.md,
+        alignItems: 'center',
+    },
+    emergencyButton: {
+        backgroundColor: theme.colors.warning,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.md,
+    },
+    emergencyButtonText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.background,
+    },
+    shieldButton: {
+        backgroundColor: theme.colors.epic,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.md,
+    },
+    shieldButtonText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: '#fff',
+    },
+    buttonDisabled: {
+        opacity: 0.4,
+    },
+    shieldActiveIndicator: {
+        backgroundColor: theme.colors.success,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.round,
+        marginTop: theme.spacing.sm,
+    },
+    shieldActiveText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: '#fff',
     },
 });

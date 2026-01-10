@@ -16,15 +16,24 @@ import Animated, {
 import { theme } from '../styles/theme';
 import { SessionState } from '../context/GameContext';
 import { Language, t } from '../i18n/translations';
+import { WarningLevel } from '../hooks/useToleranceSystem';
 
 interface EggProps {
     sessionState: SessionState;
     progress?: number; // 0 to 1
     onHatchComplete?: () => void;
     language?: Language;
+    warningLevel?: WarningLevel; // 0=none, 1=50%, 2=75%, 3=100%
 }
 
-export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'en' }: EggProps) {
+const WARNING_COLORS = {
+    0: theme.colors.accent,
+    1: '#FFD93D', // Yellow
+    2: '#FF8C00', // Orange
+    3: '#FF4444', // Red
+};
+
+export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'en', warningLevel = 0 }: EggProps) {
     const wobble = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
@@ -34,6 +43,8 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
     const pulseValue = useSharedValue(0);
     const sparkleRotation = useSharedValue(0);
     const colorProgress = useSharedValue(0);
+    const warningPulse = useSharedValue(0);
+    const anxiousShake = useSharedValue(0);
 
     // Idle animation - gentle wobble with breathing effect
     useEffect(() => {
@@ -114,6 +125,40 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
         }
     }, [sessionState, progress]);
 
+    // Warning level animations - urgent feedback when backgrounded too long
+    useEffect(() => {
+        if (warningLevel > 0 && sessionState === 'active') {
+            // Anxious shake intensity based on warning level
+            const shakeIntensity = warningLevel * 4;
+            const shakeSpeed = 150 - warningLevel * 30;
+
+            anxiousShake.value = withRepeat(
+                withSequence(
+                    withTiming(shakeIntensity, { duration: shakeSpeed }),
+                    withTiming(-shakeIntensity, { duration: shakeSpeed })
+                ),
+                -1,
+                true
+            );
+
+            // Warning pulse for glow
+            const pulseSpeed = 500 - warningLevel * 100;
+            warningPulse.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: pulseSpeed }),
+                    withTiming(0.3, { duration: pulseSpeed })
+                ),
+                -1,
+                true
+            );
+        } else {
+            cancelAnimation(anxiousShake);
+            cancelAnimation(warningPulse);
+            anxiousShake.value = withTiming(0, { duration: 200 });
+            warningPulse.value = withTiming(0, { duration: 200 });
+        }
+    }, [warningLevel, sessionState]);
+
     // Hatching animation - dramatic climax
     useEffect(() => {
         if (sessionState === 'completed') {
@@ -192,7 +237,7 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
-            { rotate: `${wobble.value}deg` },
+            { rotate: `${wobble.value + anxiousShake.value}deg` },
             { scale: scale.value * (1 + pulseValue.value * 0.05) },
         ],
         opacity: opacity.value,
@@ -210,6 +255,10 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
 
     const innerGlowStyle = useAnimatedStyle(() => ({
         opacity: pulseValue.value * 0.5 + colorProgress.value * 0.3,
+    }));
+
+    const warningGlowStyle = useAnimatedStyle(() => ({
+        opacity: warningPulse.value * 0.8,
     }));
 
     const getCrackEmoji = () => {
@@ -232,6 +281,17 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
         <View style={styles.container}>
             {/* Outer glow effect */}
             <Animated.View style={[styles.glow, glowStyle]} />
+
+            {/* Warning glow overlay */}
+            {warningLevel > 0 && (
+                <Animated.View
+                    style={[
+                        styles.warningGlow,
+                        warningGlowStyle,
+                        { backgroundColor: WARNING_COLORS[warningLevel] }
+                    ]}
+                />
+            )}
 
             {/* Rotating sparkles */}
             {sessionState === 'active' && progress > 0.3 && (
@@ -351,5 +411,11 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.lg,
         color: theme.colors.error,
         fontWeight: theme.fontWeight.bold,
+    },
+    warningGlow: {
+        position: 'absolute',
+        width: 250,
+        height: 250,
+        borderRadius: 125,
     },
 });
