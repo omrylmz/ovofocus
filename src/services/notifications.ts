@@ -2,7 +2,7 @@
 // Note: Push notifications are not supported in Expo Go (SDK 53+)
 // This service gracefully handles the case when notifications are unavailable
 
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import Constants from 'expo-constants';
 import { Animal } from '../data/animals';
 import { Language, t, getAnimalName } from '../i18n/translations';
@@ -10,8 +10,19 @@ import { Language, t, getAnimalName } from '../i18n/translations';
 // Check if we're running in Expo Go (notifications not supported)
 const isExpoGo = Constants.appOwnership === 'expo';
 
+// Track app foreground state
+let isAppInForeground = AppState.currentState === 'active';
+
 // Dynamically import notifications only when not in Expo Go
 let Notifications: typeof import('expo-notifications') | null = null;
+
+// Initialize app state listener for notifications
+export function initializeAppStateListener() {
+    const subscription = AppState.addEventListener('change', (state) => {
+        isAppInForeground = state === 'active';
+    });
+    return subscription;
+}
 
 async function getNotificationsModule() {
     if (isExpoGo) {
@@ -21,14 +32,14 @@ async function getNotificationsModule() {
     if (!Notifications) {
         try {
             Notifications = await import('expo-notifications');
-            // Configure notification behavior
+            // Configure notification behavior - only show if app is backgrounded
             Notifications.setNotificationHandler({
                 handleNotification: async () => ({
-                    shouldShowAlert: true,
-                    shouldPlaySound: true,
+                    shouldShowAlert: !isAppInForeground,
+                    shouldPlaySound: !isAppInForeground,
                     shouldSetBadge: false,
-                    shouldShowBanner: true,
-                    shouldShowList: true,
+                    shouldShowBanner: !isAppInForeground,
+                    shouldShowList: !isAppInForeground,
                 }),
             });
         } catch (error) {
@@ -76,11 +87,17 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     }
 }
 
-// Send session complete notification with animal info
+// Send session complete notification with animal info (only if app is backgrounded)
 export async function sendSessionCompleteNotification(
     animal: Animal,
     language: Language
 ): Promise<void> {
+    // Only send notification if app is backgrounded
+    if (isAppInForeground) {
+        console.log('App in foreground - skipping notification');
+        return;
+    }
+
     const notif = await getNotificationsModule();
     if (!notif) return;
 
