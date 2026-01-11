@@ -29,43 +29,51 @@ export function PowerUpControls({
     onOpenShieldSelector,
     labels,
 }: PowerUpControlsProps) {
-    // Only show during active, non-paused sessions
-    if (sessionState !== 'active' || isPaused) {
-        return null;
-    }
+    const isVisible = sessionState === 'active' && !isPaused;
 
+    // Always render container to maintain layout stability
     return (
-        <>
-            {/* Emergency Pause & Shield buttons */}
-            <View style={styles.powerUpRow}>
-                <Pressable
-                    style={[styles.emergencyButton, emergencyPauseUsed && styles.buttonDisabled]}
-                    onPress={onEmergencyPause}
-                    disabled={emergencyPauseUsed}
-                >
-                    <Text style={styles.emergencyButtonText}>🛡️ {labels.emergencyPause}</Text>
-                </Pressable>
-                <View style={styles.buttonSpacer} />
-                <Pressable
-                    style={[styles.shieldButton, shieldCount === 0 && styles.buttonDisabled]}
-                    onPress={onOpenShieldSelector}
-                    disabled={shieldCount === 0}
-                >
-                    <Text style={styles.shieldButtonText}>⚔️ {labels.activateShield} ({shieldCount})</Text>
-                </Pressable>
-            </View>
+        <View style={styles.container}>
+            {isVisible && (
+                <>
+                    {/* Emergency Pause & Shield buttons */}
+                    <View style={styles.powerUpRow}>
+                        <Pressable
+                            style={[styles.emergencyButton, emergencyPauseUsed && styles.buttonDisabled]}
+                            onPress={onEmergencyPause}
+                            disabled={emergencyPauseUsed}
+                        >
+                            <Text style={styles.emergencyButtonText}>🛡️ {labels.emergencyPause}</Text>
+                        </Pressable>
+                        <View style={styles.buttonSpacer} />
+                        <Pressable
+                            style={[styles.shieldButton, shieldCount === 0 && styles.buttonDisabled]}
+                            onPress={onOpenShieldSelector}
+                            disabled={shieldCount === 0}
+                        >
+                            <Text style={styles.shieldButtonText}>⚔️ {labels.activateShield} ({shieldCount})</Text>
+                        </Pressable>
+                    </View>
 
-            {/* Active Shield Indicator */}
-            {activeShieldBonus > 0 && (
-                <View style={styles.shieldActiveIndicator}>
-                    <Text style={styles.shieldActiveText}>🛡️ {labels.shieldActive}: +{activeShieldBonus}s</Text>
-                </View>
+                    {/* Active Shield Indicator */}
+                    {activeShieldBonus > 0 && (
+                        <View style={styles.shieldActiveIndicator}>
+                            <Text style={styles.shieldActiveText}>🛡️ {labels.shieldActive}: +{activeShieldBonus}s</Text>
+                        </View>
+                    )}
+                </>
             )}
-        </>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        // Fixed height to prevent layout shift
+        minHeight: 70,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+    },
     powerUpRow: {
         flexDirection: 'row',
         marginTop: theme.spacing.md,

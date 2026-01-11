@@ -111,6 +111,9 @@ const styles = StyleSheet.create({
     buttonContainer: {
         marginTop: theme.spacing.xl,
         alignItems: 'center',
+        // Fixed height to prevent layout shift when buttons change
+        minHeight: 120,
+        justifyContent: 'flex-start',
     },
     activeButtonsRow: {
         flexDirection: 'row',
