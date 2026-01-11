@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     egg: {
-        fontSize: 130,
+        fontSize: 90,
         color: '#FFFFFF',
     },
     crackOverlay: {
