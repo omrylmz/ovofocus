@@ -309,7 +309,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
             {/* Egg */}
             <Animated.View style={[styles.eggContainer, animatedStyle]}>
-                <Text style={styles.egg}>{getCrackEmoji()}</Text>
+                <Text style={styles.egg} allowFontScaling={false}>{getCrackEmoji()}</Text>
 
                 {/* Progress sparkle overlay */}
                 {sessionState === 'active' && progress > 0.25 && (
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     },
     egg: {
         fontSize: 90,
-        color: '#FFFFFF',
+        color: theme.colors.accent,
     },
     crackOverlay: {
         position: 'absolute',

@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     },
     debugBadge: {
         position: 'absolute',
-        bottom: theme.spacing.xl,
+        bottom: 100,
         alignSelf: 'center',
         backgroundColor: theme.colors.warning,
         paddingHorizontal: theme.spacing.md,

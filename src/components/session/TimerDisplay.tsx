@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
         fontVariant: ['tabular-nums'],
+        marginTop: theme.spacing.xl,
         marginBottom: theme.spacing.md,
     },
     progressContainer: {
