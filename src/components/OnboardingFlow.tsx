@@ -74,61 +74,66 @@ function AnimatedIcon({ icon, animation }: { icon: string; animation: string }) 
     useEffect(() => {
         switch (animation) {
             case 'bounce':
+                // Gentler bounce with higher damping to prevent excessive shaking
                 scale.value = withRepeat(
                     withSequence(
-                        withSpring(1.2, { damping: 5 }),
-                        withSpring(1, { damping: 8 })
+                        withSpring(1.08, { damping: 12, stiffness: 100 }),
+                        withSpring(1, { damping: 12, stiffness: 100 })
                     ),
                     -1,
                     true
                 );
                 break;
             case 'pulse':
+                // Smoother, slower pulse
                 scale.value = withRepeat(
                     withSequence(
-                        withTiming(1.15, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-                        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+                        withTiming(1.08, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
                     ),
                     -1,
                     true
                 );
                 break;
             case 'wiggle':
+                // Much gentler wiggle - reduced rotation and longer duration
                 rotation.value = withRepeat(
                     withSequence(
-                        withTiming(-10, { duration: 200 }),
-                        withTiming(10, { duration: 200 }),
-                        withTiming(-10, { duration: 200 }),
-                        withTiming(0, { duration: 200 }),
-                        withDelay(500, withTiming(0, { duration: 0 }))
+                        withTiming(-5, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(5, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(-3, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+                        withDelay(800, withTiming(0, { duration: 0 }))
                     ),
                     -1,
                     false
                 );
                 break;
             case 'float':
+                // Gentler floating motion
                 translateY.value = withRepeat(
                     withSequence(
-                        withTiming(-15, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                        withTiming(-10, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.ease) })
                     ),
                     -1,
                     true
                 );
                 break;
             case 'sparkle':
+                // Subtler sparkle effect
                 opacity.value = withRepeat(
                     withSequence(
-                        withTiming(0.6, { duration: 300 }),
-                        withTiming(1, { duration: 300 })
+                        withTiming(0.7, { duration: 400 }),
+                        withTiming(1, { duration: 400 })
                     ),
                     -1,
                     true
                 );
                 scale.value = withRepeat(
                     withSequence(
-                        withTiming(1.1, { duration: 600 }),
-                        withTiming(1, { duration: 600 })
+                        withTiming(1.05, { duration: 800 }),
+                        withTiming(1, { duration: 800 })
                     ),
                     -1,
                     true
@@ -177,6 +182,7 @@ export function OnboardingFlow({
     language = 'en'
 }: OnboardingFlowProps) {
     const [currentStep, setCurrentStep] = useState(0);
+    const [isExiting, setIsExiting] = useState(false);
 
     // Animation values
     const backgroundOpacity = useSharedValue(0);
@@ -185,17 +191,32 @@ export function OnboardingFlow({
     const slideOffset = useSharedValue(0);
 
     useEffect(() => {
-        if (visible) {
+        if (visible && !isExiting) {
             backgroundOpacity.value = withTiming(1, { duration: 400 });
             contentOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
             contentTranslateY.value = withDelay(200, withSpring(0, { damping: 12 }));
-        } else {
+        } else if (!visible) {
             backgroundOpacity.value = 0;
             contentOpacity.value = 0;
             contentTranslateY.value = 50;
             setCurrentStep(0);
+            setIsExiting(false);
         }
-    }, [visible]);
+    }, [visible, isExiting]);
+
+    const exitOnboarding = () => {
+        if (isExiting) return; // Prevent double-trigger
+        setIsExiting(true);
+
+        // Fade out first
+        backgroundOpacity.value = withTiming(0, { duration: 250 });
+        contentOpacity.value = withTiming(0, { duration: 200 });
+
+        // Then call onComplete after animation
+        setTimeout(() => {
+            onComplete();
+        }, 260);
+    };
 
     const handleNext = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -214,17 +235,13 @@ export function OnboardingFlow({
         } else {
             // Complete onboarding
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            backgroundOpacity.value = withTiming(0, { duration: 300 });
-            contentOpacity.value = withTiming(0, { duration: 200 });
-            setTimeout(onComplete, 300);
+            exitOnboarding();
         }
     };
 
     const handleSkip = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        backgroundOpacity.value = withTiming(0, { duration: 300 });
-        contentOpacity.value = withTiming(0, { duration: 200 });
-        setTimeout(onComplete, 300);
+        exitOnboarding();
     };
 
     const backgroundStyle = useAnimatedStyle(() => ({
@@ -239,7 +256,8 @@ export function OnboardingFlow({
         ],
     }));
 
-    if (!visible) return null;
+    // Don't return null while exiting (fade animation in progress)
+    if (!visible && !isExiting) return null;
 
     const step = ONBOARDING_STEPS[currentStep];
     const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;

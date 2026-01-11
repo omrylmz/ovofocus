@@ -197,6 +197,9 @@ const styles = StyleSheet.create({
     eggWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
+        // Explicit dimensions to ensure proper rendering on Android
+        minWidth: 200,
+        minHeight: 280,
     },
     sparkleOverlay: {
         position: 'absolute',

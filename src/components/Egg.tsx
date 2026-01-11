@@ -34,6 +34,7 @@ const WARNING_COLORS = {
 };
 
 export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'en', warningLevel = 0 }: EggProps) {
+    // Stable initial values - prevents blank flash on Android
     const wobble = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
@@ -235,13 +236,20 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
         }
     }, [sessionState]);
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { rotate: `${wobble.value + anxiousShake.value}deg` },
-            { scale: scale.value * (1 + pulseValue.value * 0.05) },
-        ],
-        opacity: opacity.value,
-    }));
+    const animatedStyle = useAnimatedStyle(() => {
+        // Ensure minimum opacity of 0.01 to prevent complete invisibility issues on Android
+        const safeOpacity = Math.max(0.01, opacity.value);
+        // Ensure scale is always positive and non-zero
+        const safeScale = Math.max(0.1, scale.value * (1 + pulseValue.value * 0.05));
+
+        return {
+            transform: [
+                { rotate: `${wobble.value + anxiousShake.value}deg` },
+                { scale: safeScale },
+            ],
+            opacity: safeOpacity,
+        };
+    });
 
     const glowStyle = useAnimatedStyle(() => ({
         opacity: glowOpacity.value,
