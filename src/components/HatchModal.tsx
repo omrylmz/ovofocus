@@ -92,12 +92,12 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
         if (visible && animal) {
             // Trigger haptic based on rarity
             if (animal.rarity === 'legendary') {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 200);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 200);
             } else if (animal.rarity === 'epic') {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             } else {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
             }
 
             // Background fade in

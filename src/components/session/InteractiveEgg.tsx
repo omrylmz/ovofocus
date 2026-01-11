@@ -98,7 +98,8 @@ export function InteractiveEgg({
             const motivationalMessages = language === 'tr'
                 ? ['Yumurtan büyüyor! 🥚✨', 'İçeride bir şey kıpırdıyor...', 'Neredeyse çatlayacak! 🐣']
                 : ['Your egg is growing! 🥚✨', 'Something is stirring inside...', 'Almost ready to hatch! 🐣'];
-            const msg = motivationalMessages[Math.floor(progress * motivationalMessages.length)];
+            const msgIndex = Math.min(Math.floor(progress * motivationalMessages.length), motivationalMessages.length - 1);
+            const msg = motivationalMessages[msgIndex];
             setEncouragementText(msg);
             setTimeout(() => setEncouragementText(null), 2500);
         }

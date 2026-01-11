@@ -392,6 +392,7 @@ const styles = StyleSheet.create({
     },
     egg: {
         fontSize: 130,
+        color: '#FFFFFF',
     },
     crackOverlay: {
         position: 'absolute',

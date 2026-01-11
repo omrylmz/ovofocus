@@ -78,6 +78,10 @@ export function getRandomAnimal(): Animal {
     }
 
     const animalsOfRarity = animals.filter(a => a.rarity === selectedRarity);
+    if (animalsOfRarity.length === 0) {
+        // Fallback to first animal if rarity not found
+        return animals[0];
+    }
     return animalsOfRarity[Math.floor(Math.random() * animalsOfRarity.length)];
 }
 

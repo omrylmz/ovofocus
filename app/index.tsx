@@ -451,6 +451,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.lg,
+        paddingBottom: 80,
     },
     gestureHintsOverlay: {
         ...StyleSheet.absoluteFillObject,
