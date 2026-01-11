@@ -49,6 +49,7 @@ type GameAction =
     | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress } }
     | { type: 'START_SESSION' }
     | { type: 'PAUSE_SESSION' }
+    | { type: 'EMERGENCY_PAUSE' }
     | { type: 'RESUME_SESSION' }
     | { type: 'COMPLETE_SESSION'; payload: { animal: Animal; focusMinutes: number } }
     | { type: 'FAIL_SESSION'; payload: { focusMinutes: number } }
@@ -65,6 +66,7 @@ interface GameContextType {
     state: GameState;
     startSession: () => void;
     pauseSession: () => void;
+    emergencyPause: () => void;
     resumeSession: () => void;
     completeSession: (focusMinutes: number) => Promise<Animal>;
     failSession: (focusMinutes: number) => Promise<void>;
@@ -149,10 +151,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             };
 
         case 'PAUSE_SESSION':
+            // Guard: don't increment if already paused (prevents double-pause race condition)
+            if (state.isPaused) return state;
             return {
                 ...state,
                 isPaused: true,
                 pauseCount: state.pauseCount + 1,
+            };
+
+        case 'EMERGENCY_PAUSE':
+            // Emergency pause sets isPaused but doesn't increment pauseCount
+            if (state.isPaused) return state;
+            return {
+                ...state,
+                isPaused: true,
             };
 
         case 'RESUME_SESSION':
@@ -274,6 +286,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'PAUSE_SESSION' });
     };
 
+    const emergencyPause = () => {
+        dispatch({ type: 'EMERGENCY_PAUSE' });
+    };
+
     const resumeSession = () => {
         dispatch({ type: 'RESUME_SESSION' });
     };
@@ -370,6 +386,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 state,
                 startSession,
                 pauseSession,
+                emergencyPause,
                 resumeSession,
                 completeSession,
                 failSession,

@@ -94,7 +94,8 @@ export function SessionControls({
                 </View>
             )}
 
-            {(sessionState === 'failed' || sessionState === 'completed') && (
+            {/* Only show "Try Again" on failed state - completed state is handled by HatchModal */}
+            {sessionState === 'failed' && (
                 <PixelButton
                     title={labels.tryAgain}
                     onPress={onReset}

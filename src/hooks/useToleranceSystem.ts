@@ -122,14 +122,23 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
             if (backgroundStartTimeRef.current && isSessionActive && !isPaused) {
                 const timeDiff = Math.floor((Date.now() - backgroundStartTimeRef.current) / 1000);
                 setTimeInBackground(timeDiff);
-                
+
                 // Check for quick return
                 if (timeDiff <= QUICK_RETURN_THRESHOLD) {
                     setIsQuickReturn(true);
                     // Auto-clear quick return flag after 3 seconds
                     setTimeout(() => setIsQuickReturn(false), 3000);
                 }
-                
+
+                // If returned within tolerance, clear the warning after a brief display
+                // This prevents the warning UI from persisting incorrectly
+                const currentEffectiveTolerance = Math.round(
+                    (baseTolerance * getProgressMultiplier(progress)) + getStreakBonus(currentStreak) + shieldBonus
+                );
+                if (timeDiff < currentEffectiveTolerance) {
+                    setTimeout(() => setTimeInBackground(0), 1500);
+                }
+
                 backgroundStartTimeRef.current = null;
             }
         }

@@ -116,7 +116,6 @@ export function AnimatedBackground({ sessionState, progress = 0, variant = 'sess
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: -1,
     },
     gradientTop: {
         position: 'absolute',

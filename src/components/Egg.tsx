@@ -10,8 +10,6 @@ import Animated, {
     withDelay,
     Easing,
     cancelAnimation,
-    runOnJS,
-    interpolateColor,
 } from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 import { SessionState } from '../context/GameContext';
@@ -21,7 +19,6 @@ import { WarningLevel } from '../hooks/useToleranceSystem';
 interface EggProps {
     sessionState: SessionState;
     progress?: number; // 0 to 1
-    onHatchComplete?: () => void;
     language?: Language;
     warningLevel?: WarningLevel; // 0=none, 1=50%, 2=75%, 3=100%
 }
@@ -33,7 +30,7 @@ const WARNING_COLORS = {
     3: '#FF4444', // Red
 };
 
-export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'en', warningLevel = 0 }: EggProps) {
+export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0 }: EggProps) {
     // Stable initial values - prevents blank flash on Android
     const wobble = useSharedValue(0);
     const scale = useSharedValue(1);
@@ -185,11 +182,7 @@ export function Egg({ sessionState, progress = 0, onHatchComplete, language = 'e
             );
 
             // Fade out with explosion effect
-            opacity.value = withDelay(300, withTiming(0, { duration: 400 }, (finished) => {
-                if (finished && onHatchComplete) {
-                    runOnJS(onHatchComplete)();
-                }
-            }));
+            opacity.value = withDelay(300, withTiming(0, { duration: 400 }));
 
             // Full glow burst
             glowOpacity.value = withSequence(

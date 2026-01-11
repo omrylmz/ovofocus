@@ -141,7 +141,6 @@ export function FloatingParticles({ count = 15, isActive = false, progress = 0, 
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
         overflow: 'hidden',
     },
     particle: {
