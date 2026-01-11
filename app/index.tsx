@@ -30,7 +30,7 @@ import {
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { state, startSession, pauseSession, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
+    const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
 
     // Modal states
     const [showHatchModal, setShowHatchModal] = useState(false);
@@ -134,8 +134,9 @@ export default function HomeScreen() {
     }, [warningLevel, state.sessionState, state.settings.hapticsEnabled]);
 
     // Handle tolerance exceeded - fail session
+    // Note: We don't require isRunning because tolerance can exceed while paused too
     useEffect(() => {
-        if (toleranceExceeded && state.sessionState === 'active' && isRunning) {
+        if (toleranceExceeded && state.sessionState === 'active') {
             stopTimer();
             failSession(elapsedMinutes);
             resetTolerance();
@@ -144,7 +145,7 @@ export default function HomeScreen() {
             }
             console.log(`Failed due to exceeding tolerance: ${timeInBackground}s > ${effectiveTolerance}s`);
         }
-    }, [toleranceExceeded, state.sessionState, isRunning]);
+    }, [toleranceExceeded, state.sessionState]);
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
@@ -160,9 +161,11 @@ export default function HomeScreen() {
     };
 
     const handleEmergencyPause = () => {
+        // Emergency pause doesn't count toward the regular pause limit
+        // It's a separate one-time use power-up per session
         if (!emergencyPauseUsed && state.sessionState === 'active' && !state.isPaused) {
             pauseTimer();
-            pauseSession();
+            emergencyPause(); // Uses EMERGENCY_PAUSE action - doesn't increment pauseCount
             setEmergencyPauseUsed(true);
             if (state.settings.hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -246,18 +249,20 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Animated Background */}
-            <AnimatedBackground sessionState={state.sessionState} progress={progress} />
+            {/* Background Layer - must be first for proper Android rendering */}
+            <View style={styles.backgroundLayer} pointerEvents="none">
+                <AnimatedBackground sessionState={state.sessionState} progress={progress} />
+                <FloatingParticles
+                    count={20}
+                    isActive={state.sessionState === 'active'}
+                    progress={progress}
+                />
+            </View>
 
-            {/* Floating Particles */}
-            <FloatingParticles
-                count={20}
-                isActive={state.sessionState === 'active'}
-                progress={progress}
-            />
-
-            {/* Header */}
-            <SessionHeader
+            {/* Foreground Content Layer */}
+            <View style={styles.foregroundLayer}>
+                {/* Header */}
+                <SessionHeader
                 currentStreak={state.stats.currentStreak}
                 dailyCompletedSessions={state.dailyProgress.completedSessions}
                 dailyGoal={state.settings.dailyGoal}
@@ -344,6 +349,7 @@ export default function HomeScreen() {
                     }}
                 />
             </View>
+            </View>
 
             {/* Debug mode indicator */}
             {state.settings.debugMode && (
@@ -427,6 +433,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    backgroundLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        elevation: 0,
+    },
+    foregroundLayer: {
+        flex: 1,
+        zIndex: 1,
+        elevation: 1,
+        // Ensure this layer is not affected by background
+        backgroundColor: 'transparent',
     },
     content: {
         flex: 1,
