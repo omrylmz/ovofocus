@@ -263,8 +263,8 @@ export function OnboardingFlow({
     const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
 
     return (
-        <Animated.View style={[styles.overlay, backgroundStyle]}>
-            <Animated.View style={[styles.content, contentStyle]}>
+        <Animated.View style={[styles.overlay, backgroundStyle]} pointerEvents="none">
+            <Animated.View style={[styles.content, contentStyle]} pointerEvents="auto">
                 {/* Skip button */}
                 {!isLastStep && (
                     <View style={styles.skipContainer}>
