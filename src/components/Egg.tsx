@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 320,
+        height: 300,
     },
     glow: {
         position: 'absolute',
@@ -389,9 +389,10 @@ const styles = StyleSheet.create({
     eggContainer: {
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: theme.spacing.md,
     },
     egg: {
-        fontSize: 90,
+        fontSize: 70,
         color: theme.colors.accent,
     },
     crackOverlay: {
