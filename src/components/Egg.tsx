@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 280,
+        height: 320,
     },
     glow: {
         position: 'absolute',
@@ -404,6 +404,7 @@ const styles = StyleSheet.create({
     },
     progressText: {
         marginTop: theme.spacing.md,
+        marginBottom: theme.spacing.lg,
         fontSize: theme.fontSize.md,
         color: theme.colors.accent,
         fontWeight: theme.fontWeight.medium,
