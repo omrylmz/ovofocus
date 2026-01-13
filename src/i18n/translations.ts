@@ -19,6 +19,8 @@ export const translations = {
 
         // Home Screen
         collection: 'Collection',
+        myCollection: 'My Collection',
+        settings: 'Settings',
         session: 'Sessions',
         animals: 'Animals',
         streak: 'Streak',
@@ -74,6 +76,7 @@ export const translations = {
         filterAll: 'All',
         filterCollected: 'Collected',
         filterUncollected: 'Missing',
+        sort: 'Sort',
         filterFavorites: 'Favorites',
         sortByRarity: 'By Rarity',
         sortByRecent: 'Recent',
@@ -105,6 +108,7 @@ export const translations = {
         // Settings Screen
         focusDuration: 'Focus Duration',
         notifications: 'Notifications',
+        pushNotifications: 'Push Notifications',
         soundEffects: 'Sound Effects',
         vibration: 'Vibration',
         developer: 'Developer',
@@ -253,6 +257,8 @@ export const translations = {
 
         // Home Screen
         collection: 'Koleksiyon',
+        myCollection: 'Koleksiyonum',
+        settings: 'Ayarlar',
         session: 'Seans',
         animals: 'Hayvan',
         streak: 'Seri',
@@ -308,6 +314,7 @@ export const translations = {
         filterAll: 'Tümü',
         filterCollected: 'Toplanan',
         filterUncollected: 'Eksik',
+        sort: 'Sırala',
         filterFavorites: 'Favoriler',
         sortByRarity: 'Nadirliğe Göre',
         sortByRecent: 'En Yeni',
@@ -339,6 +346,7 @@ export const translations = {
         // Settings Screen
         focusDuration: 'Odaklanma Süresi',
         notifications: 'Bildirimler',
+        pushNotifications: 'Anlık Bildirimler',
         soundEffects: 'Ses Efektleri',
         vibration: 'Titreşim',
         developer: 'Geliştirici',

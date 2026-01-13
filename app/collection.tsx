@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
@@ -17,7 +17,15 @@ type SortOption = 'rarity' | 'recent' | 'name';
 
 export default function CollectionScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const { state, toggleFavorite, i18n } = useGame();
+
+    // Set dynamic navigation title based on current language
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            title: i18n('myCollection'),
+        });
+    }, [navigation, i18n]);
 
     // State for animal detail modal
     const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
@@ -305,7 +313,7 @@ export default function CollectionScreen() {
 
                 {/* Sort Chips */}
                 <View style={styles.sortRow}>
-                    <Text style={styles.sortLabel}>Sort:</Text>
+                    <Text style={styles.sortLabel}>{i18n('sort')}:</Text>
                     <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} />
                     <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} />
                     <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} />

@@ -59,14 +59,14 @@ export default function RootLayout() {
                     <Stack.Screen
                         name="collection"
                         options={{
-                            title: 'Koleksiyonum',
+                            title: '',
                             presentation: 'modal',
                         }}
                     />
                     <Stack.Screen
                         name="settings"
                         options={{
-                            title: 'Ayarlar',
+                            title: '',
                             presentation: 'modal',
                         }}
                     />

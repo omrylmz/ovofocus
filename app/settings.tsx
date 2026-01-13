@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { PixelButton } from '../src/components/PixelButton';
@@ -9,7 +9,15 @@ import { requestNotificationPermissions } from '../src/services/notifications';
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const { state, updateUserSettings, i18n } = useGame();
+
+    // Set dynamic navigation title based on current language
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            title: i18n('settings'),
+        });
+    }, [navigation, i18n]);
 
     const handleClearData = () => {
         Alert.alert(
@@ -152,7 +160,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Push Notifications</Text>
+                        <Text style={styles.settingLabel}>{i18n('pushNotifications')}</Text>
                         <Switch
                             value={state.settings.notificationsEnabled}
                             onValueChange={handleNotificationToggle}
