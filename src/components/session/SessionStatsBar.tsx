@@ -10,15 +10,11 @@ interface DailyProgress {
 interface SessionStatsBarProps {
     completedSessions: number;
     collectionCount: number;
-    currentStreak: number;
-    bestStreak: number;
     dailyProgress: DailyProgress;
     dailyGoal: number;
     labels: {
         session: string;
         animals: string;
-        streak: string;
-        best: string;
         dailyGoalProgress: string;
     };
 }
@@ -26,8 +22,6 @@ interface SessionStatsBarProps {
 export function SessionStatsBar({
     completedSessions,
     collectionCount,
-    currentStreak,
-    bestStreak,
     dailyProgress,
     dailyGoal,
     labels,
@@ -41,15 +35,6 @@ export function SessionStatsBar({
             <View style={styles.statItem}>
                 <Text style={styles.statValue}>{collectionCount}</Text>
                 <Text style={styles.statLabel}>{labels.animals}</Text>
-            </View>
-            <View style={styles.statItem}>
-                <Text style={styles.statValue}>🔥 {currentStreak}</Text>
-                <Text style={styles.statLabel}>{labels.streak}</Text>
-                {currentStreak > 0 && currentStreak === bestStreak && (
-                    <View style={styles.bestBadge}>
-                        <Text style={styles.bestBadgeText}>{labels.best}</Text>
-                    </View>
-                )}
             </View>
             <View style={styles.statItem}>
                 <View style={styles.dailyGoalContainer}>
@@ -88,18 +73,6 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: theme.spacing.xs,
-    },
-    bestBadge: {
-        backgroundColor: theme.colors.legendary,
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: 2,
-        borderRadius: theme.borderRadius.sm,
-        marginTop: theme.spacing.xs,
-    },
-    bestBadgeText: {
-        fontSize: 10,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.background,
     },
     dailyGoalContainer: {
         width: 44,

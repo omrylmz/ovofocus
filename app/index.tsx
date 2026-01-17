@@ -263,92 +263,88 @@ export default function HomeScreen() {
             <View style={styles.foregroundLayer}>
                 {/* Header */}
                 <SessionHeader
-                currentStreak={state.stats.currentStreak}
-                dailyCompletedSessions={state.dailyProgress.completedSessions}
-                dailyGoal={state.settings.dailyGoal}
-                collectionLabel={`📦 ${i18n('collection')}`}
-                onCollectionPress={() => router.push('/collection')}
-                onSettingsPress={() => router.push('/settings')}
-            />
-
-            {/* Stats bar */}
-            <SessionStatsBar
-                completedSessions={state.stats.completedSessions}
-                collectionCount={state.collection.length}
-                currentStreak={state.stats.currentStreak}
-                bestStreak={state.stats.bestStreak}
-                dailyProgress={state.dailyProgress}
-                dailyGoal={state.settings.dailyGoal}
-                labels={{
-                    session: i18n('session'),
-                    animals: i18n('animals'),
-                    streak: i18n('streak'),
-                    best: i18n('best'),
-                    dailyGoalProgress: i18n('dailyGoalProgress'),
-                }}
-            />
-
-            {/* Main content */}
-            <View style={styles.content}>
-                {/* Timer */}
-                <TimerDisplay
-                    formattedTime={formattedTime}
-                    isRunning={isRunning}
-                    progress={progress}
-                    sessionState={state.sessionState}
+                    currentStreak={state.stats.currentStreak}
+                    dailyCompletedSessions={state.dailyProgress.completedSessions}
+                    dailyGoal={state.settings.dailyGoal}
+                    collectionLabel={`📦 ${i18n('collection')}`}
+                    onCollectionPress={() => router.push('/collection')}
+                    onSettingsPress={() => router.push('/settings')}
                 />
 
-                {/* Interactive Egg */}
-                <InteractiveEgg
-                    sessionState={state.sessionState}
-                    progress={progress}
-                    duration={duration}
-                    warningLevel={warningLevel as 0 | 1 | 2 | 3}
-                    language={state.settings.language}
-                    hapticsEnabled={state.settings.hapticsEnabled}
-                    hasSeenGestureHints={state.settings.hasSeenGestureHints}
-                    onStart={handleStart}
-                    onShowGestureHints={() => setShowGestureHints(true)}
-                />
-
-                {/* Session Controls */}
-                <SessionControls
-                    sessionState={state.sessionState}
-                    isPaused={state.isPaused}
-                    pauseCount={state.pauseCount}
-                    maxPauses={state.settings.maxPausesPerSession}
-                    onStart={handleStart}
-                    onPause={handlePause}
-                    onResume={handleResume}
-                    onGiveUp={handleGiveUp}
-                    onReset={handleReset}
+                {/* Stats bar */}
+                <SessionStatsBar
+                    completedSessions={state.stats.completedSessions}
+                    collectionCount={state.collection.length}
+                    dailyProgress={state.dailyProgress}
+                    dailyGoal={state.settings.dailyGoal}
                     labels={{
-                        startFocus: i18n('startFocus'),
-                        pause: i18n('pause'),
-                        giveUp: i18n('giveUp'),
-                        paused: i18n('paused'),
-                        pausesRemaining: i18n('pausesRemaining'),
-                        resume: i18n('resume'),
-                        tryAgain: i18n('tryAgain'),
+                        session: i18n('session'),
+                        animals: i18n('animals'),
+                        dailyGoalProgress: i18n('dailyGoalProgress'),
                     }}
                 />
 
-                {/* Power-up Controls */}
-                <PowerUpControls
-                    sessionState={state.sessionState}
-                    isPaused={state.isPaused}
-                    emergencyPauseUsed={emergencyPauseUsed}
-                    activeShieldBonus={activeShieldBonus}
-                    shieldCount={shieldInventory.length}
-                    onEmergencyPause={handleEmergencyPause}
-                    onOpenShieldSelector={() => setShowShieldSelector(true)}
-                    labels={{
-                        emergencyPause: i18n('emergencyPause'),
-                        activateShield: i18n('activateShield'),
-                        shieldActive: i18n('shieldActive'),
-                    }}
-                />
-            </View>
+                {/* Main content */}
+                <View style={styles.content}>
+                    {/* Timer */}
+                    <TimerDisplay
+                        formattedTime={formattedTime}
+                        isRunning={isRunning}
+                        progress={progress}
+                        sessionState={state.sessionState}
+                    />
+
+                    {/* Interactive Egg */}
+                    <InteractiveEgg
+                        sessionState={state.sessionState}
+                        progress={progress}
+                        duration={duration}
+                        warningLevel={warningLevel as 0 | 1 | 2 | 3}
+                        language={state.settings.language}
+                        hapticsEnabled={state.settings.hapticsEnabled}
+                        hasSeenGestureHints={state.settings.hasSeenGestureHints}
+                        onStart={handleStart}
+                        onShowGestureHints={() => setShowGestureHints(true)}
+                    />
+
+                    {/* Session Controls */}
+                    <SessionControls
+                        sessionState={state.sessionState}
+                        isPaused={state.isPaused}
+                        pauseCount={state.pauseCount}
+                        maxPauses={state.settings.maxPausesPerSession}
+                        onStart={handleStart}
+                        onPause={handlePause}
+                        onResume={handleResume}
+                        onGiveUp={handleGiveUp}
+                        onReset={handleReset}
+                        labels={{
+                            startFocus: i18n('startFocus'),
+                            pause: i18n('pause'),
+                            giveUp: i18n('giveUp'),
+                            paused: i18n('paused'),
+                            pausesRemaining: i18n('pausesRemaining'),
+                            resume: i18n('resume'),
+                            tryAgain: i18n('tryAgain'),
+                        }}
+                    />
+
+                    {/* Power-up Controls */}
+                    <PowerUpControls
+                        sessionState={state.sessionState}
+                        isPaused={state.isPaused}
+                        emergencyPauseUsed={emergencyPauseUsed}
+                        activeShieldBonus={activeShieldBonus}
+                        shieldCount={shieldInventory.length}
+                        onEmergencyPause={handleEmergencyPause}
+                        onOpenShieldSelector={() => setShowShieldSelector(true)}
+                        labels={{
+                            emergencyPause: i18n('emergencyPause'),
+                            activateShield: i18n('activateShield'),
+                            shieldActive: i18n('shieldActive'),
+                        }}
+                    />
+                </View>
             </View>
 
             {/* Debug mode indicator */}
