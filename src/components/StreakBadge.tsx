@@ -94,7 +94,14 @@ export function StreakBadge({ streak, size = 'medium' }: StreakBadgeProps) {
     const currentSize = sizes[size];
 
     if (streak <= 0) {
-        return null;
+        return (
+            <View style={[styles.container, { width: currentSize.container, height: currentSize.container }]}>
+                <Text style={[styles.flame, { fontSize: currentSize.emoji, opacity: 0.3 }]}>🔥</Text>
+                <View style={styles.badge}>
+                    <Text style={[styles.text, { fontSize: currentSize.text, color: theme.colors.textSecondary }]}>0</Text>
+                </View>
+            </View>
+        );
     }
 
     return (
