@@ -84,9 +84,9 @@ function formatCooldown(ms: number, language: Language): string {
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
-        return language === 'tr' ? `${hours}s ${minutes}d` : `${hours}h ${minutes}m`;
+        return language === 'tr' ? `${hours}sa ${minutes}dk` : `${hours}h ${minutes}m`;
     }
-    return language === 'tr' ? `${minutes}d` : `${minutes}m`;
+    return language === 'tr' ? `${minutes}dk` : `${minutes}m`;
 }
 
 // Get happiness emoji based on level

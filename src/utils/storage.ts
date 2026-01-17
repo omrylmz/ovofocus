@@ -138,6 +138,8 @@ export async function incrementSession(completed: boolean, focusMinutes: number)
     const lastDate = stats.lastSessionDate?.split('T')[0];
 
     // Check if streak continues
+    // Note: Failed sessions should NOT break streaks. Streaks only break when
+    // an entire calendar day passes without any completed sessions.
     let newStreak = stats.currentStreak;
     if (completed) {
         if (lastDate === today) {
@@ -145,14 +147,13 @@ export async function incrementSession(completed: boolean, focusMinutes: number)
         } else if (lastDate && isYesterday(lastDate)) {
             // Previous day, increment streak
             newStreak = stats.currentStreak + 1;
-        } else {
-            // New streak starts
+        } else if (!lastDate || isMoreThanOneDayAgo(lastDate)) {
+            // No previous session OR more than one day has passed - start fresh
             newStreak = 1;
         }
-    } else if (!completed && lastDate !== today) {
-        // Failed session breaks streak if it's a new day
-        newStreak = 0;
     }
+    // Note: We intentionally do NOT reset streak on failed sessions.
+    // Streak only resets when a new day starts AND no completed session exists from yesterday.
 
     const updated: Stats = {
         totalSessions: stats.totalSessions + 1,
@@ -173,6 +174,14 @@ function isYesterday(dateStr: string): boolean {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     return date.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0];
+}
+
+function isMoreThanOneDayAgo(dateStr: string): boolean {
+    const date = new Date(dateStr);
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    // If the date is on or before two days ago, it's more than one day ago
+    return date.toISOString().split('T')[0] <= twoDaysAgo.toISOString().split('T')[0];
 }
 
 // Settings

@@ -40,6 +40,13 @@ export default function HomeScreen() {
     const [celebrationStreak, setCelebrationStreak] = useState(0);
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
 
+    // Update previousBestStreakRef once stats have loaded to avoid stale value comparisons
+    useEffect(() => {
+        if (!state.isLoading) {
+            previousBestStreakRef.current = state.stats.bestStreak;
+        }
+    }, [state.isLoading, state.stats.bestStreak]);
+
     // Power-up states
     const [showQuickReturnToast, setShowQuickReturnToast] = useState(false);
     const [showShieldSelector, setShowShieldSelector] = useState(false);

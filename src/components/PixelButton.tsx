@@ -64,8 +64,10 @@ export function PixelButton({
             Haptics.impactAsync(hapticStyle);
         }
 
-        // Play button sound
-        audioManager.playSound('button_press');
+        // Play button sound only when not disabled
+        if (!disabled) {
+            audioManager.playSound('button_press');
+        }
 
         // Burst effect
         glowOpacity.value = withSequence(
