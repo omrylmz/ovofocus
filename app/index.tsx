@@ -39,11 +39,14 @@ export default function HomeScreen() {
     const [showStreakCelebration, setShowStreakCelebration] = useState(false);
     const [celebrationStreak, setCelebrationStreak] = useState(0);
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
+    const hasInitializedRef = useRef(false);
 
-    // Update previousBestStreakRef once stats have loaded to avoid stale value comparisons
+    // Update previousBestStreakRef ONLY ONCE when stats finish loading
+    // This prevents the ref from being overwritten on subsequent bestStreak changes
     useEffect(() => {
-        if (!state.isLoading) {
+        if (!state.isLoading && !hasInitializedRef.current) {
             previousBestStreakRef.current = state.stats.bestStreak;
+            hasInitializedRef.current = true;
         }
     }, [state.isLoading, state.stats.bestStreak]);
 
