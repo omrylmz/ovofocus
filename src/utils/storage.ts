@@ -330,10 +330,14 @@ function getDefaultInteraction(animalId: string): AnimalInteraction {
 }
 
 function calculateHappinessDecay(interaction: AnimalInteraction): number {
-    const lastInteractionTime = interaction.lastPetTime || interaction.lastFeedTime;
-    if (!lastInteractionTime) return interaction.happiness;
+    // Get the most recent interaction time (not first truthy value)
+    const times = [interaction.lastPetTime, interaction.lastFeedTime]
+        .filter(Boolean)
+        .map(t => new Date(t!).getTime());
 
-    const lastTime = new Date(lastInteractionTime).getTime();
+    if (times.length === 0) return interaction.happiness;
+
+    const lastTime = Math.max(...times);
     const now = Date.now();
     const daysSinceInteraction = Math.floor((now - lastTime) / (1000 * 60 * 60 * 24));
 
