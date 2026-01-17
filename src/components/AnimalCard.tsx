@@ -68,6 +68,7 @@ export function AnimalCard({
     const idleOffset = useSharedValue(0);
     const shinePosition = useSharedValue(-50);
     const glowOpacity = useSharedValue(0);
+    const zIndexValue = useSharedValue(1);
 
     // Entrance animation values
     const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
@@ -132,6 +133,7 @@ export function AnimalCard({
     }, [collected, animal.rarity, isMaxLevel]);
 
     const handlePressIn = () => {
+        zIndexValue.value = 10;
         scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
         rotation.value = withSequence(
             withTiming(-2, { duration: 50 }),
@@ -144,6 +146,7 @@ export function AnimalCard({
     };
 
     const handlePressOut = () => {
+        zIndexValue.value = 1;
         scale.value = withSpring(1, { damping: 15, stiffness: 300 });
     };
 
@@ -153,14 +156,15 @@ export function AnimalCard({
         } else if (collected) {
             // Fun interaction when tapping collected animals
             scale.value = withSequence(
-                withSpring(1.1, { damping: 8 }),
-                withSpring(1, { damping: 10 })
+                withSpring(1.05, { damping: 10 }),
+                withSpring(1, { damping: 12 })
             );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
     };
 
     const animatedStyle = useAnimatedStyle(() => ({
+        zIndex: zIndexValue.value,
         transform: [
             { scale: scale.value },
             { rotate: `${rotation.value}deg` },
@@ -193,102 +197,102 @@ export function AnimalCard({
                 disabled={!onPress && !collected}
             >
                 <Animated.View
-                style={[
-                    styles.container,
-                    sizeStyles.container,
-                    { borderColor: collected ? rarityColor : theme.colors.surfaceLight },
-                    !collected && styles.uncollected,
-                    animatedStyle,
-                ]}
-            >
-                {/* Max level glow */}
-                {collected && isMaxLevel && (
-                    <Animated.View
-                        style={[
-                            styles.maxLevelGlow,
-                            { backgroundColor: rarityColor },
-                            glowStyle
-                        ]}
-                    />
-                )}
-
-                {/* Shine effect for rare animals */}
-                {collected && (animal.rarity === 'legendary' || animal.rarity === 'epic') && (
-                    <View style={styles.shineContainer}>
-                        <Animated.View style={[styles.shine, shineStyle]} />
-                    </View>
-                )}
-
-                {/* Emoji */}
-                <Text style={[styles.emoji, sizeStyles.emoji]}>
-                    {collected ? animal.emoji : '❓'}
-                </Text>
-
-                {/* Name */}
-                <Text
                     style={[
-                        styles.name,
-                        sizeStyles.name,
-                        { color: collected ? theme.colors.text : theme.colors.textSecondary },
+                        styles.container,
+                        sizeStyles.container,
+                        { borderColor: collected ? rarityColor : theme.colors.surfaceLight },
+                        !collected && styles.uncollected,
+                        animatedStyle,
                     ]}
-                    numberOfLines={1}
                 >
-                    {collected ? getAnimalName(animal.id, language) : '???'}
-                </Text>
+                    {/* Max level glow */}
+                    {collected && isMaxLevel && (
+                        <Animated.View
+                            style={[
+                                styles.maxLevelGlow,
+                                { backgroundColor: rarityColor },
+                                glowStyle
+                            ]}
+                        />
+                    )}
 
-                {/* Rarity badge */}
-                {collected && (
-                    <View style={[styles.rarityBadge, { backgroundColor: rarityColor }]}>
-                        <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
-                    </View>
-                )}
+                    {/* Shine effect for rare animals */}
+                    {collected && (animal.rarity === 'legendary' || animal.rarity === 'epic') && (
+                        <View style={styles.shineContainer}>
+                            <Animated.View style={[styles.shine, shineStyle]} />
+                        </View>
+                    )}
 
-                {/* Count/Level badge */}
-                {collected && count > 1 && (
-                    <View style={[
-                        styles.countBadge,
-                        isMaxLevel && styles.maxLevelBadge,
-                        isMaxLevel && { backgroundColor: rarityColor }
-                    ]}>
-                        <Text style={[
-                            styles.countText,
-                            isMaxLevel && styles.maxLevelText
+                    {/* Emoji */}
+                    <Text style={[styles.emoji, sizeStyles.emoji]}>
+                        {collected ? animal.emoji : '❓'}
+                    </Text>
+
+                    {/* Name */}
+                    <Text
+                        style={[
+                            styles.name,
+                            sizeStyles.name,
+                            { color: collected ? theme.colors.text : theme.colors.textSecondary },
+                        ]}
+                        numberOfLines={1}
+                    >
+                        {collected ? getAnimalName(animal.id, language) : '???'}
+                    </Text>
+
+                    {/* Rarity badge */}
+                    {collected && (
+                        <View style={[styles.rarityBadge, { backgroundColor: rarityColor }]}>
+                            <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
+                        </View>
+                    )}
+
+                    {/* Count/Level badge */}
+                    {collected && count > 1 && (
+                        <View style={[
+                            styles.countBadge,
+                            isMaxLevel && styles.maxLevelBadge,
+                            isMaxLevel && { backgroundColor: rarityColor }
                         ]}>
-                            {isMaxLevel ? '⭐' : `x${count}`}
-                        </Text>
-                    </View>
-                )}
+                            <Text style={[
+                                styles.countText,
+                                isMaxLevel && styles.maxLevelText
+                            ]}>
+                                {isMaxLevel ? '⭐' : `x${count}`}
+                            </Text>
+                        </View>
+                    )}
 
-                {/* Level indicator for medium/large cards */}
-                {collected && level > 1 && size !== 'small' && (
-                    <View style={styles.levelContainer}>
-                        {Array.from({ length: level }).map((_, i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.levelDot,
-                                    { backgroundColor: i < level ? rarityColor : theme.colors.surfaceLight }
-                                ]}
-                            />
-                        ))}
-                    </View>
-                )}
+                    {/* Level indicator for medium/large cards */}
+                    {collected && level > 1 && size !== 'small' && (
+                        <View style={styles.levelContainer}>
+                            {Array.from({ length: level }).map((_, i) => (
+                                <View
+                                    key={i}
+                                    style={[
+                                        styles.levelDot,
+                                        { backgroundColor: i < level ? rarityColor : theme.colors.surfaceLight }
+                                    ]}
+                                />
+                            ))}
+                        </View>
+                    )}
 
-                {/* Compact level badge for small cards */}
-                {collected && size === 'small' && (
-                    <View style={[
-                        styles.smallLevelBadge,
-                        isMaxLevel && { backgroundColor: rarityColor }
-                    ]}>
-                        <Text style={[
-                            styles.smallLevelText,
-                            isMaxLevel && styles.maxLevelSmallText
+                    {/* Compact level badge for small cards */}
+                    {collected && size === 'small' && (
+                        <View style={[
+                            styles.smallLevelBadge,
+                            isMaxLevel && { backgroundColor: rarityColor }
                         ]}>
-                            {isMaxLevel ? '★' : `L${level}`}
-                        </Text>
-                    </View>
-                )}
-            </Animated.View>
+                            <Text style={[
+                                styles.smallLevelText,
+                                isMaxLevel && styles.maxLevelSmallText
+                            ]}>
+                                {isMaxLevel ? '★' : `L${level}`}
+                            </Text>
+                        </View>
+                    )}
+                </Animated.View>
             </Pressable>
         </Animated.View>
     );
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingVertical: 1,
         borderRadius: theme.borderRadius.sm,
-        minWidth: 18,
+        minWidth: 20,
         alignItems: 'center',
     },
     smallLevelText: {
