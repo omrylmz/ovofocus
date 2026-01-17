@@ -184,11 +184,12 @@ const styles = StyleSheet.create({
     },
     glow: {
         position: 'absolute',
-        top: -4,
-        left: -4,
-        right: -4,
-        bottom: -4,
+        top: -2,
+        left: -2,
+        right: -2,
+        bottom: -2,
         borderRadius: theme.borderRadius.lg,
+        zIndex: -1,
     },
     text: {
         fontWeight: theme.fontWeight.bold,

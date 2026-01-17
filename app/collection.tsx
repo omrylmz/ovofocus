@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     animalGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: theme.spacing.sm,
+        gap: 12,
     },
     emptyState: {
         alignItems: 'center',

@@ -85,6 +85,7 @@ export function SessionControls({
                             icon="▶️"
                         />
                     </View>
+                    <View style={styles.buttonSpacer} />
                     <PixelButton
                         title={labels.giveUp}
                         onPress={onGiveUp}
