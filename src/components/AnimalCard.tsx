@@ -25,9 +25,6 @@ interface AnimalCardProps {
     entranceDelay?: number;  // For staggered entrance animations
 }
 
-// Level thresholds for progression
-const LEVEL_THRESHOLDS = [1, 3, 6, 10, 15];
-
 // Calculate level based on count
 function getLevel(count: number): number {
     if (count >= 15) return 5;
@@ -35,23 +32,6 @@ function getLevel(count: number): number {
     if (count >= 6) return 3;
     if (count >= 3) return 2;
     return 1;
-}
-
-// Get progress to next level
-function getLevelProgress(count: number, level: number): { current: number; next: number } | null {
-    if (level >= 5) return null; // Max level
-    const nextThreshold = LEVEL_THRESHOLDS[level];
-    const prevThreshold = LEVEL_THRESHOLDS[level - 1];
-    return {
-        current: count - prevThreshold,
-        next: nextThreshold - prevThreshold,
-    };
-}
-
-// Get level badge text
-function getLevelBadge(level: number): string {
-    if (level >= 5) return '⭐ MAX';
-    return `Lv.${level}`;
 }
 
 export function AnimalCard({

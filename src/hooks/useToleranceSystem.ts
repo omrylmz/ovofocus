@@ -144,7 +144,7 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
         }
 
         previousAppStateRef.current = nextAppState;
-    }, [isSessionActive, isPaused]);
+    }, [isSessionActive, isPaused, baseTolerance, progress, currentStreak, shieldBonus]);
 
     // Subscribe to app state changes
     useEffect(() => {

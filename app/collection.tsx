@@ -15,6 +15,40 @@ import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
 type SortOption = 'rarity' | 'recent' | 'name';
 
+// Filter chip component - memoized to prevent unnecessary re-renders
+interface FilterChipProps {
+    label: string;
+    value: FilterOption;
+    active: boolean;
+    onPress: (value: FilterOption) => void;
+}
+
+const FilterChip = React.memo(({ label, value, active, onPress }: FilterChipProps) => (
+    <Pressable
+        style={[styles.filterChip, active && styles.filterChipActive]}
+        onPress={() => onPress(value)}
+    >
+        <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+    </Pressable>
+));
+
+// Sort chip component - memoized to prevent unnecessary re-renders
+interface SortChipProps {
+    label: string;
+    value: SortOption;
+    active: boolean;
+    onPress: (value: SortOption) => void;
+}
+
+const SortChip = React.memo(({ label, value, active, onPress }: SortChipProps) => (
+    <Pressable
+        style={[styles.sortChip, active && styles.sortChipActive]}
+        onPress={() => onPress(value)}
+    >
+        <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+    </Pressable>
+));
+
 export default function CollectionScreen() {
     const router = useRouter();
     const navigation = useNavigation();
@@ -159,35 +193,20 @@ export default function CollectionScreen() {
         }
     }, [selectedAnimal, toggleFavorite]);
 
-    // Filter chip component
-    const FilterChip = ({ label, value, active }: { label: string; value: FilterOption; active: boolean }) => (
-        <Pressable
-            style={[styles.filterChip, active && styles.filterChipActive]}
-            onPress={() => {
-                setActiveFilter(value);
-                if (state.settings.hapticsEnabled) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-            }}
-        >
-            <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
-        </Pressable>
-    );
+    // Memoized handlers for filter and sort chips
+    const handleFilterPress = useCallback((value: FilterOption) => {
+        setActiveFilter(value);
+        if (state.settings.hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    }, [state.settings.hapticsEnabled]);
 
-    // Sort chip component
-    const SortChip = ({ label, value, active }: { label: string; value: SortOption; active: boolean }) => (
-        <Pressable
-            style={[styles.sortChip, active && styles.sortChipActive]}
-            onPress={() => {
-                setActiveSort(value);
-                if (state.settings.hapticsEnabled) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-            }}
-        >
-            <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
-        </Pressable>
-    );
+    const handleSortPress = useCallback((value: SortOption) => {
+        setActiveSort(value);
+        if (state.settings.hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    }, [state.settings.hapticsEnabled]);
 
     // Render filtered grid (flat list, no rarity sections)
     const renderFilteredGrid = () => {
@@ -295,18 +314,18 @@ export default function CollectionScreen() {
 
                 {/* Filter Chips */}
                 <View style={styles.filterRow}>
-                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} />
-                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} />
-                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} />
-                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} />
+                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} onPress={handleFilterPress} />
+                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} onPress={handleFilterPress} />
+                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} onPress={handleFilterPress} />
+                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} onPress={handleFilterPress} />
                 </View>
 
                 {/* Sort Chips */}
                 <View style={styles.sortRow}>
                     <Text style={styles.sortLabel}>{i18n('sort')}:</Text>
-                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} />
-                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} />
-                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} />
+                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} onPress={handleSortPress} />
+                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} onPress={handleSortPress} />
+                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} onPress={handleSortPress} />
                 </View>
 
                 {/* Overall Progress */}

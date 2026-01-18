@@ -40,6 +40,7 @@ export default function HomeScreen() {
     const [celebrationStreak, setCelebrationStreak] = useState(0);
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
     const hasInitializedRef = useRef(false);
+    const prevWarningLevelRef = useRef(0);
 
     // Update previousBestStreakRef ONLY ONCE when stats finish loading
     // This prevents the ref from being overwritten on subsequent bestStreak changes
@@ -133,13 +134,20 @@ export default function HomeScreen() {
 
     // Handle warning level haptic feedback
     useEffect(() => {
-        if (warningLevel > 0 && state.sessionState === 'active' && state.settings.hapticsEnabled) {
+        // Only trigger haptic when warning level INCREASES to a new higher level
+        if (warningLevel > prevWarningLevelRef.current && state.sessionState === 'active' && state.settings.hapticsEnabled) {
             const hapticTypes = {
                 1: Haptics.ImpactFeedbackStyle.Light,
                 2: Haptics.ImpactFeedbackStyle.Medium,
                 3: Haptics.ImpactFeedbackStyle.Heavy,
             };
             Haptics.impactAsync(hapticTypes[warningLevel as 1 | 2 | 3]);
+        }
+        prevWarningLevelRef.current = warningLevel;
+
+        // Reset when session is not active
+        if (state.sessionState !== 'active') {
+            prevWarningLevelRef.current = 0;
         }
     }, [warningLevel, state.sessionState, state.settings.hapticsEnabled]);
 
