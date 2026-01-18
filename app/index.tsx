@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +17,7 @@ import { FloatingParticles } from '../src/components/FloatingParticles';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
 import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal } from '../src/utils/storage';
+import { calculateCollectionBonuses, calculateEffectiveDuration } from '../src/utils/levelBonuses';
 
 // Extracted session components
 import {
@@ -58,8 +59,24 @@ export default function HomeScreen() {
     const [activeShieldBonus, setActiveShieldBonus] = useState(0);
     const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
 
-    // Debug mode: 10 seconds, Normal: 25 minutes
-    const duration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
+    // Calculate level bonuses from collection
+    const levelBonuses = useMemo(() => {
+        // Group collection by animal id and sum counts
+        const animalCounts = new Map<string, number>();
+        for (const animal of state.collection) {
+            const current = animalCounts.get(animal.id) || 0;
+            animalCounts.set(animal.id, current + 1);
+        }
+        const collectionForBonus = Array.from(animalCounts.entries()).map(([animalId, count]) => ({
+            animalId,
+            count,
+        }));
+        return calculateCollectionBonuses(collectionForBonus);
+    }, [state.collection]);
+
+    // Debug mode: 10 seconds, Normal: 25 minutes (with focus bonus applied)
+    const baseDuration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
+    const duration = calculateEffectiveDuration(baseDuration, levelBonuses.focusPercentage);
 
     const handleTimerComplete = useCallback(async () => {
         if (state.settings.hapticsEnabled) {
@@ -119,7 +136,7 @@ export default function HomeScreen() {
         baseTolerance: state.settings.toleranceSeconds,
         progress,
         currentStreak: state.stats.currentStreak,
-        shieldBonus: activeShieldBonus,
+        shieldBonus: activeShieldBonus + levelBonuses.shieldSeconds,
         isSessionActive: state.sessionState === 'active',
         isPaused: state.isPaused,
     });

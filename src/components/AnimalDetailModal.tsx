@@ -18,6 +18,7 @@ import { PixelButton } from './PixelButton';
 import { Language, getAnimalName, getAnimalDescription, getRarityLabelI18n, t } from '../i18n/translations';
 import { useGame } from '../context/GameContext';
 import { AnimalInteraction } from '../utils/storage';
+import { getLevelBonusDescription } from '../utils/levelBonuses';
 
 interface AnimalDetailModalProps {
     visible: boolean;
@@ -52,18 +53,6 @@ function getLevelInfo(count: number) {
     const progress = isMaxLevel ? 1 : (count - currentLevelStart) / (nextLevelRequired - currentLevelStart);
 
     return { level, progress, isMaxLevel, nextLevelRequired };
-}
-
-// Get bonus description based on level
-function getBonusDescription(level: number, language: Language): string {
-    const bonuses: Record<number, { en: string; tr: string }> = {
-        1: { en: 'No bonus yet', tr: 'Henüz bonus yok' },
-        2: { en: 'Enhanced animations', tr: 'Gelişmiş animasyonlar' },
-        3: { en: '+2% focus time bonus', tr: '+2% odaklanma bonusu' },
-        4: { en: 'Special aura effect', tr: 'Özel aura efekti' },
-        5: { en: '+5% focus bonus + Master badge', tr: '+5% odaklanma bonusu + Usta rozeti' },
-    };
-    return bonuses[level]?.[language] || bonuses[1][language];
 }
 
 // Get happiness level color
@@ -502,7 +491,7 @@ export function AnimalDetailModal({
                             {language === 'tr' ? 'Seviye Bonusu' : 'Level Bonus'}
                         </Text>
                         <Text style={styles.bonusText}>
-                            {getBonusDescription(level, language)}
+                            {getLevelBonusDescription(level, language)}
                         </Text>
                     </View>
 
