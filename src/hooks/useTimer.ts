@@ -25,7 +25,7 @@ export function useTimer({ duration, onComplete, onTick }: UseTimerOptions): Use
     const pausedTimeRef = useRef<number>(duration);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const elapsedMinutes = Math.floor((duration - timeRemaining) / 60);
+    const elapsedMinutes = Math.round((duration - timeRemaining) / 60);
     const progress = 1 - timeRemaining / duration;
 
     const formatTime = useCallback((seconds: number): string => {

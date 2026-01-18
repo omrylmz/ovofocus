@@ -52,12 +52,12 @@ export function PixelButton({
     const handlePressIn = useCallback(() => {
         scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
         translateY.value = withSpring(2, { damping: 15, stiffness: 400 });
-    }, []);
+    }, [scale, translateY]);
 
     const handlePressOut = useCallback(() => {
         scale.value = withSpring(1, { damping: 12, stiffness: 300 });
         translateY.value = withSpring(0, { damping: 12, stiffness: 300 });
-    }, []);
+    }, [scale, translateY]);
 
     const handlePress = useCallback(() => {
         if (hapticEnabled && !disabled) {
@@ -76,7 +76,7 @@ export function PixelButton({
         );
 
         onPress();
-    }, [hapticEnabled, hapticStyle, disabled, onPress]);
+    }, [hapticEnabled, hapticStyle, disabled, onPress, glowOpacity]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [

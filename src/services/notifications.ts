@@ -10,19 +10,8 @@ import { Language, t, getAnimalName } from '../i18n/translations';
 // Check if we're running in Expo Go (notifications not supported)
 const isExpoGo = Constants.appOwnership === 'expo';
 
-// Track app foreground state
-let isAppInForeground = AppState.currentState === 'active';
-
 // Dynamically import notifications only when not in Expo Go
 let Notifications: typeof import('expo-notifications') | null = null;
-
-// Initialize app state listener for notifications
-export function initializeAppStateListener() {
-    const subscription = AppState.addEventListener('change', (state) => {
-        isAppInForeground = state === 'active';
-    });
-    return subscription;
-}
 
 async function getNotificationsModule() {
     if (isExpoGo) {
@@ -33,14 +22,18 @@ async function getNotificationsModule() {
         try {
             Notifications = await import('expo-notifications');
             // Configure notification behavior - only show if app is backgrounded
+            // Check AppState.currentState directly to avoid race conditions with stale state
             Notifications.setNotificationHandler({
-                handleNotification: async () => ({
-                    shouldShowAlert: !isAppInForeground,
-                    shouldPlaySound: !isAppInForeground,
-                    shouldSetBadge: false,
-                    shouldShowBanner: !isAppInForeground,
-                    shouldShowList: !isAppInForeground,
-                }),
+                handleNotification: async () => {
+                    const isInForeground = AppState.currentState === 'active';
+                    return {
+                        shouldShowAlert: !isInForeground,
+                        shouldPlaySound: !isInForeground,
+                        shouldSetBadge: false,
+                        shouldShowBanner: !isInForeground,
+                        shouldShowList: !isInForeground,
+                    };
+                },
             });
         } catch (error) {
             console.log('Failed to load notifications module:', error);
@@ -93,7 +86,8 @@ export async function sendSessionCompleteNotification(
     language: Language
 ): Promise<void> {
     // Only send notification if app is backgrounded
-    if (isAppInForeground) {
+    // Check AppState.currentState directly to avoid race conditions with stale state
+    if (AppState.currentState === 'active') {
         console.log('App in foreground - skipping notification');
         return;
     }

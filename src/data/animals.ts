@@ -95,14 +95,3 @@ export function getRarityColor(rarity: Rarity): string {
     };
     return colors[rarity];
 }
-
-// Get rarity label in Turkish
-export function getRarityLabel(rarity: Rarity): string {
-    const labels: Record<Rarity, string> = {
-        common: 'Yaygın',
-        rare: 'Nadir',
-        epic: 'Epik',
-        legendary: 'Efsanevi',
-    };
-    return labels[rarity];
-}
