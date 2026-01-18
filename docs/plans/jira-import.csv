@@ -1,0 +1,349 @@
+Summary,Issue Type,Priority,Labels,Description,Epic Link
+"Complete UI/UX Overhaul",Epic,High,"ui-ux","## Overview
+Comprehensive UI/UX improvements to transform Ovo Focus into a polished, production-ready mobile experience.
+
+## Objectives
+- Improve visual hierarchy and design consistency
+- Enhance accessibility for all users
+- Optimize performance and animations
+- Create a premium, engaging user experience
+
+## Scope
+- Visual Design System refinement
+- Home Screen improvements
+- Collection Screen overhaul
+- Settings Screen improvements
+- Animation and transition polish
+- Accessibility improvements
+- Performance optimization
+- Advanced UX features
+
+## Success Criteria
+- Maintain 60fps during all animations
+- Pass WCAG AA accessibility audit
+- Positive user feedback on visual improvements
+- Improved session completion rate",
+"Implement responsive typography system with scaling",Task,High,"ui-ux,design-system,phase-1","## Context
+Timer font (72px) can overflow on smaller screens, rarity badges use 8px text that's hard to read, and font weights are inconsistent.
+
+## Requirements
+- Implement responsive typography scaling based on screen size
+- Increase minimum readable text size to 10px
+- Create explicit typography scale: display, headline, title, body, caption, micro
+- Add letter-spacing adjustments for improved readability
+
+## Acceptance Criteria
+- [ ] Typography scales smoothly on screens 320px-428px wide
+- [ ] All text passes WCAG AA contrast requirements
+- [ ] Timer remains readable without overflow on all supported devices",Complete UI/UX Overhaul
+"Add semantic color tokens and enhance color system",Task,High,"ui-ux,design-system,phase-1","## Context
+Limited color palette for UI states, no semantic color tokens for success/warning/error/info.
+
+## Requirements
+- Add semantic color tokens: success (#4CAF50), warning (#FF9800), error (#F44336), info (#2196F3)
+- Create color variations: light, default, dark for each primary color
+- Improve rarity color contrast for accessibility
+- Add surface elevation colors (surface1, surface2, surface3)
+
+## Acceptance Criteria
+- [ ] Semantic colors defined and exported from theme.ts
+- [ ] All rarity colors pass 4.5:1 contrast ratio
+- [ ] Surface elevation creates clear visual hierarchy",Complete UI/UX Overhaul
+"Audit and fix spacing consistency across all components",Task,Medium,"ui-ux,design-system,phase-1","## Context
+Some components have inconsistent padding, screen margins vary, and touch targets are occasionally below 44px minimum.
+
+## Requirements
+- Audit all components for spacing consistency
+- Implement 8px grid system strictly
+- Ensure all interactive elements have minimum 44x44px touch targets
+- Standardize screen padding (16px horizontal, 24px vertical)
+
+## Acceptance Criteria
+- [ ] All touch targets >= 44x44px
+- [ ] Consistent 8px grid alignment
+- [ ] Screen padding standardized across all views",Complete UI/UX Overhaul
+"Redesign home screen header with clear visual hierarchy",Story,High,"ui-ux,home-screen,phase-2","## Context
+Three competing elements in header: collection link, streak badge, daily ring + settings. No clear visual hierarchy and elements feel cramped.
+
+## Requirements
+- Redesign header with clear primary/secondary grouping
+- Move streak badge to more prominent position or integrate with stats
+- Simplify daily progress indicator
+- Add subtle separator or background treatment
+
+## Acceptance Criteria
+- [ ] Clear visual hierarchy with one primary focal point
+- [ ] Header elements have appropriate spacing
+- [ ] Touch targets adequate for all header buttons",Complete UI/UX Overhaul
+"Enhance timer display with progress ring and visual feedback",Story,High,"ui-ux,home-screen,phase-2","## Context
+Plain text timer display could be more engaging, no visual progress indication beyond text, pause state not visually distinct.
+
+## Requirements
+- Add circular progress ring around timer
+- Implement color transitions as session progresses
+- Create distinct visual treatment for paused state
+- Add subtle glow effect that intensifies with progress
+
+## Acceptance Criteria
+- [ ] Progress ring accurately reflects session progress
+- [ ] Paused state is immediately recognizable
+- [ ] Smooth color transitions without jank",Complete UI/UX Overhaul
+"Redesign session controls with improved button hierarchy",Story,High,"ui-ux,home-screen,phase-2","## Context
+Controls at bottom could be more prominent, give up button placement could lead to accidental taps, pause count indicator is subtle.
+
+## Requirements
+- Create floating action bar with clear button hierarchy
+- Add safe distance between destructive and constructive actions
+- Make pause count indicator more prominent
+- Add micro-animations on button state changes
+
+## Acceptance Criteria
+- [ ] Primary action is most prominent
+- [ ] Destructive actions require deliberate interaction
+- [ ] Pause count clearly visible at all times",Complete UI/UX Overhaul
+"Add screen transition animations for modals",Task,High,"ui-ux,animations,phase-2","## Context
+Modals appear instantly without animation, screen changes feel abrupt.
+
+## Requirements
+- Add slide-up animation for modals
+- Implement crossfade for screen content changes
+- Create state transition animations
+- Animations complete within 300ms
+
+## Acceptance Criteria
+- [ ] All modals have entrance/exit animations
+- [ ] State changes feel smooth and intentional
+- [ ] No animation jank or dropped frames",Complete UI/UX Overhaul
+"Implement screen reader support and accessibility labels",Task,High,"ui-ux,accessibility,phase-2","## Context
+Accessibility labels may be incomplete, focus order might not be logical, announcements for state changes missing.
+
+## Requirements
+- Audit all components for accessibilityLabel
+- Implement logical focus order
+- Add announcements for session state changes
+- Test with VoiceOver and TalkBack
+
+## Acceptance Criteria
+- [ ] App fully navigable with screen reader
+- [ ] State changes announced appropriately
+- [ ] All interactive elements have descriptive labels",Complete UI/UX Overhaul
+"Unify filter and sort UI with consistent styling",Story,High,"ui-ux,collection-screen,phase-3","## Context
+Filter chips have inconsistent styling, sort options not immediately discoverable, no visual indication of active filters.
+
+## Requirements
+- Unify chip styling: all outlined, filled when active
+- Add filter badge showing count of active filters
+- Add Clear all filters quick action
+- Persist filter preferences across sessions
+
+## Acceptance Criteria
+- [ ] Consistent chip styling throughout
+- [ ] Active filter state clearly indicated
+- [ ] Filters persist between app sessions",Complete UI/UX Overhaul
+"Optimize collection grid with virtualization and collapsible sections",Task,High,"ui-ux,collection-screen,performance,phase-3","## Context
+No virtualization for large collections, staggered animations can feel slow with many items, rarity sections cannot collapse.
+
+## Requirements
+- Implement FlashList for virtualized rendering
+- Add collapsible rarity sections
+- Reduce animation stagger for large collections
+- Add scroll to top button
+
+## Acceptance Criteria
+- [ ] Smooth 60fps scrolling with 100+ animals
+- [ ] Rarity sections collapsible
+- [ ] Quick navigation for large collections",Complete UI/UX Overhaul
+"Redesign animal cards with enhanced visuals and clear progression",Story,High,"ui-ux,collection-screen,phase-3","## Context
+Emoji-only design may feel basic, level dots are subtle, count badges crowd the card.
+
+## Requirements
+- Enhance emoji with backgrounds or custom illustrations
+- Redesign level indicator as progress bar or stars
+- Add rarity-colored card borders
+- Implement card flip animation for reveal
+
+## Acceptance Criteria
+- [ ] Cards feel premium and polished
+- [ ] Level progression clearly visible
+- [ ] Rarity immediately identifiable",Complete UI/UX Overhaul
+"Create illustrated empty and error states",Story,Medium,"ui-ux,collection-screen,phase-3","## Context
+Empty state uses only emoji + text, no error state designs, loading state not implemented.
+
+## Requirements
+- Create illustrated empty states for each filter
+- Design error state with retry action
+- Add skeleton loading screens
+- Add celebration state when collection complete
+
+## Acceptance Criteria
+- [ ] Every state has thoughtful design
+- [ ] Error states provide recovery path
+- [ ] Loading feels fast with skeletons",Complete UI/UX Overhaul
+"Improve egg interaction feedback and gesture discovery",Story,Medium,"ui-ux,home-screen,phase-4","## Context
+Gesture hints only shown once, feedback messages could be more engaging.
+
+## Requirements
+- Add persistent subtle hint for interactions
+- Create 10+ encouragement message variations
+- Implement haptic patterns for message types
+- Add visual feedback ripple on interaction
+
+## Acceptance Criteria
+- [ ] Users discover all gesture types naturally
+- [ ] 10+ unique encouragement messages
+- [ ] Haptic feedback matches interaction type",Complete UI/UX Overhaul
+"Redesign stats bar with compact pills and trends",Story,Medium,"ui-ux,home-screen,phase-4","## Context
+Stats feel disconnected, BEST badge could be more celebratory, limited information density.
+
+## Requirements
+- Create compact stat pills with icons
+- Add mini-trends for streak changes
+- Animate BEST badge when achieved
+- Add expandable stats view on tap
+
+## Acceptance Criteria
+- [ ] Stats immediately comprehensible
+- [ ] BEST achievement feels rewarding
+- [ ] Tapping stats reveals detailed view",Complete UI/UX Overhaul
+"Refine micro-interactions and button feedback",Task,Medium,"ui-ux,animations,phase-4","## Context
+Some buttons lack press feedback, toggle animations could be snappier.
+
+## Requirements
+- Audit all interactive elements for feedback
+- Add satisfying toggle animations with overshoot
+- Create success checkmark animation
+- Implement button ripple effects
+
+## Acceptance Criteria
+- [ ] Every interaction has immediate feedback
+- [ ] Success/failure clearly communicated
+- [ ] Ripple effect on button press",Complete UI/UX Overhaul
+"Implement loading and progress state indicators",Task,Medium,"ui-ux,animations,phase-4","## Context
+No loading indicators during data operations, app feels frozen during heavy operations.
+
+## Requirements
+- Add loading spinner for async operations
+- Implement optimistic UI updates
+- Add skeleton screens for initial load
+- Create progress indicators for long operations
+
+## Acceptance Criteria
+- [ ] Users always know app is working
+- [ ] Operations feel fast with optimistic updates
+- [ ] Initial load uses skeleton screens",Complete UI/UX Overhaul
+"Audit and fix color contrast for WCAG AA compliance",Task,Medium,"ui-ux,accessibility,phase-4","## Context
+Some text may not meet contrast requirements, no high contrast mode.
+
+## Requirements
+- Audit all text for WCAG AA compliance (4.5:1)
+- Add patterns or icons alongside color coding
+- Implement optional high contrast theme
+- Test with color blindness simulators
+
+## Acceptance Criteria
+- [ ] All text passes WCAG AA
+- [ ] Information not conveyed by color alone
+- [ ] High contrast option available",Complete UI/UX Overhaul
+"Enhance animal detail modal with animations and history",Story,Medium,"ui-ux,collection-screen,phase-5","## Context
+Modal appears without transition, limited information displayed, favorite toggle could be more prominent.
+
+## Requirements
+- Add slide-up entrance animation
+- Display collection history
+- Make favorite button prominent with animation
+- Add share functionality
+
+## Acceptance Criteria
+- [ ] Modal has smooth entrance/exit animations
+- [ ] All relevant animal data displayed
+- [ ] Share generates shareable image",Complete UI/UX Overhaul
+"Reorganize settings screen with icons and sections",Story,Medium,"ui-ux,settings-screen,phase-5","## Context
+Sections could be better grouped, focus duration buttons dont adapt to screen width.
+
+## Requirements
+- Reorganize into clear categories
+- Use segmented control or slider for focus duration
+- Add icons to each setting
+- Create visual stats cards
+
+## Acceptance Criteria
+- [ ] Settings logically grouped
+- [ ] All controls adapt to screen width
+- [ ] Icons aid quick comprehension",Complete UI/UX Overhaul
+"Optimize animation performance and battery usage",Task,High,"ui-ux,performance,phase-5","## Context
+Multiple simultaneous animations on egg, infinite animations drain battery.
+
+## Requirements
+- Implement animation budgeting
+- Pause animations when app backgrounded
+- Clean up particles immediately after fade
+- Use native driver for all animations
+
+## Acceptance Criteria
+- [ ] Consistent 60fps during animations
+- [ ] Battery usage reduced when idle
+- [ ] No memory leaks from animations",Complete UI/UX Overhaul
+"Create guided onboarding flow for new users",Story,Medium,"ui-ux,onboarding,phase-5","## Context
+No guided onboarding, gesture hints only shown once.
+
+## Requirements
+- Create 3-5 screen onboarding carousel
+- Implement progressive disclosure
+- Add tips system for advanced features
+- Show whats new after updates
+
+## Acceptance Criteria
+- [ ] New users complete onboarding in < 1 minute
+- [ ] Core features understood before first session
+- [ ] Tips appear contextually",Complete UI/UX Overhaul
+"Implement reduced motion support",Task,Low,"ui-ux,accessibility,phase-6","## Context
+No reduced motion support, animations might trigger vestibular issues.
+
+## Requirements
+- Detect and respect reduce motion setting
+- Provide fallback static states
+- Allow disabling particle effects
+
+## Acceptance Criteria
+- [ ] Respects system reduce motion preference
+- [ ] Alternative static designs work well
+- [ ] User can disable specific animations",Complete UI/UX Overhaul
+"Optimize render performance with memoization",Task,Medium,"ui-ux,performance,phase-6","## Context
+Collection may re-render unnecessarily, no memoization audit.
+
+## Requirements
+- Implement React.memo for pure components
+- Add useMemo/useCallback where appropriate
+- Implement lazy loading for modals
+- Profile renders with React DevTools
+
+## Acceptance Criteria
+- [ ] Reduced re-renders on state changes
+- [ ] Modals load on-demand
+- [ ] Measurable performance improvement",Complete UI/UX Overhaul
+"Redesign danger zone with proper confirmation flow",Task,Low,"ui-ux,settings-screen,phase-6","## Context
+Delete button doesnt feel appropriately serious.
+
+## Requirements
+- Add visual warning treatment
+- Implement two-step deletion
+- Show what will be lost before deletion
+- Add export data option
+
+## Acceptance Criteria
+- [ ] Deletion feels appropriately serious
+- [ ] Users understand consequences
+- [ ] Export option available before delete",Complete UI/UX Overhaul
+"Add milestone celebrations and achievement system",Story,Low,"ui-ux,gamification,phase-6","## Context
+Limited positive reinforcement, no milestone celebrations.
+
+## Requirements
+- Add milestone celebrations (10, 50, 100 sessions)
+- Create achievement unlocked animations
+- Implement streak milestones
+- Create share cards for achievements
+
+## Acceptance Criteria
+- [ ] Milestones trigger celebratory UI
+- [ ] Users feel recognized for progress
+- [ ] Shareable achievement cards",Complete UI/UX Overhaul

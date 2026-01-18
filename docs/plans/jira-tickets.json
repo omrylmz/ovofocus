@@ -1,0 +1,183 @@
+{
+  "epic": {
+    "summary": "Complete UI/UX Overhaul",
+    "description": "## Overview\nComprehensive UI/UX improvements to transform Ovo Focus into a polished, production-ready mobile experience.\n\n## Objectives\n- Improve visual hierarchy and design consistency\n- Enhance accessibility for all users\n- Optimize performance and animations\n- Create a premium, engaging user experience\n\n## Scope\n- Visual Design System refinement\n- Home Screen improvements\n- Collection Screen overhaul\n- Settings Screen improvements\n- Animation and transition polish\n- Accessibility improvements\n- Performance optimization\n- Advanced UX features\n\n## Success Criteria\n- Maintain 60fps during all animations\n- Pass WCAG AA accessibility audit\n- Positive user feedback on visual improvements\n- Improved session completion rate"
+  },
+  "tickets": [
+    {
+      "summary": "Implement responsive typography system with scaling",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "design-system", "phase-1"],
+      "description": "## Context\nTimer font (72px) can overflow on smaller screens, rarity badges use 8px text that's hard to read, and font weights are inconsistent.\n\n## Requirements\n- Implement responsive typography scaling based on screen size\n- Increase minimum readable text size to 10px\n- Create explicit typography scale: display, headline, title, body, caption, micro\n- Add letter-spacing adjustments for improved readability\n\n## Technical Details\n- Update src/styles/theme.ts with responsive typography tokens\n- Use React Native's PixelRatio or Dimensions for scaling\n- Test on screens 320px-428px wide\n\n## Acceptance Criteria\n- [ ] Typography scales smoothly on screens 320px-428px wide\n- [ ] All text passes WCAG AA contrast requirements\n- [ ] Timer remains readable without overflow on all supported devices\n- [ ] Typography scale documented in theme.ts"
+    },
+    {
+      "summary": "Add semantic color tokens and enhance color system",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "design-system", "phase-1"],
+      "description": "## Context\nLimited color palette for UI states, no semantic color tokens for success/warning/error/info.\n\n## Requirements\n- Add semantic color tokens: success (#4CAF50), warning (#FF9800), error (#F44336), info (#2196F3)\n- Create color variations: light, default, dark for each primary color\n- Improve rarity color contrast for accessibility\n- Add surface elevation colors (surface1, surface2, surface3)\n\n## Technical Details\n- Update src/styles/theme.ts colors object\n- Ensure all rarity colors pass 4.5:1 contrast ratio against backgrounds\n- Document color usage guidelines\n\n## Acceptance Criteria\n- [ ] Semantic colors defined and exported from theme.ts\n- [ ] All rarity colors pass 4.5:1 contrast ratio\n- [ ] Surface elevation creates clear visual hierarchy\n- [ ] Color system documented"
+    },
+    {
+      "summary": "Audit and fix spacing consistency across all components",
+      "type": "Task",
+      "priority": "Medium",
+      "labels": ["ui-ux", "design-system", "phase-1"],
+      "description": "## Context\nSome components have inconsistent padding, screen margins vary, and touch targets are occasionally below 44px minimum.\n\n## Requirements\n- Audit all components for spacing consistency\n- Implement 8px grid system strictly\n- Ensure all interactive elements have minimum 44x44px touch targets\n- Standardize screen padding (16px horizontal, 24px vertical)\n\n## Technical Details\n- Review all components in src/components/\n- Update theme.ts spacing scale if needed\n- Add hitSlop to buttons/touchables where needed\n\n## Acceptance Criteria\n- [ ] All touch targets >= 44x44px\n- [ ] Consistent 8px grid alignment\n- [ ] Screen padding standardized across all views\n- [ ] No spacing inconsistencies visible"
+    },
+    {
+      "summary": "Redesign home screen header with clear visual hierarchy",
+      "type": "Story",
+      "priority": "High",
+      "labels": ["ui-ux", "home-screen", "phase-2"],
+      "description": "## Context\nThree competing elements in header: collection link, streak badge, daily ring + settings. No clear visual hierarchy and elements feel cramped.\n\n## Requirements\n- Redesign header with clear primary/secondary grouping\n- Move streak badge to more prominent position or integrate with stats\n- Simplify daily progress indicator\n- Add subtle separator or background treatment\n- Consider collapsing to icon-only on scroll\n\n## Technical Details\n- Update app/index.tsx header section\n- May need new HeaderBar component\n- Coordinate with stats bar redesign\n\n## Acceptance Criteria\n- [ ] Clear visual hierarchy with one primary focal point\n- [ ] Header elements have appropriate spacing (min 12px between elements)\n- [ ] Touch targets adequate for all header buttons\n- [ ] Header looks balanced and intentional"
+    },
+    {
+      "summary": "Enhance timer display with progress ring and visual feedback",
+      "type": "Story",
+      "priority": "High",
+      "labels": ["ui-ux", "home-screen", "phase-2"],
+      "description": "## Context\nPlain text timer display could be more engaging, no visual progress indication beyond text, pause state not visually distinct.\n\n## Requirements\n- Add circular progress ring around timer\n- Implement color transitions as session progresses\n- Create distinct visual treatment for paused state (dimmed, pulsing border)\n- Add subtle glow effect that intensifies with progress\n- Consider session phase indicators (warm-up, focus, finishing)\n\n## Technical Details\n- Create new TimerRing component using react-native-svg or Reanimated\n- Integrate with existing timer state from GameContext\n- Use Reanimated for smooth color transitions\n\n## Acceptance Criteria\n- [ ] Progress ring accurately reflects session progress (0-100%)\n- [ ] Paused state is immediately recognizable\n- [ ] Smooth color transitions without jank (60fps)\n- [ ] Glow intensity correlates with progress"
+    },
+    {
+      "summary": "Redesign session controls with improved button hierarchy",
+      "type": "Story",
+      "priority": "High",
+      "labels": ["ui-ux", "home-screen", "phase-2"],
+      "description": "## Context\nControls at bottom could be more prominent, give up button placement could lead to accidental taps, pause count indicator is subtle.\n\n## Requirements\n- Create floating action bar with clear button hierarchy\n- Add safe distance between destructive (give up) and constructive actions\n- Make pause count indicator more prominent with visual badges\n- Add micro-animations on button state changes\n- Consider swipe gestures for common actions\n\n## Technical Details\n- Create SessionControls component\n- Update PixelButton for new variants if needed\n- Implement swipe gesture with react-native-gesture-handler\n\n## Acceptance Criteria\n- [ ] Primary action (start/pause/resume) is most prominent\n- [ ] Destructive actions require deliberate interaction (separated by > 24px)\n- [ ] Pause count clearly visible at all times\n- [ ] Button state changes have micro-animations"
+    },
+    {
+      "summary": "Add screen transition animations for modals",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "animations", "phase-2"],
+      "description": "## Context\nModals appear instantly without animation, screen changes feel abrupt.\n\n## Requirements\n- Add slide-up animation for modals (collection, settings)\n- Implement crossfade for screen content changes\n- Create state transition animations (idle → active → completed)\n- Add parallax effect on scroll\n- Implement shared element transitions where appropriate\n\n## Technical Details\n- Use Expo Router's animation options\n- Create custom modal wrapper with Reanimated\n- Test on both iOS and Android\n\n## Acceptance Criteria\n- [ ] All modals have entrance/exit animations\n- [ ] State changes feel smooth and intentional\n- [ ] Animations complete within 300ms\n- [ ] No animation jank or dropped frames"
+    },
+    {
+      "summary": "Implement screen reader support and accessibility labels",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "accessibility", "phase-2"],
+      "description": "## Context\nAccessibility labels may be incomplete, focus order might not be logical, announcements for state changes missing.\n\n## Requirements\n- Audit all components for accessibilityLabel\n- Implement logical focus order (tab navigation)\n- Add announcements for session state changes\n- Ensure all images have alt text\n- Test with VoiceOver and TalkBack\n\n## Technical Details\n- Add accessibilityLabel, accessibilityHint, accessibilityRole to all components\n- Use AccessibilityInfo.announceForAccessibility for state changes\n- Set accessibilityElementsHidden for decorative elements\n\n## Acceptance Criteria\n- [ ] App fully navigable with screen reader\n- [ ] State changes announced appropriately\n- [ ] All interactive elements have descriptive labels\n- [ ] Tested on both VoiceOver (iOS) and TalkBack (Android)"
+    },
+    {
+      "summary": "Unify filter and sort UI with consistent styling",
+      "type": "Story",
+      "priority": "High",
+      "labels": ["ui-ux", "collection-screen", "phase-3"],
+      "description": "## Context\nFilter chips have inconsistent styling (filled vs outlined), sort options not immediately discoverable, no visual indication of active filters.\n\n## Requirements\n- Unify chip styling: all outlined, filled when active\n- Add filter badge showing count of active filters\n- Create slide-out or bottom sheet for advanced filtering\n- Add 'Clear all filters' quick action\n- Persist filter preferences across sessions\n\n## Technical Details\n- Update FilterChip component styling\n- Add AsyncStorage persistence for filters\n- Create FilterSheet component for advanced options\n\n## Acceptance Criteria\n- [ ] Consistent chip styling throughout (outlined default, filled active)\n- [ ] Active filter state clearly indicated with badge\n- [ ] Filters persist between app sessions\n- [ ] Clear all filters available when filters active"
+    },
+    {
+      "summary": "Optimize collection grid with virtualization and collapsible sections",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "collection-screen", "performance", "phase-3"],
+      "description": "## Context\nNo virtualization for large collections, staggered animations can feel slow with many items, rarity sections cannot collapse.\n\n## Requirements\n- Implement FlashList for virtualized rendering\n- Add collapsible rarity sections with expand/collapse\n- Reduce animation stagger for collections > 20 items\n- Add 'scroll to top' button when scrolled\n- Implement pull-to-refresh for collection sync\n\n## Technical Details\n- Replace FlatList with @shopify/flash-list\n- Create CollapsibleSection component\n- Add scroll position tracking for 'scroll to top' button\n\n## Acceptance Criteria\n- [ ] Smooth 60fps scrolling with 100+ animals\n- [ ] Rarity sections collapsible with animation\n- [ ] Quick navigation for large collections\n- [ ] Scroll to top appears after scrolling 500px"
+    },
+    {
+      "summary": "Redesign animal cards with enhanced visuals and clear progression",
+      "type": "Story",
+      "priority": "High",
+      "labels": ["ui-ux", "collection-screen", "phase-3"],
+      "description": "## Context\nEmoji-only design may feel basic, level dots are subtle and hard to see, count badges crowd the card.\n\n## Requirements\n- Create custom animal illustrations or enhance emoji with backgrounds\n- Redesign level indicator as progress bar or stars\n- Move count to detail view, show 'collected' checkmark on card\n- Add rarity-colored card borders or backgrounds\n- Implement card flip animation for reveal\n- Add shimmer loading state\n\n## Technical Details\n- Create new AnimalCard design in Figma first\n- Update src/components/AnimalCard.tsx\n- Add shimmer placeholder component\n- Consider SVG backgrounds for animals\n\n## Acceptance Criteria\n- [ ] Cards feel premium and polished\n- [ ] Level progression clearly visible (progress bar or stars)\n- [ ] Rarity immediately identifiable without reading badge\n- [ ] Card flip animation smooth and satisfying\n- [ ] Shimmer loading state implemented"
+    },
+    {
+      "summary": "Create illustrated empty and error states",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "collection-screen", "phase-3"],
+      "description": "## Context\nEmpty state uses only emoji + text, no error state designs, loading state not implemented.\n\n## Requirements\n- Create illustrated empty states for each filter combination\n- Design error state with retry action\n- Add skeleton loading screens\n- Implement friendly 'no results' state with suggestions\n- Add celebration state when collection complete\n\n## Technical Details\n- Create EmptyState component variants\n- Create SkeletonCard component\n- Add error boundary with custom fallback\n\n## Acceptance Criteria\n- [ ] Every state has thoughtful design\n- [ ] Error states provide clear recovery path (retry button)\n- [ ] Loading feels fast with skeleton screens\n- [ ] Celebration triggers at 100% collection"
+    },
+    {
+      "summary": "Improve egg interaction feedback and gesture discovery",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "home-screen", "phase-4"],
+      "description": "## Context\nGesture hints only shown once, feedback messages could be more engaging, long press detection sometimes conflicts with scroll.\n\n## Requirements\n- Add persistent subtle hint for available interactions\n- Create variety of encouragement messages (10+ variations)\n- Implement haptic patterns that correspond to message types\n- Add visual feedback ripple on each interaction\n- Show interaction count or engagement meter\n\n## Technical Details\n- Update src/components/Egg.tsx interaction handling\n- Create message pool in src/data/ or src/i18n/\n- Add ripple effect component\n\n## Acceptance Criteria\n- [ ] Users discover all three gesture types naturally\n- [ ] 10+ unique encouragement messages (per language)\n- [ ] Haptic feedback matches interaction type\n- [ ] Visual ripple on each interaction"
+    },
+    {
+      "summary": "Redesign stats bar with compact pills and trends",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "home-screen", "phase-4"],
+      "description": "## Context\nStats feel disconnected from main focus, 'BEST' badge could be more celebratory, limited information density.\n\n## Requirements\n- Create compact stat pills with icons\n- Add mini-trends (up/down arrows for streak changes)\n- Animate 'BEST' badge when achieved\n- Consider expandable stats view on tap\n- Add today's focus time as primary stat\n\n## Technical Details\n- Create StatPill component\n- Add trend calculation to GameContext\n- Create expandable stats modal or sheet\n\n## Acceptance Criteria\n- [ ] Stats immediately comprehensible with icons\n- [ ] 'BEST' achievement feels rewarding (animation + haptic)\n- [ ] Tapping stats reveals detailed view\n- [ ] Today's focus time prominently displayed"
+    },
+    {
+      "summary": "Refine micro-interactions and button feedback",
+      "type": "Task",
+      "priority": "Medium",
+      "labels": ["ui-ux", "animations", "phase-4"],
+      "description": "## Context\nSome buttons lack press feedback, toggle animations could be snappier, success/failure states need polish.\n\n## Requirements\n- Audit all interactive elements for feedback\n- Add satisfying toggle animations with overshoot\n- Create success checkmark animation\n- Add failure shake animation\n- Implement button ripple effects\n\n## Technical Details\n- Update PixelButton with ripple\n- Create ToggleSwitch with custom animation\n- Add success/failure feedback components\n\n## Acceptance Criteria\n- [ ] Every interaction has immediate feedback (< 100ms)\n- [ ] Toggle animations feel satisfying with spring overshoot\n- [ ] Success/failure clearly communicated visually\n- [ ] Ripple effect on button press"
+    },
+    {
+      "summary": "Implement loading and progress state indicators",
+      "type": "Task",
+      "priority": "Medium",
+      "labels": ["ui-ux", "animations", "phase-4"],
+      "description": "## Context\nNo loading indicators during data operations, progress not shown during session save, app feels frozen during heavy operations.\n\n## Requirements\n- Add subtle loading spinner for async operations\n- Show save progress indicator\n- Implement optimistic UI updates\n- Add skeleton screens for initial load\n- Create progress indicators for long operations\n\n## Technical Details\n- Create LoadingIndicator component\n- Implement optimistic updates in GameContext\n- Add loading states to relevant screens\n\n## Acceptance Criteria\n- [ ] Users always know app is working (loading indicator)\n- [ ] No perceived 'freezing' during operations\n- [ ] Operations feel fast with optimistic updates\n- [ ] Initial load uses skeleton screens"
+    },
+    {
+      "summary": "Audit and fix color contrast for WCAG AA compliance",
+      "type": "Task",
+      "priority": "Medium",
+      "labels": ["ui-ux", "accessibility", "phase-4"],
+      "description": "## Context\nSome text may not meet contrast requirements, no high contrast mode, color-only indicators (rarity colors).\n\n## Requirements\n- Audit all text for WCAG AA compliance (4.5:1)\n- Add patterns or icons alongside color coding\n- Implement optional high contrast theme\n- Ensure focus indicators are visible\n- Test with color blindness simulators\n\n## Technical Details\n- Use contrast checking tools to audit\n- Add rarity icons in addition to colors\n- Create highContrast theme variant\n\n## Acceptance Criteria\n- [ ] All text passes WCAG AA (4.5:1 contrast ratio)\n- [ ] Information not conveyed by color alone\n- [ ] High contrast option available in settings\n- [ ] Focus indicators visible on all interactive elements"
+    },
+    {
+      "summary": "Enhance animal detail modal with animations and history",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "collection-screen", "phase-5"],
+      "description": "## Context\nModal appears without transition, limited information displayed, favorite toggle could be more prominent.\n\n## Requirements\n- Add slide-up or scale entrance animation\n- Display collection history (dates, total count)\n- Show animal 'personality' or fun facts\n- Make favorite button more prominent with animation\n- Add share functionality for collected animals\n- Show 'time to next level' for leveling system\n\n## Technical Details\n- Update AnimalDetailModal component\n- Add collection history to animal data model if needed\n- Implement share with expo-sharing\n\n## Acceptance Criteria\n- [ ] Modal has smooth entrance/exit animations\n- [ ] All relevant animal data displayed (history, facts)\n- [ ] Favorite action feels satisfying with animation\n- [ ] Share generates shareable image/link"
+    },
+    {
+      "summary": "Reorganize settings screen with icons and sections",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "settings-screen", "phase-5"],
+      "description": "## Context\nSections could be better grouped, focus duration buttons don't adapt to screen width, statistics are plain text.\n\n## Requirements\n- Reorganize into clear categories: Session, Notifications, Preferences, Data\n- Use segmented control or slider for focus duration\n- Add icons to each setting for quick scanning\n- Create visual stats cards with mini-charts\n- Add search/filter for settings\n\n## Technical Details\n- Restructure app/settings.tsx\n- Create SettingsSection component\n- Add icons from expo/vector-icons\n\n## Acceptance Criteria\n- [ ] Settings logically grouped with clear headers\n- [ ] All controls adapt to screen width\n- [ ] Icons aid quick comprehension\n- [ ] Focus duration uses slider or segmented control"
+    },
+    {
+      "summary": "Optimize animation performance and battery usage",
+      "type": "Task",
+      "priority": "High",
+      "labels": ["ui-ux", "performance", "phase-5"],
+      "description": "## Context\nMultiple simultaneous animations on egg, infinite animations drain battery, confetti particles not cleaned up immediately.\n\n## Requirements\n- Implement animation budgeting (max concurrent animations)\n- Pause animations when app backgrounded\n- Clean up particles immediately after fade\n- Use native driver for all animations\n- Profile and optimize heavy animations\n\n## Technical Details\n- Add AppState listener to pause animations\n- Audit all Reanimated animations for useNativeDriver\n- Implement animation manager/coordinator\n- Profile with Flipper or React DevTools\n\n## Acceptance Criteria\n- [ ] Consistent 60fps during animations\n- [ ] Battery usage reduced when idle/backgrounded\n- [ ] No memory leaks from animations\n- [ ] All animations use native driver where possible"
+    },
+    {
+      "summary": "Create guided onboarding flow for new users",
+      "type": "Story",
+      "priority": "Medium",
+      "labels": ["ui-ux", "onboarding", "phase-5"],
+      "description": "## Context\nNo guided onboarding, gesture hints only shown once, features may be undiscoverable.\n\n## Requirements\n- Create 3-5 screen onboarding carousel\n- Implement progressive disclosure for features\n- Add 'tips' system for advanced features\n- Create interactive tutorials for gestures\n- Show 'what's new' after updates\n\n## Technical Details\n- Create OnboardingScreen component\n- Store onboarding completion in AsyncStorage\n- Track app version for 'what's new' display\n\n## Acceptance Criteria\n- [ ] New users complete onboarding in < 1 minute\n- [ ] Core features understood before first session\n- [ ] Tips appear contextually (not overwhelming)\n- [ ] What's new shown after app updates"
+    },
+    {
+      "summary": "Implement reduced motion support",
+      "type": "Task",
+      "priority": "Low",
+      "labels": ["ui-ux", "accessibility", "phase-6"],
+      "description": "## Context\nNo reduced motion support, animations might trigger vestibular issues, particle effects could be overwhelming.\n\n## Requirements\n- Detect and respect 'reduce motion' system setting\n- Provide fallback static states for all animations\n- Allow disabling particle effects in settings\n- Reduce or eliminate auto-playing animations\n- Test with reduced motion enabled\n\n## Technical Details\n- Use AccessibilityInfo.isReduceMotionEnabled()\n- Create animation wrappers that respect setting\n- Add particle toggle in settings\n\n## Acceptance Criteria\n- [ ] Respects system reduce motion preference\n- [ ] Alternative static designs work well\n- [ ] User can disable specific animation types in settings\n- [ ] Tested with reduced motion enabled"
+    },
+    {
+      "summary": "Optimize render performance with memoization",
+      "type": "Task",
+      "priority": "Medium",
+      "labels": ["ui-ux", "performance", "phase-6"],
+      "description": "## Context\nCollection may re-render unnecessarily, no memoization audit, heavy component tree.\n\n## Requirements\n- Implement React.memo for pure components\n- Add useMemo/useCallback where appropriate\n- Split large components into smaller chunks\n- Implement lazy loading for modals\n- Profile renders with React DevTools\n\n## Technical Details\n- Audit all components for unnecessary re-renders\n- Use React.memo, useMemo, useCallback appropriately\n- Add React.lazy for modal components\n\n## Acceptance Criteria\n- [ ] Reduced re-renders on state changes (measurable)\n- [ ] Modals load on-demand\n- [ ] Measurable performance improvement (profile before/after)\n- [ ] No regressions in functionality"
+    },
+    {
+      "summary": "Redesign danger zone with proper confirmation flow",
+      "type": "Task",
+      "priority": "Low",
+      "labels": ["ui-ux", "settings-screen", "phase-6"],
+      "description": "## Context\nDelete button doesn't feel appropriately serious, no intermediate confirmation steps.\n\n## Requirements\n- Add visual warning treatment (red border, warning icon)\n- Implement two-step deletion (type 'DELETE' to confirm)\n- Show what will be lost before deletion\n- Add export data option before delete\n- Consider 'soft delete' with 7-day recovery\n\n## Technical Details\n- Create DangerZone component\n- Implement text confirmation input\n- Add data export using expo-sharing\n\n## Acceptance Criteria\n- [ ] Deletion feels appropriately serious (visual treatment)\n- [ ] Users understand consequences before action (preview)\n- [ ] Two-step confirmation required (type DELETE)\n- [ ] Export option available before delete"
+    },
+    {
+      "summary": "Add milestone celebrations and achievement system",
+      "type": "Story",
+      "priority": "Low",
+      "labels": ["ui-ux", "gamification", "phase-6"],
+      "description": "## Context\nLimited positive reinforcement, no milestone celebrations, streaks feel underwhelming.\n\n## Requirements\n- Add milestone celebrations (10, 50, 100 sessions)\n- Create 'achievement unlocked' animations\n- Implement streak milestones with special rewards\n- Add weekly summary with encouragement\n- Create share cards for achievements\n\n## Technical Details\n- Create AchievementModal component\n- Track milestones in GameContext\n- Generate share images with expo-view-shot\n\n## Acceptance Criteria\n- [ ] Milestones trigger celebratory UI (confetti, modal)\n- [ ] Users feel recognized for progress\n- [ ] Shareable achievement cards can be generated\n- [ ] Weekly summary shows at appropriate time"
+    }
+  ]
+}
