@@ -296,7 +296,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const completeSession = async (focusMinutes: number): Promise<Animal> => {
         const animal = getRandomAnimal();
-        const sessionId = Date.now().toString();
+        const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         // Update state
         dispatch({ type: 'COMPLETE_SESSION', payload: { animal, focusMinutes } });

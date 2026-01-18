@@ -138,16 +138,6 @@ export default function CollectionScreen() {
     // Check if we're in filtered mode (not default view)
     const isFilteredView = searchQuery.trim() || activeFilter !== 'all' || activeSort !== 'rarity';
 
-    // Handle long press on animal card
-    const handleAnimalLongPress = useCallback((animal: Animal) => {
-        const data = collectionData.get(animal.id);
-        if (data && data.count > 0) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setSelectedAnimal(animal);
-            setShowDetailModal(true);
-        }
-    }, [collectionData]);
-
     // Handle tap on animal card
     const handleAnimalPress = useCallback((animal: Animal) => {
         const data = collectionData.get(animal.id);

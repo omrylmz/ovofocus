@@ -31,6 +31,7 @@ function ConfettiParticle({ delay, startX, color }: { delay: number; startX: num
     const opacity = useSharedValue(0);
     const scale = useSharedValue(1);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally mount-only animation; shared values are stable refs
     useEffect(() => {
         opacity.value = withDelay(delay, withSequence(
             withTiming(1, { duration: 100 }),
