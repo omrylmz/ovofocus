@@ -218,6 +218,23 @@ export async function getSettings(): Promise<Settings> {
 
 export async function updateSettings(updates: Partial<Settings>): Promise<Settings> {
     try {
+        // Validate settings values to prevent invalid data
+        if (updates.focusDuration !== undefined) {
+            updates.focusDuration = Math.max(1, Math.min(120, updates.focusDuration));
+        }
+        if (updates.dailyGoal !== undefined) {
+            updates.dailyGoal = Math.max(1, Math.min(20, updates.dailyGoal));
+        }
+        if (updates.toleranceSeconds !== undefined) {
+            updates.toleranceSeconds = Math.max(0, Math.min(300, updates.toleranceSeconds));
+        }
+        if (updates.emergencyPauseDuration !== undefined) {
+            updates.emergencyPauseDuration = Math.max(10, Math.min(300, updates.emergencyPauseDuration));
+        }
+        if (updates.maxPausesPerSession !== undefined) {
+            updates.maxPausesPerSession = Math.max(0, Math.min(10, updates.maxPausesPerSession));
+        }
+
         const current = await getSettings();
         const updated = { ...current, ...updates };
         await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));

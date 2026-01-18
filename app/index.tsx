@@ -163,7 +163,7 @@ export default function HomeScreen() {
             }
             console.log(`Failed due to exceeding tolerance: ${timeInBackground}s > ${effectiveTolerance}s`);
         }
-    }, [toleranceExceeded, state.sessionState]);
+    }, [toleranceExceeded, state.sessionState, stopTimer, failSession, elapsedMinutes, resetTolerance, state.settings.hapticsEnabled, timeInBackground, effectiveTolerance]);
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {

@@ -71,7 +71,7 @@ export function AnimalCard({
                 withSpring(0, { damping: 12, stiffness: 200 })
             );
         }
-    }, [entranceDelay]);
+    }, [entranceDelay, entranceOpacity, entranceTranslateY]);
 
     // Idle animation for collected animals
     useEffect(() => {
@@ -110,7 +110,7 @@ export function AnimalCard({
                 );
             }
         }
-    }, [collected, animal.rarity, isMaxLevel]);
+    }, [collected, animal.rarity, isMaxLevel, idleOffset, shinePosition, glowOpacity]);
 
     const handlePressIn = () => {
         zIndexValue.value = 10;
