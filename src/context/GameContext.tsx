@@ -62,13 +62,18 @@ type GameAction =
     | { type: 'SET_GESTURE_HINTS_SEEN' }
     | { type: 'SET_ONBOARDING_COMPLETE' };
 
+export interface CompleteSessionResult {
+    animal: Animal;
+    updatedStats: Stats;
+}
+
 interface GameContextType {
     state: GameState;
     startSession: () => void;
     pauseSession: () => void;
     emergencyPause: () => void;
     resumeSession: () => void;
-    completeSession: (focusMinutes: number) => Promise<Animal>;
+    completeSession: (focusMinutes: number) => Promise<CompleteSessionResult>;
     failSession: (focusMinutes: number) => Promise<void>;
     resetSession: () => void;
     updateUserSettings: (settings: Partial<Settings>) => Promise<void>;
@@ -294,25 +299,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'RESUME_SESSION' });
     };
 
-    const completeSession = async (focusMinutes: number): Promise<Animal> => {
+    const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
         const animal = getRandomAnimal();
         const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        // Update state
         dispatch({ type: 'COMPLETE_SESSION', payload: { animal, focusMinutes } });
 
-        // Persist
+        // Persist to storage - storage functions have built-in error handling
+        // and return fallback data on failure (see storage.ts)
         const updatedCollection = await addToCollection(animal, sessionId);
         dispatch({ type: 'ADD_TO_COLLECTION', payload: updatedCollection[updatedCollection.length - 1] });
 
         const updatedStats = await incrementSession(true, focusMinutes);
         dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
 
-        // Update daily progress
         const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
         dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
 
-        return animal;
+        return { animal, updatedStats };
     };
 
     const failSession = async (focusMinutes: number): Promise<void> => {

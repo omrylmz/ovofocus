@@ -84,7 +84,7 @@ export default function HomeScreen() {
         }
 
         const prevBest = previousBestStreakRef.current;
-        const animal = await completeSession(state.settings.focusDuration);
+        const { animal, updatedStats } = await completeSession(state.settings.focusDuration);
         setHatchedAnimal(animal);
         setShowHatchModal(true);
 
@@ -93,7 +93,9 @@ export default function HomeScreen() {
         }
 
         setTimeout(() => {
-            const newStreak = state.stats.currentStreak + 1;
+            // Use actual streak from updated stats instead of calculating client-side
+            // This correctly handles same-day sessions where streak doesn't increment
+            const newStreak = updatedStats.currentStreak;
             if (newStreak > prevBest && newStreak > 1) {
                 setCelebrationStreak(newStreak);
                 setShowStreakCelebration(true);
@@ -108,7 +110,6 @@ export default function HomeScreen() {
         state.settings.focusDuration,
         state.settings.notificationsEnabled,
         state.settings.language,
-        state.stats.currentStreak,
     ]);
 
     const {
