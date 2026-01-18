@@ -85,7 +85,14 @@ export default function HomeScreen() {
         }, 100);
 
         await handleGrantShield(animal);
-    }, [completeSession, state.settings, state.stats.currentStreak]);
+    }, [
+        completeSession,
+        state.settings.hapticsEnabled,
+        state.settings.focusDuration,
+        state.settings.notificationsEnabled,
+        state.settings.language,
+        state.stats.currentStreak,
+    ]);
 
     const {
         formattedTime,

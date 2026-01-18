@@ -25,12 +25,27 @@ interface AnimalCardProps {
     entranceDelay?: number;  // For staggered entrance animations
 }
 
-// Calculate level based on count
+/**
+ * Minimum animal counts required for each level.
+ * Index corresponds to level (0 = level 1, 1 = level 2, etc.)
+ * - Level 1: 0+ animals (starting level)
+ * - Level 2: 3+ animals
+ * - Level 3: 6+ animals
+ * - Level 4: 10+ animals
+ * - Level 5: 15+ animals (max level)
+ */
+const LEVEL_MIN_COUNTS = [0, 3, 6, 10, 15];
+
+/**
+ * Calculate level based on animal count.
+ * @param count - Number of animals collected
+ * @returns Level from 1 to 5
+ */
 function getLevel(count: number): number {
-    if (count >= 15) return 5;
-    if (count >= 10) return 4;
-    if (count >= 6) return 3;
-    if (count >= 3) return 2;
+    if (count >= LEVEL_MIN_COUNTS[4]) return 5;
+    if (count >= LEVEL_MIN_COUNTS[3]) return 4;
+    if (count >= LEVEL_MIN_COUNTS[2]) return 3;
+    if (count >= LEVEL_MIN_COUNTS[1]) return 2;
     return 1;
 }
 

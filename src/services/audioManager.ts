@@ -1,3 +1,34 @@
+/**
+ * Audio Manager for Ovo Focus
+ *
+ * CURRENT STATUS: Audio system is not functional - sound files are not loaded.
+ *
+ * TO ENABLE AUDIO:
+ * 1. Create the assets/sounds/ directory if it doesn't exist
+ * 2. Add the following MP3 files (recommended: short, ~0.5-2 seconds each):
+ *    - button.mp3      : UI button click/tap sound
+ *    - start.mp3       : Session start chime
+ *    - complete.mp3    : Session completion fanfare
+ *    - crack.mp3       : Egg cracking/hatching sound
+ *    - streak.mp3      : Streak increase celebration
+ *    - shield.mp3      : Shield/power-up equip sound
+ *    - shimmer.mp3     : Quick return/magical shimmer
+ *    - warning.mp3     : Warning/alert tone
+ *    - fanfare.mp3     : Big celebration (legendary hatch)
+ *    - pet.mp3         : Pet interaction sound
+ *    - munch.mp3       : Feeding/eating sound
+ *
+ * 3. Uncomment the require() lines in loadSoundFiles() function below
+ *
+ * RECOMMENDED SOURCES (CC0/royalty-free):
+ *    - https://pixabay.com/sound-effects/
+ *    - https://freesound.org/ (filter by CC0 license)
+ *    - https://mixkit.co/free-sound-effects/
+ *
+ * The audio manager handles missing files gracefully - if a sound file
+ * is not available, playSound() will silently return without error.
+ */
+
 import { Audio, AVPlaybackStatus } from 'expo-av';
 
 export type SoundType =
@@ -34,18 +65,28 @@ const SOUND_CONFIG: Record<SoundType, SoundConfig> = {
     feed: { volume: 0.4 },
 };
 
-// Sound files - loaded dynamically to handle missing files gracefully
-// Uses a single placeholder file for all sounds until real sounds are added
-let SOUND_FILES: Partial<Record<SoundType, any>> = {};
+/**
+ * Sound file registry - maps sound types to their loaded audio assets.
+ * Currently empty because no sound files are installed.
+ * When sound files are added, they will be registered here via loadSoundFiles().
+ */
+const SOUND_FILES: Partial<Record<SoundType, any>> = {};
 
-// Try to load sound files - this will be populated at runtime
-function loadSoundFiles() {
-    // NOTE: To enable sounds, add MP3 files to assets/sounds/ with these names:
-    // button.mp3, start.mp3, complete.mp3, crack.mp3, streak.mp3,
-    // shield.mp3, shimmer.mp3, warning.mp3, fanfare.mp3, pet.mp3, munch.mp3
+/**
+ * Loads sound file assets into the SOUND_FILES registry.
+ *
+ * TODO: To enable audio functionality:
+ * 1. Add MP3 files to assets/sounds/ directory
+ * 2. Uncomment the require() lines below for each sound file you add
+ * 3. The audio manager will automatically pick them up
+ *
+ * Note: require() statements must be uncommented individually as each
+ * sound file is added. Uncommenting a require() for a non-existent file
+ * will cause a build error.
+ */
+function loadSoundFiles(): void {
+    // TODO: Uncomment each line after adding the corresponding MP3 file to assets/sounds/
     //
-    // Then uncomment the corresponding lines below:
-
     // SOUND_FILES.button_press = require('../../assets/sounds/button.mp3');
     // SOUND_FILES.session_start = require('../../assets/sounds/start.mp3');
     // SOUND_FILES.session_complete = require('../../assets/sounds/complete.mp3');
@@ -59,7 +100,7 @@ function loadSoundFiles() {
     // SOUND_FILES.feed = require('../../assets/sounds/munch.mp3');
 }
 
-// Initialize sound files
+// Initialize sound files on module load
 loadSoundFiles();
 
 class AudioManager {
@@ -102,13 +143,20 @@ class AudioManager {
     }
 
     /**
-     * Play a sound by type
-     * Silently fails if sound file is not available
+     * Play a sound by type.
+     *
+     * Handles missing sound files gracefully:
+     * - If the sound file is not registered in SOUND_FILES, returns silently
+     * - If the sound previously failed to load, skips without retry
+     * - If audio is disabled via setEnabled(false), returns silently
+     *
+     * This allows the app to call playSound() for any event without
+     * worrying about whether sound files are actually installed.
      */
     async playSound(type: SoundType): Promise<void> {
         if (!this.isEnabled) return;
 
-        // Skip sounds that don't have files or have previously failed
+        // Gracefully handle missing sound files - just return without error
         const file = SOUND_FILES[type];
         if (!file || this.failedSounds.has(type)) return;
 
@@ -212,17 +260,37 @@ class AudioManager {
     }
 
     /**
-     * Check if a sound type is available
+     * Check if a specific sound type has a file loaded and hasn't failed.
+     * Returns false if no sound files are installed (current state).
      */
     isSoundAvailable(type: SoundType): boolean {
         return !!SOUND_FILES[type] && !this.failedSounds.has(type);
     }
 
     /**
-     * Get list of available sounds
+     * Get list of sound types that have files loaded.
+     * Returns empty array if no sound files are installed (current state).
      */
     getAvailableSounds(): SoundType[] {
         return Object.keys(SOUND_FILES) as SoundType[];
+    }
+
+    /**
+     * Check if the audio system is functional (has any sound files loaded).
+     * Currently returns false because no sound files are installed.
+     *
+     * See the file header documentation for instructions on adding sound files.
+     */
+    isAudioSystemFunctional(): boolean {
+        return Object.keys(SOUND_FILES).length > 0;
+    }
+
+    /**
+     * Get all defined sound types (whether files are loaded or not).
+     * Useful for debugging/logging what sounds the app expects.
+     */
+    getAllDefinedSoundTypes(): SoundType[] {
+        return Object.keys(SOUND_CONFIG) as SoundType[];
     }
 }
 
