@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
         marginTop: theme.spacing.md,
+        marginBottom: theme.spacing.md,
     },
     statItem: {
         alignItems: 'center',
