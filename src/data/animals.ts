@@ -85,13 +85,33 @@ export function getRandomAnimal(): Animal {
     return animalsOfRarity[Math.floor(Math.random() * animalsOfRarity.length)];
 }
 
-// Get rarity color
+// Get rarity color - WCAG AA compliant colors
+// These colors have been audited for 4.5:1+ contrast ratio against background (#1A1A2E)
 export function getRarityColor(rarity: Rarity): string {
     const colors: Record<Rarity, string> = {
-        common: '#A8A8A8',
-        rare: '#4FC3F7',
-        epic: '#BA68C8',
-        legendary: '#FFD700',
+        common: '#A8A8A8',    // 7.17:1 contrast
+        rare: '#4FC3F7',      // 8.51:1 contrast
+        epic: '#C77DDB',      // 6.00:1 contrast (adjusted from #BA68C8 for WCAG AA)
+        legendary: '#FFD700', // 12.16:1 contrast
     };
     return colors[rarity];
+}
+
+// Rarity indicator icons - Alternative visual cues for accessibility (non-color-dependent)
+export const rarityIndicators: Record<Rarity, { icon: string; stars: number; label: string }> = {
+    common: { icon: '●', stars: 1, label: 'Common' },
+    rare: { icon: '◆', stars: 2, label: 'Rare' },
+    epic: { icon: '★', stars: 3, label: 'Epic' },
+    legendary: { icon: '✦', stars: 4, label: 'Legendary' },
+};
+
+// Get rarity indicator for accessibility
+export function getRarityIndicator(rarity: Rarity): { icon: string; stars: number; label: string } {
+    return rarityIndicators[rarity];
+}
+
+// Generate star rating string for rarity (e.g., "★★★" for epic)
+export function getRarityStars(rarity: Rarity): string {
+    const { stars } = rarityIndicators[rarity];
+    return '★'.repeat(stars);
 }
