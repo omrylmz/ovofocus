@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { theme } from '../src/styles/theme';
@@ -6,11 +6,18 @@ import { useGame } from '../src/context/GameContext';
 import { PixelButton } from '../src/components/PixelButton';
 import { clearAllData } from '../src/utils/storage';
 import { requestNotificationPermissions } from '../src/services/notifications';
+import { audioManager } from '../src/services/audioManager';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const { state, updateUserSettings, i18n } = useGame();
+    const [isAudioAvailable, setIsAudioAvailable] = useState(false);
+
+    // Check if audio system is functional
+    useEffect(() => {
+        setIsAudioAvailable(audioManager.isAudioSystemFunctional());
+    }, []);
 
     // Set dynamic navigation title based on current language
     useLayoutEffect(() => {
@@ -139,15 +146,17 @@ export default function SettingsScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n('notifications')}</Text>
 
-                    <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
-                        <Switch
-                            value={state.settings.soundEnabled}
-                            onValueChange={value => updateUserSettings({ soundEnabled: value })}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
-                            thumbColor={theme.colors.text}
-                        />
-                    </View>
+                    {isAudioAvailable && (
+                        <View style={styles.settingRow}>
+                            <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
+                            <Switch
+                                value={state.settings.soundEnabled}
+                                onValueChange={value => updateUserSettings({ soundEnabled: value })}
+                                trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
+                                thumbColor={theme.colors.text}
+                            />
+                        </View>
+                    )}
 
                     <View style={styles.settingRow}>
                         <Text style={styles.settingLabel}>{i18n('vibration')}</Text>

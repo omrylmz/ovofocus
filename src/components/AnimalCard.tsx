@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { theme } from '../styles/theme';
 import { Animal, getRarityColor, Rarity } from '../data/animals';
 import { Language, getAnimalName, getRarityLabelI18n } from '../i18n/translations';
+import { getAnimalLevel } from '../utils/levelBonuses';
 
 interface AnimalCardProps {
     animal: Animal;
@@ -23,30 +24,6 @@ interface AnimalCardProps {
     size?: 'small' | 'medium' | 'large';
     language?: Language;
     entranceDelay?: number;  // For staggered entrance animations
-}
-
-/**
- * Minimum animal counts required for each level.
- * Index corresponds to level (0 = level 1, 1 = level 2, etc.)
- * - Level 1: 0+ animals (starting level)
- * - Level 2: 3+ animals
- * - Level 3: 6+ animals
- * - Level 4: 10+ animals
- * - Level 5: 15+ animals (max level)
- */
-const LEVEL_MIN_COUNTS = [0, 3, 6, 10, 15];
-
-/**
- * Calculate level based on animal count.
- * @param count - Number of animals collected
- * @returns Level from 1 to 5
- */
-function getLevel(count: number): number {
-    if (count >= LEVEL_MIN_COUNTS[4]) return 5;
-    if (count >= LEVEL_MIN_COUNTS[3]) return 4;
-    if (count >= LEVEL_MIN_COUNTS[2]) return 3;
-    if (count >= LEVEL_MIN_COUNTS[1]) return 2;
-    return 1;
 }
 
 export function AnimalCard({
@@ -69,7 +46,7 @@ export function AnimalCard({
     const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
     const entranceTranslateY = useSharedValue(entranceDelay !== undefined ? 20 : 0);
 
-    const level = getLevel(count);
+    const level = getAnimalLevel(count);
     const isMaxLevel = level >= 5;
     const rarityColor = getRarityColor(animal.rarity);
     const sizeStyles = getSizeStyles(size);

@@ -18,7 +18,7 @@ import { PixelButton } from './PixelButton';
 import { Language, getAnimalName, getAnimalDescription, getRarityLabelI18n, t } from '../i18n/translations';
 import { useGame } from '../context/GameContext';
 import { AnimalInteraction } from '../utils/storage';
-import { getLevelBonusDescription } from '../utils/levelBonuses';
+import { getLevelBonusDescription, getAnimalLevel, LEVEL_THRESHOLDS } from '../utils/levelBonuses';
 
 interface AnimalDetailModalProps {
     visible: boolean;
@@ -31,27 +31,13 @@ interface AnimalDetailModalProps {
     language?: Language;
 }
 
-// Calculate level and progress
-function getLevelInfo(count: number) {
-    const levels = [1, 3, 6, 10, 15];
-    let level = 1;
-    let currentLevelStart = 0;
-    let nextLevelRequired = levels[0];
-
-    for (let i = 0; i < levels.length; i++) {
-        if (count >= levels[i]) {
-            level = i + 1;
-            currentLevelStart = levels[i];
-            nextLevelRequired = levels[i + 1] || levels[i];
-        } else {
-            nextLevelRequired = levels[i];
-            break;
-        }
-    }
-
+// Calculate level progress using canonical level calculation
+function getLevelProgress(count: number) {
+    const level = getAnimalLevel(count);
     const isMaxLevel = level >= 5;
+    const currentLevelStart = LEVEL_THRESHOLDS[level - 1];
+    const nextLevelRequired = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[4];
     const progress = isMaxLevel ? 1 : (count - currentLevelStart) / (nextLevelRequired - currentLevelStart);
-
     return { level, progress, isMaxLevel, nextLevelRequired };
 }
 
@@ -309,7 +295,7 @@ export function AnimalDetailModal({
     const happinessPercent = interaction ? interaction.happiness : 50;
 
     const rarityColor = getRarityColor(animal.rarity);
-    const { level, progress, isMaxLevel, nextLevelRequired } = getLevelInfo(count);
+    const { level, progress, isMaxLevel, nextLevelRequired } = getLevelProgress(count);
 
     return (
         <Modal visible={visible} transparent animationType="none">
