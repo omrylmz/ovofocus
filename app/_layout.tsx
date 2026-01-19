@@ -7,7 +7,6 @@ import * as Notifications from 'expo-notifications';
 import { GameProvider } from '../src/context/GameContext';
 import { theme } from '../src/styles/theme';
 import { audioManager } from '../src/services/audioManager';
-import { initializeAppStateListener } from '../src/services/notifications';
 
 export default function RootLayout() {
     const router = useRouter();
@@ -16,7 +15,6 @@ export default function RootLayout() {
     useEffect(() => {
         // Initialize audio asynchronously - playSound() also auto-initializes if needed
         void audioManager.initialize();
-        const appStateSubscription = initializeAppStateListener();
 
         // Handle notification responses (when user taps notification)
         const notificationSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -27,7 +25,6 @@ export default function RootLayout() {
         // Cleanup on unmount
         return () => {
             audioManager.cleanup();
-            appStateSubscription?.remove();
             notificationSubscription?.();
         };
     }, [router]);
