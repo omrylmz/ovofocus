@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, Dimensions } from 'react-native';
 import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
@@ -15,6 +15,53 @@ import {
     STREAK_FREEZE_CONSTANTS,
     StreakFreezeData,
 } from '../src/utils/streakFreeze';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Calculate button width based on screen size (3 per row with gaps)
+const BUTTON_GAP = theme.spacing.sm;
+const CONTAINER_PADDING = theme.spacing.lg * 2;
+const BUTTONS_PER_ROW = 3;
+const BUTTON_WIDTH = (SCREEN_WIDTH - CONTAINER_PADDING - (BUTTON_GAP * (BUTTONS_PER_ROW - 1))) / BUTTONS_PER_ROW;
+
+// Section Header Component with Icon
+interface SectionHeaderProps {
+    icon: string;
+    title: string;
+    color?: string;
+}
+
+function SectionHeader({ icon, title, color }: SectionHeaderProps) {
+    return (
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>{icon}</Text>
+            <Text style={[styles.sectionTitle, color ? { color } : null]}>{title}</Text>
+        </View>
+    );
+}
+
+// Stat Item Component for better statistics display
+interface StatItemProps {
+    icon: string;
+    label: string;
+    value: string | number;
+    valueColor?: string;
+    isLast?: boolean;
+}
+
+function StatItem({ icon, label, value, valueColor, isLast }: StatItemProps) {
+    return (
+        <View style={[styles.statRow, isLast && styles.statRowLast]}>
+            <View style={styles.statLabelContainer}>
+                <Text style={styles.statIcon}>{icon}</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+            </View>
+            <Text style={[styles.statValue, valueColor ? { color: valueColor } : null]}>
+                {value}
+            </Text>
+        </View>
+    );
+}
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -100,13 +147,30 @@ export default function SettingsScreen() {
     };
 
     const durations = [15, 20, 25, 30, 45, 60];
+    const tolerances = [10, 15, 20, 30, 45, 60];
+    const dailyGoals = [1, 2, 3, 4, 5, 6];
+
+    // Calculate success rate
+    const successRate = state.stats.totalSessions > 0
+        ? Math.round((state.stats.completedSessions / state.stats.totalSessions) * 100)
+        : 0;
+
+    // Format total focus time
+    const formatFocusTime = (minutes: number) => {
+        if (minutes >= 60) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
+        return `${minutes}m`;
+    };
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Language */}
+                {/* ===== DISPLAY SETTINGS ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('language')}</Text>
+                    <SectionHeader icon="🎨" title={i18n('language')} />
                     <View style={styles.languageGrid}>
                         <Pressable
                             style={[
@@ -137,58 +201,59 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Focus Duration */}
+                {/* ===== TIMER SETTINGS ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('focusDuration')}</Text>
-                    <View style={styles.durationGrid}>
+                    <SectionHeader icon="⏱️" title={i18n('focusDuration')} />
+                    <View style={styles.buttonGrid}>
                         {durations.map(duration => (
-                            <PixelButton
-                                key={duration}
-                                title={`${duration} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
-                                onPress={() => updateUserSettings({ focusDuration: duration })}
-                                variant={state.settings.focusDuration === duration ? 'primary' : 'ghost'}
-                                size="small"
-                            />
+                            <View key={duration} style={styles.buttonWrapper}>
+                                <PixelButton
+                                    title={`${duration} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
+                                    onPress={() => updateUserSettings({ focusDuration: duration })}
+                                    variant={state.settings.focusDuration === duration ? 'primary' : 'ghost'}
+                                    size="small"
+                                />
+                            </View>
                         ))}
                     </View>
                 </View>
 
-                {/* Background Tolerance */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('tolerance')}</Text>
-                    <Text style={styles.toleranceDesc}>{i18n('toleranceDesc')}</Text>
-                    <View style={styles.durationGrid}>
-                        {[10, 15, 20, 30, 45, 60].map(secs => (
-                            <PixelButton
-                                key={secs}
-                                title={`${secs} ${i18n('seconds')}`}
-                                onPress={() => updateUserSettings({ toleranceSeconds: secs })}
-                                variant={state.settings.toleranceSeconds === secs ? 'primary' : 'ghost'}
-                                size="small"
-                            />
+                    <SectionHeader icon="🛡️" title={i18n('tolerance')} />
+                    <Text style={styles.settingDescription}>{i18n('toleranceDesc')}</Text>
+                    <View style={styles.buttonGrid}>
+                        {tolerances.map(secs => (
+                            <View key={secs} style={styles.buttonWrapper}>
+                                <PixelButton
+                                    title={`${secs} ${i18n('seconds')}`}
+                                    onPress={() => updateUserSettings({ toleranceSeconds: secs })}
+                                    variant={state.settings.toleranceSeconds === secs ? 'primary' : 'ghost'}
+                                    size="small"
+                                />
+                            </View>
                         ))}
                     </View>
                 </View>
 
-                {/* Daily Goal */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('dailyGoalSetting')}</Text>
-                    <View style={styles.durationGrid}>
-                        {[1, 2, 3, 4, 5, 6].map(goal => (
-                            <PixelButton
-                                key={goal}
-                                title={`${goal}`}
-                                onPress={() => updateUserSettings({ dailyGoal: goal })}
-                                variant={state.settings.dailyGoal === goal ? 'primary' : 'ghost'}
-                                size="small"
-                            />
+                    <SectionHeader icon="🎯" title={i18n('dailyGoalSetting')} />
+                    <View style={styles.buttonGrid}>
+                        {dailyGoals.map(goal => (
+                            <View key={goal} style={styles.buttonWrapper}>
+                                <PixelButton
+                                    title={`${goal}`}
+                                    onPress={() => updateUserSettings({ dailyGoal: goal })}
+                                    variant={state.settings.dailyGoal === goal ? 'primary' : 'ghost'}
+                                    size="small"
+                                />
+                            </View>
                         ))}
                     </View>
                 </View>
 
-                {/* Streak Freeze */}
+                {/* ===== STREAK FREEZE ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('streakFreezes')}</Text>
+                    <SectionHeader icon="❄️" title={i18n('streakFreezes')} />
                     <View style={styles.freezeCard}>
                         <View style={styles.freezeHeader}>
                             <StreakFreezeIndicator freezeCount={freezeData.freezeCount} />
@@ -220,13 +285,16 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Sound & Haptics */}
+                {/* ===== SOUND & HAPTICS ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('notifications')}</Text>
+                    <SectionHeader icon="🔔" title={i18n('notifications')} />
 
                     {isAudioAvailable && (
                         <View style={styles.settingRow}>
-                            <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
+                            <View style={styles.settingLabelContainer}>
+                                <Text style={styles.settingRowIcon}>🔊</Text>
+                                <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
+                            </View>
                             <Switch
                                 value={state.settings.soundEnabled}
                                 onValueChange={value => updateUserSettings({ soundEnabled: value })}
@@ -237,7 +305,10 @@ export default function SettingsScreen() {
                     )}
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>{i18n('vibration')}</Text>
+                        <View style={styles.settingLabelContainer}>
+                            <Text style={styles.settingRowIcon}>📳</Text>
+                            <Text style={styles.settingLabel}>{i18n('vibration')}</Text>
+                        </View>
                         <Switch
                             value={state.settings.hapticsEnabled}
                             onValueChange={value => updateUserSettings({ hapticsEnabled: value })}
@@ -247,7 +318,10 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>{i18n('pushNotifications')}</Text>
+                        <View style={styles.settingLabelContainer}>
+                            <Text style={styles.settingRowIcon}>📱</Text>
+                            <Text style={styles.settingLabel}>{i18n('pushNotifications')}</Text>
+                        </View>
                         <Switch
                             value={state.settings.notificationsEnabled}
                             onValueChange={handleNotificationToggle}
@@ -257,14 +331,67 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Debug Mode */}
+                {/* ===== STATISTICS ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('developer')}</Text>
+                    <SectionHeader icon="📊" title={i18n('statistics')} />
+                    <View style={styles.statsCard}>
+                        {/* Summary Row */}
+                        <View style={styles.statsSummary}>
+                            <View style={styles.statsSummaryItem}>
+                                <Text style={styles.statsSummaryValue}>{state.stats.totalSessions}</Text>
+                                <Text style={styles.statsSummaryLabel}>{i18n('totalSessions')}</Text>
+                            </View>
+                            <View style={styles.statsSummaryDivider} />
+                            <View style={styles.statsSummaryItem}>
+                                <Text style={[styles.statsSummaryValue, { color: theme.colors.accent }]}>
+                                    {successRate}%
+                                </Text>
+                                <Text style={styles.statsSummaryLabel}>{i18n('completed')}</Text>
+                            </View>
+                            <View style={styles.statsSummaryDivider} />
+                            <View style={styles.statsSummaryItem}>
+                                <Text style={[styles.statsSummaryValue, { color: theme.colors.primary }]}>
+                                    {state.stats.bestStreak}
+                                </Text>
+                                <Text style={styles.statsSummaryLabel}>{i18n('bestStreak')}</Text>
+                            </View>
+                        </View>
+
+                        {/* Detailed Stats */}
+                        <View style={styles.statsDetails}>
+                            <StatItem
+                                icon="✅"
+                                label={i18n('completed')}
+                                value={state.stats.completedSessions}
+                                valueColor={theme.colors.success}
+                            />
+                            <StatItem
+                                icon="❌"
+                                label={i18n('failed')}
+                                value={state.stats.failedSessions}
+                                valueColor={theme.colors.error}
+                            />
+                            <StatItem
+                                icon="⏰"
+                                label={i18n('totalFocus')}
+                                value={formatFocusTime(state.stats.totalFocusMinutes)}
+                                isLast
+                            />
+                        </View>
+                    </View>
+                </View>
+
+                {/* ===== DEVELOPER ===== */}
+                <View style={styles.section}>
+                    <SectionHeader icon="🛠️" title={i18n('developer')} />
 
                     <View style={styles.settingRow}>
-                        <View>
-                            <Text style={styles.settingLabel}>{i18n('debugMode')}</Text>
-                            <Text style={styles.settingDescription}>
+                        <View style={styles.settingLabelContainerWithDesc}>
+                            <View style={styles.settingLabelContainer}>
+                                <Text style={styles.settingRowIcon}>🐛</Text>
+                                <Text style={styles.settingLabel}>{i18n('debugMode')}</Text>
+                            </View>
+                            <Text style={styles.settingDescriptionSmall}>
                                 {i18n('debugModeDesc')}
                             </Text>
                         </View>
@@ -277,46 +404,9 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* Stats */}
+                {/* ===== DATA & PRIVACY ===== */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n('statistics')}</Text>
-                    <View style={styles.statsCard}>
-                        <View style={styles.statRow}>
-                            <Text style={styles.statLabel}>{i18n('totalSessions')}</Text>
-                            <Text style={styles.statValue}>{state.stats.totalSessions}</Text>
-                        </View>
-                        <View style={styles.statRow}>
-                            <Text style={styles.statLabel}>{i18n('completed')}</Text>
-                            <Text style={[styles.statValue, { color: theme.colors.success }]}>
-                                {state.stats.completedSessions}
-                            </Text>
-                        </View>
-                        <View style={styles.statRow}>
-                            <Text style={styles.statLabel}>{i18n('failed')}</Text>
-                            <Text style={[styles.statValue, { color: theme.colors.error }]}>
-                                {state.stats.failedSessions}
-                            </Text>
-                        </View>
-                        <View style={styles.statRow}>
-                            <Text style={styles.statLabel}>{i18n('totalFocus')}</Text>
-                            <Text style={styles.statValue}>
-                                {state.stats.totalFocusMinutes} {i18n('minutes').toLowerCase()}
-                            </Text>
-                        </View>
-                        <View style={styles.statRow}>
-                            <Text style={styles.statLabel}>{i18n('bestStreak')}</Text>
-                            <Text style={[styles.statValue, { color: theme.colors.accent }]}>
-                                🔥 {state.stats.bestStreak}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Danger Zone */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.error }]}>
-                        {i18n('dangerZone')}
-                    </Text>
+                    <SectionHeader icon="⚠️" title={i18n('dangerZone')} color={theme.colors.error} />
                     <PixelButton
                         title={i18n('deleteAllData')}
                         onPress={handleClearData}
@@ -325,7 +415,7 @@ export default function SettingsScreen() {
                     />
                 </View>
 
-                {/* App Info */}
+                {/* ===== APP INFO ===== */}
                 <View style={styles.appInfo}>
                     <Text style={styles.appName}>🥚 Ovo Focus</Text>
                     <Text style={styles.appVersion}>v1.0.0</Text>
@@ -347,12 +437,22 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: theme.spacing.xl,
     },
+    // Section Header styles
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+    sectionIcon: {
+        fontSize: 20,
+    },
     sectionTitle: {
         fontSize: theme.fontSize.lg,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
-        marginBottom: theme.spacing.md,
     },
+    // Language styles
     languageGrid: {
         flexDirection: 'row',
         gap: theme.spacing.md,
@@ -385,16 +485,27 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         fontWeight: theme.fontWeight.bold,
     },
-    durationGrid: {
+    // Responsive button grid
+    buttonGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: theme.spacing.sm,
+        gap: BUTTON_GAP,
     },
-    toleranceDesc: {
+    buttonWrapper: {
+        width: BUTTON_WIDTH,
+    },
+    // Setting description
+    settingDescription: {
         fontSize: theme.fontSize.sm,
         color: theme.colors.textSecondary,
         marginBottom: theme.spacing.md,
     },
+    settingDescriptionSmall: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        marginTop: 2,
+    },
+    // Setting row styles
     settingRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -404,27 +515,76 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.sm,
     },
+    settingLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    settingLabelContainerWithDesc: {
+        flex: 1,
+    },
+    settingRowIcon: {
+        fontSize: 18,
+    },
     settingLabel: {
         fontSize: theme.fontSize.md,
         color: theme.colors.text,
         fontWeight: theme.fontWeight.medium,
     },
-    settingDescription: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-        marginTop: 2,
-    },
+    // Statistics styles
     statsCard: {
         backgroundColor: theme.colors.surface,
-        padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
+        overflow: 'hidden',
+    },
+    statsSummary: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: theme.spacing.lg,
+        backgroundColor: theme.colors.surfaceLight,
+    },
+    statsSummaryItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statsSummaryValue: {
+        fontSize: theme.fontSize.xxl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    statsSummaryLabel: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        marginTop: theme.spacing.xs,
+        textAlign: 'center',
+    },
+    statsSummaryDivider: {
+        width: 1,
+        height: 40,
+        backgroundColor: theme.colors.semantic.border,
+    },
+    statsDetails: {
+        padding: theme.spacing.md,
     },
     statRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
         paddingVertical: theme.spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.surfaceLight,
+    },
+    statRowLast: {
+        borderBottomWidth: 0,
+    },
+    statLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    statIcon: {
+        fontSize: 16,
     },
     statLabel: {
         fontSize: theme.fontSize.md,
@@ -435,6 +595,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
     },
+    // App info styles
     appInfo: {
         alignItems: 'center',
         paddingVertical: theme.spacing.xl,
