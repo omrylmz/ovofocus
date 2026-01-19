@@ -18,6 +18,44 @@ export const theme = {
     rare: '#4FC3F7',
     epic: '#BA68C8',
     legendary: '#FFD700',
+
+    // Semantic colors
+    semantic: {
+      // Success states (green tones)
+      success: '#4CAF50',
+      successLight: '#81C784',
+      successDark: '#388E3C',
+
+      // Warning states (amber/orange tones)
+      warning: '#FFC107',
+      warningLight: '#FFD54F',
+      warningDark: '#FFA000',
+
+      // Error states (red tones)
+      error: '#FF5252',
+      errorLight: '#FF8A80',
+      errorDark: '#D32F2F',
+
+      // Info states (blue tones that complement the dark theme)
+      info: '#29B6F6',
+      infoLight: '#4FC3F7',
+      infoDark: '#0288D1',
+
+      // Disabled states
+      disabled: '#3A4255',
+      disabledText: '#5C6478',
+
+      // Border colors
+      border: '#2A3A52',
+      borderLight: '#3D4E66',
+      borderDark: '#1E2D42',
+
+      // Overlay and highlight
+      highlight: 'rgba(255, 230, 109, 0.15)',  // Subtle gold highlight
+      overlay: 'rgba(0, 0, 0, 0.6)',
+      overlayLight: 'rgba(0, 0, 0, 0.4)',
+      overlayDark: 'rgba(0, 0, 0, 0.8)',
+    },
   },
   
   spacing: {

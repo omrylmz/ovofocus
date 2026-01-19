@@ -10,6 +10,7 @@ import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
 import { PixelButton } from '../src/components/PixelButton';
 import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
+import { EmptyState } from '../src/components/EmptyState';
 import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
 
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
@@ -212,10 +213,13 @@ export default function CollectionScreen() {
     const renderFilteredGrid = () => {
         if (filteredAnimals.length === 0) {
             return (
-                <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsEmoji}>🔍</Text>
-                    <Text style={styles.noResultsText}>{i18n('noResults')}</Text>
-                </View>
+                <EmptyState
+                    type="empty"
+                    title={i18n('noResults')}
+                    message={activeFilter === 'favorites'
+                        ? i18n('noFavoritesYet')
+                        : i18n('tryDifferentSearch')}
+                />
             );
         }
 
@@ -372,19 +376,16 @@ export default function CollectionScreen() {
 
                 {/* Empty state */}
                 {state.collection.length === 0 && (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyEmoji}>🥚</Text>
-                        <Text style={styles.emptyTitle}>{i18n('noAnimalsYet')}</Text>
-                        <Text style={styles.emptyText}>
-                            {i18n('completeSessionsToHatch')}
-                        </Text>
-                        <PixelButton
-                            title={i18n('startFocus')}
-                            onPress={() => router.back()}
-                            variant="primary"
-                            icon="🥚"
-                        />
-                    </View>
+                    <EmptyState
+                        type="empty"
+                        title={i18n('noAnimalsYet')}
+                        message={i18n('completeSessionsToHatch')}
+                        actionButton={{
+                            title: i18n('startFocus'),
+                            onPress: () => router.back(),
+                            icon: '🥚',
+                        }}
+                    />
                 )}
             </ScrollView>
 
@@ -489,18 +490,6 @@ const styles = StyleSheet.create({
         color: theme.colors.secondary,
         fontWeight: theme.fontWeight.medium,
     },
-    noResultsContainer: {
-        alignItems: 'center',
-        paddingVertical: theme.spacing.xxl,
-    },
-    noResultsEmoji: {
-        fontSize: 48,
-        marginBottom: theme.spacing.md,
-    },
-    noResultsText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
-    },
     progressCard: {
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
@@ -582,26 +571,5 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 12,
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: theme.spacing.xxl,
-    },
-    emptyEmoji: {
-        fontSize: 64,
-        marginBottom: theme.spacing.md,
-    },
-    emptyTitle: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.sm,
-    },
-    emptyText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
-        textAlign: 'center',
-        marginBottom: theme.spacing.lg,
-        maxWidth: 280,
     },
 });

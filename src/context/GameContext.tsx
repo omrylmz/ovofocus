@@ -118,6 +118,7 @@ const initialState: GameState = {
         hasCompletedOnboarding: false,
         dailyGoal: 3,
         emergencyPauseDuration: 60,
+        reducedMotion: 'system',
     },
     dailyProgress: {
         date: new Date().toISOString().split('T')[0],

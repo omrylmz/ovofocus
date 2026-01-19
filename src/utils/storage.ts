@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animal } from '../data/animals';
 import { Language, getDeviceLanguage } from '../i18n/translations';
+import { ReducedMotionPreference } from '../hooks/useReducedMotion';
 
 const STORAGE_KEYS = {
     COLLECTION: '@ovofocus/collection',
@@ -41,6 +42,7 @@ export interface Settings {
     hasCompletedOnboarding: boolean;
     dailyGoal: number; // number of sessions per day
     emergencyPauseDuration: number; // extended pause duration in seconds
+    reducedMotion: ReducedMotionPreference; // accessibility: reduce animations
 }
 
 export interface DailyProgress {
@@ -88,6 +90,7 @@ const defaultSettings: Settings = {
     hasCompletedOnboarding: false,
     dailyGoal: 3,
     emergencyPauseDuration: 60,
+    reducedMotion: 'system',
 };
 
 // Collection

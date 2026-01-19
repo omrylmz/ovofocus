@@ -84,6 +84,13 @@ export const translations = {
         searchPlaceholder: 'Search animals...',
         keepFocusingToDiscover: 'Keep focusing to discover this animal!',
         noResults: 'No animals found',
+        noFavoritesYet: 'Tap the heart on any collected animal to add it to your favorites!',
+        tryDifferentSearch: 'Try a different search term or filter.',
+        errorTitle: 'Something went wrong',
+        errorMessage: 'We could not load your collection. Please try again.',
+        loadingTitle: 'Loading...',
+        loadingMessage: 'Getting your collection ready',
+        retry: 'Try Again',
 
         // Egg States
         focus: 'Focus...',
@@ -354,6 +361,13 @@ export const translations = {
         searchPlaceholder: 'Hayvan ara...',
         keepFocusingToDiscover: 'Bu hayvanı keşfetmek için odaklanmaya devam et!',
         noResults: 'Hayvan bulunamadı',
+        noFavoritesYet: 'Favorilere eklemek için herhangi bir toplanan hayvandaki kalbe dokun!',
+        tryDifferentSearch: 'Farklı bir arama terimi veya filtre deneyin.',
+        errorTitle: 'Bir şeyler yanlış gitti',
+        errorMessage: 'Koleksiyonunuzu yükleyemedik. Lütfen tekrar deneyin.',
+        loadingTitle: 'Yükleniyor...',
+        loadingMessage: 'Koleksiyonunuz hazırlanıyor',
+        retry: 'Tekrar Dene',
 
         // Egg States
         focus: 'Odaklan...',

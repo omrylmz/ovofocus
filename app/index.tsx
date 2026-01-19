@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../src/styles/theme';
@@ -61,6 +61,7 @@ export default function HomeScreen() {
     const [shieldInventory, setShieldInventory] = useState<ShieldItem[]>([]);
     const [activeShieldBonus, setActiveShieldBonus] = useState(0);
     const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
+    const emergencyPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Daily reward states
     const [showDailyRewardModal, setShowDailyRewardModal] = useState(false);
@@ -159,6 +160,15 @@ export default function HomeScreen() {
         getShieldInventory().then(setShieldInventory);
     }, []);
 
+    // Cleanup emergency pause timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (emergencyPauseTimeoutRef.current) {
+                clearTimeout(emergencyPauseTimeoutRef.current);
+            }
+        };
+    }, []);
+
     // Check for daily reward on app load (after data is loaded and onboarding is complete)
     useEffect(() => {
         async function checkForDailyReward() {
@@ -253,6 +263,16 @@ export default function HomeScreen() {
             if (state.settings.hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             }
+
+            // Set up auto-resume after emergencyPauseDuration seconds
+            const autoResumeDuration = state.settings.emergencyPauseDuration * 1000;
+            emergencyPauseTimeoutRef.current = setTimeout(() => {
+                startTimer();
+                resumeSession();
+                if (state.settings.hapticsEnabled) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+            }, autoResumeDuration);
         }
     };
 
@@ -286,6 +306,11 @@ export default function HomeScreen() {
     };
 
     const handleResume = () => {
+        // Clear emergency pause auto-resume timeout if user manually resumes
+        if (emergencyPauseTimeoutRef.current) {
+            clearTimeout(emergencyPauseTimeoutRef.current);
+            emergencyPauseTimeoutRef.current = null;
+        }
         startTimer();
         resumeSession();
         if (state.settings.hapticsEnabled) {
@@ -340,6 +365,17 @@ export default function HomeScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
     };
+
+    // Show loading indicator while data is being loaded
+    if (state.isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -536,6 +572,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     backgroundLayer: {
         ...StyleSheet.absoluteFillObject,
