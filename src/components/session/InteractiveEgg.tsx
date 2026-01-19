@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { theme } from '../../styles/theme';
 import { Egg } from '../Egg';
+import { audioManager } from '../../services/audioManager';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
 type Language = 'en' | 'tr';
@@ -62,6 +63,7 @@ export function InteractiveEgg({
             if (hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
+            audioManager.playSound('egg_tap');
             showEncouragement();
         }
     }, [sessionState, hapticsEnabled, showEncouragement]);
@@ -71,6 +73,7 @@ export function InteractiveEgg({
             if (hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
+            audioManager.playSound('egg_double_tap');
             // Show remaining time in a nice format
             const remaining = Math.ceil((1 - progress) * duration);
             const mins = Math.floor(remaining / 60);
@@ -95,6 +98,7 @@ export function InteractiveEgg({
             if (hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             }
+            audioManager.playSound('egg_long_press');
             const motivationalMessages = language === 'tr'
                 ? ['Yumurtan büyüyor! 🥚✨', 'İçeride bir şey kıpırdıyor...', 'Neredeyse çatlayacak! 🐣']
                 : ['Your egg is growing! 🥚✨', 'Something is stirring inside...', 'Almost ready to hatch! 🐣'];

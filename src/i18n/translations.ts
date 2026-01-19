@@ -149,6 +149,20 @@ export const translations = {
         progressBonus: 'Progress protection',
         effectiveTolerance: 'Effective tolerance',
 
+        // Streak Freeze
+        streakFreeze: 'Streak Freeze',
+        streakFreezes: 'Streak Freezes',
+        useFreeze: 'Use Freeze',
+        freezeUsed: 'Freeze Used!',
+        freezeProtectsStreak: 'Your streak is protected for today',
+        noFreezesAvailable: 'No freezes available',
+        alreadyUsedFreeze: 'Already used a freeze today',
+        sessionCompletedToday: 'You already completed a session today',
+        freezeEarned: 'You earned a streak freeze!',
+        freezesAvailable: 'freezes available',
+        nextFreezeAt: 'Next freeze at',
+        dayStreak: 'day streak',
+
         // Animal Interactions
         happiness: 'Happiness',
         pet: 'Pet',
@@ -210,6 +224,24 @@ export const translations = {
         cosmic_owl: 'Cosmic Owl',
         celestial_lion: 'Celestial Lion',
         void_serpent: 'Void Serpent',
+
+        // Daily Rewards
+        dailyReward: 'Daily Reward',
+        dailyRewardTitle: 'Daily Login Reward!',
+        dayOf7: 'Day',
+        claimReward: 'Claim',
+        welcomeBackReward: 'Welcome back!',
+        streakContinues: 'Streak continues!',
+        streakBroken: 'New streak started!',
+        day1Message: 'Great to see you! Keep coming back!',
+        day2Message: 'Two days in a row! Nice!',
+        day3Message: 'Here is a Streak Freeze for you!',
+        day4Message: 'Four days! You are on fire!',
+        day5Message: 'Five days! Amazing dedication!',
+        day6Message: 'Almost there! One more day!',
+        day7Message: 'Perfect week! You are a champion!',
+        streakFreezeEarned: 'Streak Freeze earned!',
+        specialBadgeEarned: 'Weekly Badge earned!',
 
         // Animal descriptions
         chick_desc: 'A cute yellow chick!',
@@ -387,6 +419,20 @@ export const translations = {
         progressBonus: 'İlerleme koruması',
         effectiveTolerance: 'Etkin tolerans',
 
+        // Streak Freeze
+        streakFreeze: 'Seri Koruyucu',
+        streakFreezes: 'Seri Koruyucular',
+        useFreeze: 'Koruyucu Kullan',
+        freezeUsed: 'Koruyucu Kullanildi!',
+        freezeProtectsStreak: 'Serin bugun icin korunuyor',
+        noFreezesAvailable: 'Koruyucu yok',
+        alreadyUsedFreeze: 'Bugun zaten koruyucu kullanildi',
+        sessionCompletedToday: 'Bugun zaten seans tamamladin',
+        freezeEarned: 'Seri koruyucu kazandin!',
+        freezesAvailable: 'koruyucu mevcut',
+        nextFreezeAt: 'Sonraki koruyucu',
+        dayStreak: 'gunluk seri',
+
         // Animal Interactions
         happiness: 'Mutluluk',
         pet: 'Sevdir',
@@ -448,6 +494,24 @@ export const translations = {
         cosmic_owl: 'Kozmik Baykuş',
         celestial_lion: 'Göksel Aslan',
         void_serpent: 'Boşluk Yılanı',
+
+        // Daily Rewards
+        dailyReward: 'Gunluk Odul',
+        dailyRewardTitle: 'Gunluk Giris Odulu!',
+        dayOf7: 'Gun',
+        claimReward: 'Al',
+        welcomeBackReward: 'Tekrar hosgeldin!',
+        streakContinues: 'Seri devam ediyor!',
+        streakBroken: 'Yeni seri basladi!',
+        day1Message: 'Seni gormek guzel! Gelmeye devam et!',
+        day2Message: 'Ust uste iki gun! Harika!',
+        day3Message: 'Sana bir Seri Koruyucu!',
+        day4Message: 'Dort gun! Ateslisin!',
+        day5Message: 'Bes gun! Muhtesem adanmislik!',
+        day6Message: 'Neredeyse tamam! Bir gun daha!',
+        day7Message: 'Mukemmel hafta! Sampiyonsun!',
+        streakFreezeEarned: 'Seri Koruyucu kazanildi!',
+        specialBadgeEarned: 'Haftalik Rozet kazanildi!',
 
         // Animal descriptions
         chick_desc: 'Tatlı bir sarı civciv!',

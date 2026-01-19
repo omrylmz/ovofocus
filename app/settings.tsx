@@ -1,23 +1,56 @@
-import React, { useLayoutEffect, useState, useEffect } from 'react';
+import React, { useLayoutEffect, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { PixelButton } from '../src/components/PixelButton';
 import { clearAllData } from '../src/utils/storage';
 import { requestNotificationPermissions } from '../src/services/notifications';
 import { audioManager } from '../src/services/audioManager';
+import { StreakFreezeIndicator } from '../src/components/StreakFreezeIndicator';
+import {
+    getStreakFreezeData,
+    useStreakFreeze,
+    canUseFreeze,
+    STREAK_FREEZE_CONSTANTS,
+    StreakFreezeData,
+} from '../src/utils/streakFreeze';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const { state, updateUserSettings, i18n } = useGame();
     const [isAudioAvailable, setIsAudioAvailable] = useState(false);
+    const [freezeData, setFreezeData] = useState<StreakFreezeData>({
+        freezeCount: 0,
+        lastFreezeUsedDate: null,
+        lastMilestoneStreak: 0,
+    });
+    const [canUseFreezeNow, setCanUseFreezeNow] = useState(false);
 
     // Check if audio system is functional
     useEffect(() => {
         setIsAudioAvailable(audioManager.isAudioSystemFunctional());
     }, []);
+
+    // Load streak freeze data when screen is focused
+    useFocusEffect(
+        useCallback(() => {
+            const loadFreezeData = async () => {
+                const data = await getStreakFreezeData();
+                setFreezeData(data);
+
+                // Check if user has completed a session today
+                const today = new Date().toISOString().split('T')[0];
+                const lastSessionDate = state.stats.lastSessionDate?.split('T')[0];
+                const hasCompletedToday = lastSessionDate === today;
+
+                const canUse = await canUseFreeze(hasCompletedToday);
+                setCanUseFreezeNow(canUse);
+            };
+            loadFreezeData();
+        }, [state.stats.lastSessionDate])
+    );
 
     // Set dynamic navigation title based on current language
     useLayoutEffect(() => {
@@ -52,6 +85,17 @@ export default function SettingsScreen() {
             }
         } else {
             updateUserSettings({ notificationsEnabled: false });
+        }
+    };
+
+    const handleUseFreeze = async () => {
+        const success = await useStreakFreeze();
+        if (success) {
+            Alert.alert(i18n('freezeUsed'), i18n('freezeProtectsStreak'));
+            // Refresh freeze data
+            const data = await getStreakFreezeData();
+            setFreezeData(data);
+            setCanUseFreezeNow(false);
         }
     };
 
@@ -139,6 +183,40 @@ export default function SettingsScreen() {
                                 size="small"
                             />
                         ))}
+                    </View>
+                </View>
+
+                {/* Streak Freeze */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n('streakFreezes')}</Text>
+                    <View style={styles.freezeCard}>
+                        <View style={styles.freezeHeader}>
+                            <StreakFreezeIndicator freezeCount={freezeData.freezeCount} />
+                            <Text style={styles.freezeCountText}>
+                                {freezeData.freezeCount} / {STREAK_FREEZE_CONSTANTS.MAX_FREEZES} {i18n('freezesAvailable')}
+                            </Text>
+                        </View>
+                        <Text style={styles.freezeDescription}>
+                            {i18n('nextFreezeAt')} {freezeData.lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS} {i18n('dayStreak')}
+                        </Text>
+                        {canUseFreezeNow ? (
+                            <View style={styles.freezeButtonContainer}>
+                                <PixelButton
+                                    title={i18n('useFreeze')}
+                                    onPress={handleUseFreeze}
+                                    variant="secondary"
+                                    icon="*"
+                                />
+                            </View>
+                        ) : (
+                            <Text style={styles.freezeStatusText}>
+                                {freezeData.freezeCount === 0
+                                    ? i18n('noFreezesAvailable')
+                                    : freezeData.lastFreezeUsedDate === new Date().toISOString().split('T')[0]
+                                    ? i18n('alreadyUsedFreeze')
+                                    : i18n('sessionCompletedToday')}
+                            </Text>
+                        )}
                     </View>
                 </View>
 
@@ -377,5 +455,37 @@ const styles = StyleSheet.create({
         color: theme.colors.accent,
         marginTop: theme.spacing.sm,
         fontStyle: 'italic',
+    },
+    // Streak Freeze styles
+    freezeCard: {
+        backgroundColor: theme.colors.surface,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+    },
+    freezeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.md,
+        marginBottom: theme.spacing.md,
+    },
+    freezeCountText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        fontWeight: theme.fontWeight.medium,
+    },
+    freezeDescription: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.md,
+    },
+    freezeButtonContainer: {
+        marginTop: theme.spacing.sm,
+    },
+    freezeStatusText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontStyle: 'italic',
+        textAlign: 'center',
+        paddingVertical: theme.spacing.sm,
     },
 });

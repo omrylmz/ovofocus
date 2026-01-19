@@ -14,7 +14,8 @@ export default function RootLayout() {
 
     // Initialize audio manager and notification listeners on app startup
     useEffect(() => {
-        audioManager.initialize();
+        // Initialize audio asynchronously - playSound() also auto-initializes if needed
+        void audioManager.initialize();
         const appStateSubscription = initializeAppStateListener();
 
         // Handle notification responses (when user taps notification)

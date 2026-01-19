@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
     DAILY_PROGRESS: '@ovofocus/daily_progress',
     SHIELD_INVENTORY: '@ovofocus/shield_inventory',
     ANIMAL_INTERACTIONS: '@ovofocus/animal_interactions',
+    STREAK_FREEZE: '@ovofocus/streak_freeze',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -576,6 +577,7 @@ export async function clearAllData(): Promise<void> {
             STORAGE_KEYS.DAILY_PROGRESS,
             STORAGE_KEYS.SHIELD_INVENTORY,
             STORAGE_KEYS.ANIMAL_INTERACTIONS,
+            STORAGE_KEYS.STREAK_FREEZE,
         ]);
     } catch (error) {
         console.error('[Storage] Failed to clear all data:', error);

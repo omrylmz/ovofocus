@@ -15,6 +15,7 @@ import { theme } from '../styles/theme';
 import { Animal, getRarityColor, Rarity } from '../data/animals';
 import { PixelButton } from './PixelButton';
 import { Language, t, getAnimalName, getAnimalDescription, getRarityLabelI18n } from '../i18n/translations';
+import { audioManager } from '../services/audioManager';
 
 interface HatchModalProps {
     visible: boolean;
@@ -91,6 +92,15 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
 
     useEffect(() => {
         if (visible && animal) {
+            // Play celebration sound based on rarity
+            if (animal.rarity === 'legendary' || animal.rarity === 'epic') {
+                audioManager.playSound('celebration');
+            } else {
+                audioManager.playSound('session_complete');
+            }
+            // Play egg crack sound after a short delay
+            setTimeout(() => audioManager.playSound('egg_crack'), 150);
+
             // Trigger haptic based on rarity
             if (animal.rarity === 'legendary') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

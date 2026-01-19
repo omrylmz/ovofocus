@@ -26,6 +26,7 @@ import {
     getFeedCooldownRemaining,
     getHappinessLevel,
 } from '../utils/storage';
+import { checkAndAwardFreeze } from '../utils/streakFreeze';
 import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
 
 // Types
@@ -315,6 +316,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
         dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
+
+        // Check and award streak freeze based on streak milestone
+        await checkAndAwardFreeze(updatedStats.currentStreak);
 
         return { animal, updatedStats };
     };

@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 import { Language, t } from '../i18n/translations';
+import { audioManager } from '../services/audioManager';
 
 interface QuickReturnToastProps {
     visible: boolean;
@@ -26,6 +27,9 @@ export function QuickReturnToast({ visible, onDismiss, language }: QuickReturnTo
 
     useEffect(() => {
         if (visible) {
+            // Play quick return sound
+            audioManager.playSound('quick_return');
+
             // Animate in
             translateY.value = withSpring(0, { damping: 12 });
             opacity.value = withTiming(1, { duration: 200 });

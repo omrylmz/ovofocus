@@ -10,10 +10,12 @@ import Animated, {
     withRepeat,
     Easing,
     runOnJS,
+    cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../styles/theme';
 import { Language, t } from '../i18n/translations';
+import { audioManager } from '../services/audioManager';
 
 interface StreakCelebrationProps {
     visible: boolean;
@@ -29,6 +31,7 @@ function FireParticle({ delay, startX, size }: { delay: number; startX: number; 
     const opacity = useSharedValue(0);
     const scale = useSharedValue(1);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Animation values are stable refs, only run once on mount
     useEffect(() => {
         opacity.value = withDelay(delay, withSequence(
             withTiming(1, { duration: 150 }),
@@ -81,6 +84,9 @@ export function StreakCelebration({
 
     useEffect(() => {
         if (visible) {
+            // Play streak celebration sound
+            audioManager.playSound('streak_increase');
+
             // Haptic celebration
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 150);
@@ -127,8 +133,14 @@ export function StreakCelebration({
                 });
             }, 3000);
 
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(timer);
+                cancelAnimation(pulseScale);
+            };
         } else {
+            // Cancel infinite animations to prevent memory leaks
+            cancelAnimation(pulseScale);
+
             // Reset values
             backgroundOpacity.value = 0;
             iconScale.value = 0;

@@ -18,6 +18,9 @@ import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
 import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal } from '../src/utils/storage';
 import { calculateCollectionBonuses, calculateEffectiveDuration } from '../src/utils/levelBonuses';
+import { DailyRewardModal } from '../src/components/DailyRewardModal';
+import { checkDailyReward, claimDailyReward, RewardType } from '../src/utils/dailyRewards';
+import { audioManager } from '../src/services/audioManager';
 
 // Extracted session components
 import {
@@ -58,6 +61,15 @@ export default function HomeScreen() {
     const [shieldInventory, setShieldInventory] = useState<ShieldItem[]>([]);
     const [activeShieldBonus, setActiveShieldBonus] = useState(0);
     const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
+
+    // Daily reward states
+    const [showDailyRewardModal, setShowDailyRewardModal] = useState(false);
+    const [dailyRewardData, setDailyRewardData] = useState<{
+        currentDay: number;
+        rewardIcon: string;
+        rewardType: RewardType;
+        isStreakContinued: boolean;
+    } | null>(null);
 
     // Calculate level bonuses from collection
     const levelBonuses = useMemo(() => {
@@ -147,6 +159,32 @@ export default function HomeScreen() {
         getShieldInventory().then(setShieldInventory);
     }, []);
 
+    // Check for daily reward on app load (after data is loaded and onboarding is complete)
+    useEffect(() => {
+        async function checkForDailyReward() {
+            // Only check if not loading and onboarding is complete
+            if (state.isLoading || !state.settings.hasCompletedOnboarding) {
+                return;
+            }
+
+            const rewardInfo = await checkDailyReward();
+            if (rewardInfo) {
+                setDailyRewardData({
+                    currentDay: rewardInfo.currentDay,
+                    rewardIcon: rewardInfo.reward.icon,
+                    rewardType: rewardInfo.reward.type,
+                    isStreakContinued: rewardInfo.isStreakContinued,
+                });
+                // Small delay to let the UI settle before showing the modal
+                setTimeout(() => {
+                    setShowDailyRewardModal(true);
+                }, 500);
+            }
+        }
+
+        checkForDailyReward();
+    }, [state.isLoading, state.settings.hasCompletedOnboarding]);
+
     // Handle quick return toast
     useEffect(() => {
         if (isQuickReturn && state.sessionState === 'active') {
@@ -183,6 +221,7 @@ export default function HomeScreen() {
             stopTimer();
             failSession(elapsedMinutes);
             resetTolerance();
+            audioManager.playSound('session_fail');
             if (state.settings.hapticsEnabled) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             }
@@ -197,6 +236,7 @@ export default function HomeScreen() {
             setActiveShieldBonus(used.durationSeconds);
             setShieldInventory(prev => prev.filter(s => s.animalId !== shield.animalId));
             setShowShieldSelector(false);
+            audioManager.playSound('shield_equip');
             if (state.settings.hapticsEnabled) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
@@ -228,6 +268,7 @@ export default function HomeScreen() {
         setEmergencyPauseUsed(false);
         setActiveShieldBonus(0);
         resetTolerance();
+        audioManager.playSound('session_start');
         if (state.settings.hapticsEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -264,6 +305,7 @@ export default function HomeScreen() {
                     onPress: () => {
                         stopTimer();
                         failSession(elapsedMinutes);
+                        audioManager.playSound('session_fail');
                         if (state.settings.hapticsEnabled) {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                         }
@@ -288,6 +330,15 @@ export default function HomeScreen() {
         setHatchedAnimal(null);
         resetTimer();
         resetSession();
+    };
+
+    const handleClaimDailyReward = async () => {
+        await claimDailyReward();
+        setShowDailyRewardModal(false);
+        setDailyRewardData(null);
+        if (state.settings.hapticsEnabled) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
     };
 
     return (
@@ -464,6 +515,19 @@ export default function HomeScreen() {
                 onClose={() => setShowShieldSelector(false)}
                 language={state.settings.language}
             />
+
+            {/* Daily Reward Modal */}
+            {dailyRewardData && (
+                <DailyRewardModal
+                    visible={showDailyRewardModal}
+                    currentDay={dailyRewardData.currentDay}
+                    rewardIcon={dailyRewardData.rewardIcon}
+                    rewardType={dailyRewardData.rewardType}
+                    isStreakContinued={dailyRewardData.isStreakContinued}
+                    onClaim={handleClaimDailyReward}
+                    language={state.settings.language}
+                />
+            )}
         </SafeAreaView>
     );
 }
