@@ -5,6 +5,117 @@
 // - UI components/graphics: requires 3:1 contrast ratio
 // All colors below have been audited against background (#1A1A2E) and surface (#16213E)
 
+import { Dimensions, PixelRatio } from 'react-native';
+
+// Typography Scaling System
+// =========================================================================
+// IMPORTANT: Screen dimensions are calculated once at module load time.
+// This is intentional for performance - typography values are pre-computed
+// and cached to avoid recalculation on every render.
+//
+// This approach is safe because:
+// 1. The app is locked to portrait orientation (see app.json: "orientation": "portrait")
+// 2. Device rotation will not change the effective screen dimensions
+//
+// If portrait lock is ever removed, this module would need to be refactored
+// to use a hook-based approach (e.g., useWindowDimensions) or Dimensions
+// event listeners to handle orientation changes dynamically.
+// =========================================================================
+
+// Base width for scaling calculations (iPhone 11/12/13 width)
+const BASE_WIDTH = 375;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Calculate scale factor based on screen width
+// Uses a dampened scale to prevent extreme sizing on very large/small screens
+const widthScale = SCREEN_WIDTH / BASE_WIDTH;
+const heightScale = SCREEN_HEIGHT / 812; // Base height (iPhone 11/12/13)
+const averageScale = (widthScale + heightScale) / 2;
+
+// Dampened scale factor (prevents extreme scaling)
+// Range: 0.85 - 1.15 for moderate adjustments
+const SCALE_FACTOR = Math.min(Math.max(averageScale, 0.85), 1.15);
+
+// Minimum font sizes for accessibility (WCAG compliance)
+const MIN_FONT_SIZES = {
+  tiny: 10,      // Absolute minimum for any text
+  caption: 11,   // Minimum for readable captions
+  body: 14,      // Minimum for body text
+  display: 48,   // Minimum for large display text (timer)
+};
+
+/**
+ * Scales a font size based on screen dimensions while respecting minimum sizes
+ * @param size - The base font size to scale
+ * @param minSize - Optional minimum size override
+ * @returns The scaled font size, rounded to nearest pixel
+ */
+export const scaledFontSize = (size: number, minSize?: number): number => {
+  const scaled = size * SCALE_FACTOR;
+  const minimum = minSize ?? MIN_FONT_SIZES.tiny;
+  return Math.round(PixelRatio.roundToNearestPixel(Math.max(scaled, minimum)));
+};
+
+/**
+ * Gets a scaled font size for a specific typography category
+ * Ensures category-appropriate minimum sizes are respected
+ */
+export const getTypographySize = (
+  category: 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'tiny'
+): number => {
+  const sizes = {
+    display: { base: 72, min: MIN_FONT_SIZES.display },
+    h1: { base: 32, min: 24 },
+    h2: { base: 24, min: 20 },
+    h3: { base: 20, min: 18 },
+    body: { base: 16, min: MIN_FONT_SIZES.body },
+    caption: { base: 14, min: MIN_FONT_SIZES.caption },
+    tiny: { base: 12, min: MIN_FONT_SIZES.tiny },
+  };
+
+  const { base, min } = sizes[category];
+  return scaledFontSize(base, min);
+};
+
+// Pre-calculated responsive typography scale
+// These values are computed once at module load for performance
+export const typography = {
+  // Size scale (responsive)
+  sizes: {
+    display: getTypographySize('display'),  // Timer, hero text (min 48px)
+    h1: getTypographySize('h1'),            // Main headings (min 24px)
+    h2: getTypographySize('h2'),            // Section headings (min 20px)
+    h3: getTypographySize('h3'),            // Subsection headings (min 18px)
+    body: getTypographySize('body'),        // Regular text (min 14px)
+    caption: getTypographySize('caption'),  // Secondary text (min 11px)
+    tiny: getTypographySize('tiny'),        // Badges, labels (min 10px)
+  },
+
+  // Font weights (consistent naming)
+  weights: {
+    regular: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
+    heavy: '800' as const,
+  },
+
+  // Line heights (relative to font size)
+  lineHeights: {
+    tight: 1.2,    // Headings
+    normal: 1.5,   // Body text
+    relaxed: 1.75, // Reading text
+  },
+
+  // Letter spacing
+  letterSpacing: {
+    tight: -0.5,
+    normal: 0,
+    wide: 0.5,
+    extraWide: 1,
+  },
+};
+
 export const theme = {
   colors: {
     primary: '#FF6B6B',      // Coral red - 6.15:1 contrast
@@ -83,21 +194,34 @@ export const theme = {
     round: 999,
   },
 
+  // Legacy fontSize - maintained for backward compatibility
+  // New code should use theme.typography.sizes or scaledFontSize()
   fontSize: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 20,
-    xl: 24,
-    xxl: 32,
-    timer: 72,
+    xs: scaledFontSize(12, MIN_FONT_SIZES.tiny),      // Badges, tiny labels
+    sm: scaledFontSize(14, MIN_FONT_SIZES.caption),   // Captions, secondary text
+    md: scaledFontSize(16, MIN_FONT_SIZES.body),      // Body text
+    lg: scaledFontSize(20, 18),                        // Subheadings
+    xl: scaledFontSize(24, 20),                        // Headings
+    xxl: scaledFontSize(32, 24),                       // Large headings
+    timer: scaledFontSize(72, MIN_FONT_SIZES.display), // Timer display
   },
+
+  // Responsive typography system - preferred over fontSize
+  typography: typography.sizes,
 
   fontWeight: {
     normal: '400' as const,
     medium: '500' as const,
     semibold: '600' as const,
     bold: '700' as const,
+    heavy: '800' as const, // Added for extra emphasis
+  },
+
+  // Full typography config including line heights and letter spacing
+  typographyConfig: {
+    weights: typography.weights,
+    lineHeights: typography.lineHeights,
+    letterSpacing: typography.letterSpacing,
   },
 
   shadows: {
@@ -234,3 +358,6 @@ export const highContrastTheme = {
 export type Theme = typeof theme;
 export type HighContrastTheme = typeof highContrastTheme;
 export type RarityIndicator = (typeof theme.rarityIndicators)[keyof typeof theme.rarityIndicators];
+export type Typography = typeof typography;
+export type TypographySize = keyof typeof typography.sizes;
+export type FontWeight = keyof typeof typography.weights;
