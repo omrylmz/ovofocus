@@ -11,12 +11,14 @@ import Animated, {
 import { theme } from '../../styles/theme';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
+type Language = 'en' | 'tr';
 
 interface TimerDisplayProps {
     formattedTime: string;
     isRunning: boolean;
     progress: number;
     sessionState: SessionState;
+    language?: Language;
 }
 
 export function TimerDisplay({
@@ -24,7 +26,13 @@ export function TimerDisplay({
     isRunning,
     progress,
     sessionState,
+    language = 'en',
 }: TimerDisplayProps) {
+    // Accessibility labels
+    const timerLabel = language === 'tr' ? 'Odaklanma zamanlayıcısı' : 'Focus timer';
+    const progressLabel = language === 'tr'
+        ? `Seans ilerlemesi: yüzde ${Math.round(progress * 100)} tamamlandı`
+        : `Session progress: ${Math.round(progress * 100)} percent complete`;
     // Glow animation for timer
     const timerGlow = useSharedValue(0);
 
@@ -52,13 +60,29 @@ export function TimerDisplay({
     return (
         <>
             {/* Timer */}
-            <Animated.Text style={[styles.timer, timerGlowStyle]}>
+            <Animated.Text
+                style={[styles.timer, timerGlowStyle]}
+                accessible={true}
+                accessibilityRole="timer"
+                accessibilityLabel={`${timerLabel}: ${formattedTime}`}
+                accessibilityLiveRegion={isRunning ? 'polite' : 'none'}
+            >
                 {formattedTime}
             </Animated.Text>
 
             {/* Progress bar */}
             {sessionState === 'active' && (
-                <View style={styles.progressContainer}>
+                <View
+                    style={styles.progressContainer}
+                    accessible={true}
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={progressLabel}
+                    accessibilityValue={{
+                        min: 0,
+                        max: 100,
+                        now: Math.round(progress * 100),
+                    }}
+                >
                     <View style={styles.progressBar}>
                         <View
                             style={[
@@ -67,7 +91,7 @@ export function TimerDisplay({
                             ]}
                         />
                     </View>
-                    <Text style={styles.progressText}>
+                    <Text style={styles.progressText} importantForAccessibility="no">
                         {Math.round(progress * 100)}%
                     </Text>
                 </View>

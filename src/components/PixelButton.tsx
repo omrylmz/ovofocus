@@ -29,6 +29,8 @@ interface PixelButtonProps {
     icon?: string;
     hapticEnabled?: boolean;
     hapticStyle?: Haptics.ImpactFeedbackStyle;
+    accessibilityLabel?: string;
+    accessibilityHint?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -44,6 +46,8 @@ export function PixelButton({
     icon,
     hapticEnabled = true,
     hapticStyle = Haptics.ImpactFeedbackStyle.Light,
+    accessibilityLabel,
+    accessibilityHint,
 }: PixelButtonProps) {
     const scale = useSharedValue(1);
     const translateY = useSharedValue(0);
@@ -156,6 +160,11 @@ export function PixelButton({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 disabled={disabled}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={accessibilityLabel || title}
+                accessibilityHint={accessibilityHint}
+                accessibilityState={{ disabled }}
                 style={[
                     styles.container,
                     variantStyles.container,

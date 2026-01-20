@@ -169,13 +169,56 @@ export function InteractiveEgg({
         opacity: sparkleOpacity.value,
     }));
 
+    // Accessibility labels and hints based on session state
+    // TODO: Consider adding an interpolation helper to i18n system to replace manual translations
+    // with proper translation keys (e.g., i18n('eggProgressLabel', { percent: progressPercent }))
+    const getAccessibilityLabel = () => {
+        const eggLabel = language === 'tr' ? 'Odaklanma yumurtası' : 'Focus egg';
+        if (sessionState === 'completed') {
+            return language === 'tr' ? 'Çatlayan yumurta' : 'Hatching egg';
+        }
+        if (sessionState === 'failed') {
+            return language === 'tr' ? 'Kırık yumurta' : 'Broken egg';
+        }
+        if (sessionState === 'active') {
+            const progressPercent = Math.round(progress * 100);
+            return language === 'tr'
+                ? `${eggLabel}, yüzde ${progressPercent} tamamlandı`
+                : `${eggLabel}, ${progressPercent} percent complete`;
+        }
+        return eggLabel;
+    };
+
+    const getAccessibilityHint = () => {
+        if (sessionState === 'idle') {
+            return language === 'tr'
+                ? 'Odaklanma seansı başlatmak için dokunun veya hızlı başlat için uzun basın'
+                : 'Tap to start focus session, or long press for quick start';
+        }
+        if (sessionState === 'active') {
+            return language === 'tr'
+                ? 'Cesaretlendirme için tek dokunun, kalan süre için çift dokunun, motivasyon için uzun basın'
+                : 'Single tap for encouragement, double tap for time remaining, long press for motivation';
+        }
+        return undefined;
+    };
+
     return (
         <>
             {/* Interactive Egg with Gestures */}
             <GestureDetector gesture={composedGesture}>
-                <Animated.View style={[styles.eggWrapper, eggContainerStyle]}>
+                <Animated.View
+                    style={[styles.eggWrapper, eggContainerStyle]}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={getAccessibilityLabel()}
+                    accessibilityHint={getAccessibilityHint()}
+                    accessibilityState={{
+                        disabled: sessionState === 'completed' || sessionState === 'failed',
+                    }}
+                >
                     {/* Sparkle overlay for double tap */}
-                    <Animated.View style={[styles.sparkleOverlay, sparkleStyle]}>
+                    <Animated.View style={[styles.sparkleOverlay, sparkleStyle]} importantForAccessibility="no">
                         <Text style={styles.sparkleText}>✨ 💫 ⭐ 💫 ✨</Text>
                     </Animated.View>
 
@@ -190,7 +233,12 @@ export function InteractiveEgg({
 
             {/* Encouragement text */}
             {encouragementText && (
-                <Animated.View style={styles.encouragementContainer}>
+                <Animated.View
+                    style={styles.encouragementContainer}
+                    accessible={true}
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                >
                     <Text style={styles.encouragementText}>{encouragementText}</Text>
                 </Animated.View>
             )}

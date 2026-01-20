@@ -283,10 +283,36 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
         return '';
     };
 
+    // Accessibility: Get status text for screen readers
+    const getStatusText = () => {
+        if (sessionState === 'failed') return t('eggBroken', language);
+        if (sessionState === 'active') {
+            if (progress < 0.25) return t('focus', language);
+            if (progress < 0.5) return t('keepGoing', language);
+            if (progress < 0.75) return t('doingGreat', language);
+            return t('almostThere', language);
+        }
+        return '';
+    };
+
     return (
-        <View style={styles.container}>
+        <View
+            style={styles.container}
+            accessible={true}
+            accessibilityRole="image"
+            accessibilityLabel={
+                sessionState === 'failed'
+                    ? (language === 'tr' ? 'Kırık yumurta' : 'Broken egg')
+                    : sessionState === 'completed'
+                    ? (language === 'tr' ? 'Çatlayan yumurta' : 'Hatching egg')
+                    : (language === 'tr' ? 'Odaklanma yumurtası' : 'Focus egg')
+            }
+            accessibilityState={{
+                busy: sessionState === 'active',
+            }}
+        >
             {/* Outer glow effect */}
-            <Animated.View style={[styles.glow, glowStyle]} />
+            <Animated.View style={[styles.glow, glowStyle]} importantForAccessibility="no" />
 
             {/* Warning glow overlay */}
             {warningLevel > 0 && (
@@ -296,12 +322,13 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         warningGlowStyle,
                         { backgroundColor: WARNING_COLORS[warningLevel] }
                     ]}
+                    importantForAccessibility="no"
                 />
             )}
 
             {/* Rotating sparkles */}
             {sessionState === 'active' && progress > 0.3 && (
-                <Animated.View style={[styles.sparkleContainer, sparkleStyle]}>
+                <Animated.View style={[styles.sparkleContainer, sparkleStyle]} importantForAccessibility="no">
                     <Text style={styles.sparkle}>✦</Text>
                     <Text style={[styles.sparkle, styles.sparkle2]}>✦</Text>
                     <Text style={[styles.sparkle, styles.sparkle3]}>✦</Text>
@@ -310,10 +337,10 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             )}
 
             {/* Inner glow */}
-            <Animated.View style={[styles.innerGlow, innerGlowStyle]} />
+            <Animated.View style={[styles.innerGlow, innerGlowStyle]} importantForAccessibility="no" />
 
             {/* Egg */}
-            <Animated.View style={[styles.eggContainer, animatedStyle]}>
+            <Animated.View style={[styles.eggContainer, animatedStyle]} importantForAccessibility="no">
                 <Text style={styles.egg} allowFontScaling={false}>{getCrackEmoji()}</Text>
 
                 {/* Progress sparkle overlay */}
@@ -328,11 +355,22 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
             {/* Status text */}
             {sessionState === 'failed' && (
-                <Animated.Text style={styles.failedText}>{t('eggBroken', language)}</Animated.Text>
+                <Animated.Text
+                    style={styles.failedText}
+                    accessible={true}
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="assertive"
+                >
+                    {t('eggBroken', language)}
+                </Animated.Text>
             )}
 
             {sessionState === 'active' && (
-                <Text style={styles.progressText}>
+                <Text
+                    style={styles.progressText}
+                    accessible={true}
+                    accessibilityLiveRegion="polite"
+                >
                     {progress < 0.25 && t('focus', language)}
                     {progress >= 0.25 && progress < 0.5 && t('keepGoing', language)}
                     {progress >= 0.5 && progress < 0.75 && t('doingGreat', language)}

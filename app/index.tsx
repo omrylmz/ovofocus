@@ -400,6 +400,7 @@ export default function HomeScreen() {
                     collectionLabel={`📦 ${i18n('collection')}`}
                     onCollectionPress={() => router.push('/collection')}
                     onSettingsPress={() => router.push('/settings')}
+                    language={state.settings.language}
                 />
 
                 {/* Stats bar */}
@@ -423,6 +424,7 @@ export default function HomeScreen() {
                         isRunning={isRunning}
                         progress={progress}
                         sessionState={state.sessionState}
+                        language={state.settings.language}
                     />
 
                     {/* Interactive Egg */}
@@ -458,6 +460,7 @@ export default function HomeScreen() {
                             resume: i18n('resume'),
                             tryAgain: i18n('tryAgain'),
                         }}
+                        language={state.settings.language}
                     />
 
                     {/* Power-up Controls */}
@@ -474,6 +477,7 @@ export default function HomeScreen() {
                             activateShield: i18n('activateShield'),
                             shieldActive: i18n('shieldActive'),
                         }}
+                        language={state.settings.language}
                     />
                 </View>
             </View>
@@ -510,19 +514,30 @@ export default function HomeScreen() {
 
             {/* Gesture Hints Overlay */}
             {showGestureHints && (
-                <View style={styles.gestureHintsOverlay}>
+                <View
+                    style={styles.gestureHintsOverlay}
+                    accessible={true}
+                    accessibilityViewIsModal={true}
+                    accessibilityRole="alert"
+                >
                     <View style={styles.gestureHintsContent}>
-                        <Text style={styles.gestureHintsTitle}>💡 Tips</Text>
-                        <View style={styles.gestureHintItem}>
-                            <Text style={styles.gestureHintIcon}>👆</Text>
+                        <Text
+                            style={styles.gestureHintsTitle}
+                            accessible={true}
+                            accessibilityRole="header"
+                        >
+                            💡 Tips
+                        </Text>
+                        <View style={styles.gestureHintItem} accessible={true}>
+                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👆</Text>
                             <Text style={styles.gestureHintText}>{i18n('gestureHintTap')}</Text>
                         </View>
-                        <View style={styles.gestureHintItem}>
-                            <Text style={styles.gestureHintIcon}>👆👆</Text>
+                        <View style={styles.gestureHintItem} accessible={true}>
+                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👆👆</Text>
                             <Text style={styles.gestureHintText}>{i18n('gestureHintDoubleTap')}</Text>
                         </View>
-                        <View style={styles.gestureHintItem}>
-                            <Text style={styles.gestureHintIcon}>👇</Text>
+                        <View style={styles.gestureHintItem} accessible={true}>
+                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👇</Text>
                             <Text style={styles.gestureHintText}>{i18n('gestureHintLongPress')}</Text>
                         </View>
                         <View style={styles.gestureHintsButton}>
@@ -531,6 +546,7 @@ export default function HomeScreen() {
                                 onPress={handleDismissGestureHints}
                                 variant="primary"
                                 size="medium"
+                                accessibilityHint={state.settings.language === 'tr' ? 'İpuçlarını kapat' : 'Dismiss tips'}
                             />
                         </View>
                     </View>

@@ -4,6 +4,8 @@ import { theme } from '../../styles/theme';
 import { StreakBadge } from '../StreakBadge';
 import { DailyProgressRing } from '../DailyProgressRing';
 
+type Language = 'en' | 'tr';
+
 interface SessionHeaderProps {
     currentStreak: number;
     dailyCompletedSessions: number;
@@ -11,6 +13,7 @@ interface SessionHeaderProps {
     collectionLabel: string;
     onCollectionPress: () => void;
     onSettingsPress: () => void;
+    language?: Language;
 }
 
 export function SessionHeader({
@@ -20,24 +23,56 @@ export function SessionHeader({
     collectionLabel,
     onCollectionPress,
     onSettingsPress,
+    language = 'en',
 }: SessionHeaderProps) {
+    // Accessibility labels
+    const a11y = {
+        collectionHint: language === 'tr' ? 'Hayvan koleksiyonunuzu görüntüleyin' : 'View your animal collection',
+        settingsLabel: language === 'tr' ? 'Ayarları aç' : 'Open settings',
+        settingsHint: language === 'tr' ? 'Uygulama tercihlerini düzenleyin' : 'Adjust app preferences',
+        streakLabel: language === 'tr'
+            ? `Mevcut seri: ${currentStreak} gün`
+            : `Current streak: ${currentStreak} days`,
+        dailyProgressLabel: language === 'tr'
+            ? `Günlük ilerleme: ${dailyGoal} seanstan ${dailyCompletedSessions} tamamlandı`
+            : `Daily progress: ${dailyCompletedSessions} of ${dailyGoal} sessions completed`,
+    };
+
     return (
-        <View style={styles.header}>
-            <Pressable onPress={onCollectionPress} style={styles.headerButton}>
+        <View style={styles.header} accessibilityRole="toolbar">
+            <Pressable
+                onPress={onCollectionPress}
+                style={styles.headerButton}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={collectionLabel}
+                accessibilityHint={a11y.collectionHint}
+            >
                 <Text style={styles.headerButtonText}>{collectionLabel}</Text>
             </Pressable>
 
             {/* Center: Streak Badge */}
-            <StreakBadge streak={currentStreak} size="small" />
+            <View accessible={true} accessibilityLabel={a11y.streakLabel}>
+                <StreakBadge streak={currentStreak} size="small" />
+            </View>
 
             <View style={styles.headerRight}>
                 {/* Daily Progress */}
-                <DailyProgressRing
-                    current={dailyCompletedSessions}
-                    goal={dailyGoal}
-                    size={36}
-                />
-                <Pressable onPress={onSettingsPress} style={styles.headerButton}>
+                <View accessible={true} accessibilityLabel={a11y.dailyProgressLabel}>
+                    <DailyProgressRing
+                        current={dailyCompletedSessions}
+                        goal={dailyGoal}
+                        size={36}
+                    />
+                </View>
+                <Pressable
+                    onPress={onSettingsPress}
+                    style={styles.headerButton}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={a11y.settingsLabel}
+                    accessibilityHint={a11y.settingsHint}
+                >
                     <Text style={styles.headerButtonText}>⚙️</Text>
                 </Pressable>
             </View>

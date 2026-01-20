@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { theme } from '../../styles/theme';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
+type Language = 'en' | 'tr';
 
 interface PowerUpControlsProps {
     sessionState: SessionState;
@@ -17,6 +18,7 @@ interface PowerUpControlsProps {
         activateShield: string;
         shieldActive: string;
     };
+    language?: Language;
 }
 
 export function PowerUpControls({
@@ -28,8 +30,22 @@ export function PowerUpControls({
     onEmergencyPause,
     onOpenShieldSelector,
     labels,
+    language = 'en',
 }: PowerUpControlsProps) {
     const isVisible = sessionState === 'active' && !isPaused;
+
+    // Accessibility labels
+    const a11y = {
+        emergencyPauseHint: language === 'tr'
+            ? 'Otomatik devam eden tek seferlik acil duraklatma'
+            : 'One-time emergency pause that auto-resumes',
+        shieldHint: language === 'tr'
+            ? 'Arka plan toleransını uzatmak için kalkan etkinleştir'
+            : 'Activate a shield to extend background tolerance',
+        shieldActiveLabel: language === 'tr'
+            ? `Kalkan aktif, ${activeShieldBonus} saniye tolerans ekliyor`
+            : `Shield active, adding ${activeShieldBonus} seconds tolerance`,
+    };
 
     // Always render container to maintain layout stability
     return (
@@ -37,11 +53,16 @@ export function PowerUpControls({
             {isVisible && (
                 <>
                     {/* Emergency Pause & Shield buttons */}
-                    <View style={styles.powerUpRow}>
+                    <View style={styles.powerUpRow} accessibilityRole="toolbar">
                         <Pressable
                             style={[styles.emergencyButton, emergencyPauseUsed && styles.buttonDisabled]}
                             onPress={onEmergencyPause}
                             disabled={emergencyPauseUsed}
+                            accessible={true}
+                            accessibilityRole="button"
+                            accessibilityLabel={labels.emergencyPause}
+                            accessibilityHint={a11y.emergencyPauseHint}
+                            accessibilityState={{ disabled: emergencyPauseUsed }}
                         >
                             <Text style={styles.emergencyButtonText}>🛡️ {labels.emergencyPause}</Text>
                         </Pressable>
@@ -50,6 +71,11 @@ export function PowerUpControls({
                             style={[styles.shieldButton, shieldCount === 0 && styles.buttonDisabled]}
                             onPress={onOpenShieldSelector}
                             disabled={shieldCount === 0}
+                            accessible={true}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${labels.activateShield}, ${shieldCount} available`}
+                            accessibilityHint={a11y.shieldHint}
+                            accessibilityState={{ disabled: shieldCount === 0 }}
                         >
                             <Text style={styles.shieldButtonText}>⚔️ {labels.activateShield} ({shieldCount})</Text>
                         </Pressable>
@@ -57,7 +83,13 @@ export function PowerUpControls({
 
                     {/* Active Shield Indicator */}
                     {activeShieldBonus > 0 && (
-                        <View style={styles.shieldActiveIndicator}>
+                        <View
+                            style={styles.shieldActiveIndicator}
+                            accessible={true}
+                            accessibilityRole="alert"
+                            accessibilityLabel={a11y.shieldActiveLabel}
+                            accessibilityLiveRegion="polite"
+                        >
                             <Text style={styles.shieldActiveText}>🛡️ {labels.shieldActive}: +{activeShieldBonus}s</Text>
                         </View>
                     )}
