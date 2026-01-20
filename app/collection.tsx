@@ -292,11 +292,14 @@ export default function CollectionScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Animated Background for collection immersion */}
-            <AnimatedBackground sessionState="idle" variant="collection" />
-            <FloatingParticles count={12} isActive={false} variant="collection" />
+            {/* Background Layer - must be first for proper Android rendering */}
+            <View style={styles.backgroundLayer} pointerEvents="none">
+                <AnimatedBackground sessionState="idle" variant="collection" />
+                <FloatingParticles count={12} isActive={false} variant="collection" />
+            </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            {/* Foreground Content Layer */}
+            <ScrollView style={styles.foregroundLayer} contentContainerStyle={styles.scrollContent}>
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <Text style={styles.searchIcon}>🔍</Text>
@@ -408,6 +411,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    backgroundLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        elevation: 0,
+    },
+    foregroundLayer: {
+        flex: 1,
+        zIndex: 1,
+        elevation: 1,
+        backgroundColor: 'transparent',
     },
     scrollContent: {
         padding: theme.spacing.lg,
