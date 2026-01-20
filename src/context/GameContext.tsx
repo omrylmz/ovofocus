@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { Animal, getRandomAnimal } from '../data/animals';
 import { audioManager } from '../services/audioManager';
 import {
@@ -9,6 +9,8 @@ import {
     AnimalInteraction,
     PetResult,
     FeedResult,
+    PersistedSession,
+    SessionRestoreResult,
     getCollection,
     addToCollection,
     getStats,
@@ -25,6 +27,9 @@ import {
     getPetCooldownRemaining,
     getFeedCooldownRemaining,
     getHappinessLevel,
+    saveActiveSession,
+    clearActiveSession,
+    restoreActiveSession,
 } from '../utils/storage';
 import { checkAndAwardFreeze } from '../utils/streakFreeze';
 import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
@@ -43,15 +48,21 @@ interface GameState {
     isPaused: boolean;
     pauseCount: number;
     favorites: string[];
+    // Session timing state for persistence
+    sessionStartTime: string | null;      // ISO timestamp when session started
+    sessionPausedAt: string | null;       // ISO timestamp when paused (if isPaused)
+    accumulatedPauseTime: number;         // Total time spent paused in milliseconds
+    // Restored session data (when app restores an interrupted session)
+    restoredSession: { session: PersistedSession; remainingTime: number } | null;
 }
 
 type GameAction =
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress } }
-    | { type: 'START_SESSION' }
-    | { type: 'PAUSE_SESSION' }
-    | { type: 'EMERGENCY_PAUSE' }
-    | { type: 'RESUME_SESSION' }
+    | { type: 'START_SESSION'; payload: { startTime: string; duration: number } }
+    | { type: 'PAUSE_SESSION'; payload: { pausedAt: string } }
+    | { type: 'EMERGENCY_PAUSE'; payload: { pausedAt: string } }
+    | { type: 'RESUME_SESSION'; payload: { accumulatedPauseTime: number } }
     | { type: 'COMPLETE_SESSION'; payload: { animal: Animal; focusMinutes: number } }
     | { type: 'FAIL_SESSION'; payload: { focusMinutes: number } }
     | { type: 'RESET_SESSION' }
@@ -61,7 +72,9 @@ type GameAction =
     | { type: 'UPDATE_DAILY_PROGRESS'; payload: DailyProgress }
     | { type: 'TOGGLE_FAVORITE'; payload: string[] }
     | { type: 'SET_GESTURE_HINTS_SEEN' }
-    | { type: 'SET_ONBOARDING_COMPLETE' };
+    | { type: 'SET_ONBOARDING_COMPLETE' }
+    | { type: 'RESTORE_SESSION'; payload: { session: PersistedSession; remainingTime: number } }
+    | { type: 'CLEAR_RESTORED_SESSION' };
 
 export interface CompleteSessionResult {
     animal: Animal;
@@ -70,7 +83,7 @@ export interface CompleteSessionResult {
 
 interface GameContextType {
     state: GameState;
-    startSession: () => void;
+    startSession: (duration: number) => void;
     pauseSession: () => void;
     emergencyPause: () => void;
     resumeSession: () => void;
@@ -89,6 +102,8 @@ interface GameContextType {
     getPetCooldown: (interaction: AnimalInteraction) => number;
     getFeedCooldown: (interaction: AnimalInteraction) => number;
     getHappinessLevel: (happiness: number) => 'sad' | 'neutral' | 'happy' | 'ecstatic';
+    // Session restore functions
+    clearRestoredSession: () => void;
 }
 
 // Initial state
@@ -129,6 +144,11 @@ const initialState: GameState = {
     isPaused: false,
     pauseCount: 0,
     favorites: [],
+    // Session timing state
+    sessionStartTime: null,
+    sessionPausedAt: null,
+    accumulatedPauseTime: 0,
+    restoredSession: null,
 };
 
 // Reducer
@@ -155,6 +175,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 currentAnimal: null,
                 isPaused: false,
                 pauseCount: 0,
+                sessionStartTime: action.payload.startTime,
+                sessionPausedAt: null,
+                accumulatedPauseTime: 0,
             };
 
         case 'PAUSE_SESSION':
@@ -164,6 +187,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 isPaused: true,
                 pauseCount: state.pauseCount + 1,
+                sessionPausedAt: action.payload.pausedAt,
             };
 
         case 'EMERGENCY_PAUSE':
@@ -172,12 +196,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             return {
                 ...state,
                 isPaused: true,
+                sessionPausedAt: action.payload.pausedAt,
             };
 
         case 'RESUME_SESSION':
             return {
                 ...state,
                 isPaused: false,
+                sessionPausedAt: null,
+                accumulatedPauseTime: action.payload.accumulatedPauseTime,
             };
 
         case 'COMPLETE_SESSION':
@@ -185,6 +212,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'completed',
                 currentAnimal: action.payload.animal,
+                sessionStartTime: null,
+                sessionPausedAt: null,
+                accumulatedPauseTime: 0,
             };
 
         case 'FAIL_SESSION':
@@ -192,6 +222,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'failed',
                 currentAnimal: null,
+                sessionStartTime: null,
+                sessionPausedAt: null,
+                accumulatedPauseTime: 0,
             };
 
         case 'RESET_SESSION':
@@ -201,6 +234,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 currentAnimal: null,
                 isPaused: false,
                 pauseCount: 0,
+                sessionStartTime: null,
+                sessionPausedAt: null,
+                accumulatedPauseTime: 0,
+                restoredSession: null,
             };
 
         case 'ADD_TO_COLLECTION':
@@ -245,6 +282,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 settings: { ...state.settings, hasCompletedOnboarding: true },
             };
 
+        case 'RESTORE_SESSION':
+            return {
+                ...state,
+                restoredSession: {
+                    session: action.payload.session,
+                    remainingTime: action.payload.remainingTime,
+                },
+            };
+
+        case 'CLEAR_RESTORED_SESSION':
+            return {
+                ...state,
+                restoredSession: null,
+            };
+
         default:
             return state;
     }
@@ -256,6 +308,8 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 // Provider
 export function GameProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(gameReducer, initialState);
+    // Track the current session duration for persistence
+    const sessionDurationRef = useRef<number>(0);
 
     // Load data on mount
     useEffect(() => {
@@ -272,6 +326,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
                 // Sync audio manager with loaded settings
                 audioManager.setEnabled(settings.soundEnabled);
+
+                // Check for interrupted session to restore
+                const restoreResult: SessionRestoreResult = await restoreActiveSession();
+
+                if (restoreResult.status === 'restored') {
+                    // Session can be restored - store data for UI to handle
+                    dispatch({
+                        type: 'RESTORE_SESSION',
+                        payload: {
+                            session: restoreResult.session,
+                            remainingTime: restoreResult.remainingTime,
+                        },
+                    });
+                    console.log(`[GameContext] Session can be restored with ${restoreResult.remainingTime}s remaining`);
+                } else if (restoreResult.status === 'expired') {
+                    // Session expired while app was killed - record as failed
+                    console.log(`[GameContext] Interrupted session expired, recording as failed`);
+                    const updatedStats = await incrementSession(false, restoreResult.focusMinutes);
+                    dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+                } else if (restoreResult.status === 'error') {
+                    console.warn(`[GameContext] Session restore error: ${restoreResult.error}`);
+                }
+                // status === 'none' means no session to restore, which is normal
             } catch (error) {
                 console.error('Failed to load data:', error);
                 dispatch({ type: 'SET_LOADING', payload: false });
@@ -280,25 +357,83 @@ export function GameProvider({ children }: { children: ReactNode }) {
         loadData();
     }, []);
 
+    // Persist session state when it changes
+    useEffect(() => {
+        async function persistSession() {
+            if (state.sessionState === 'active' && state.sessionStartTime) {
+                const sessionData: PersistedSession = {
+                    startTime: state.sessionStartTime,
+                    duration: sessionDurationRef.current,
+                    pauseCount: state.pauseCount,
+                    isPaused: state.isPaused,
+                    pausedAt: state.sessionPausedAt,
+                    accumulatedPauseTime: state.accumulatedPauseTime,
+                    focusDuration: state.settings.focusDuration,
+                };
+                await saveActiveSession(sessionData);
+            } else if (state.sessionState !== 'active') {
+                // Session ended (completed, failed, or reset) - clear persisted session
+                await clearActiveSession();
+            }
+        }
+
+        // Only persist if we're not in the initial loading state
+        if (!state.isLoading) {
+            persistSession();
+        }
+    }, [
+        state.sessionState,
+        state.sessionStartTime,
+        state.isPaused,
+        state.sessionPausedAt,
+        state.pauseCount,
+        state.accumulatedPauseTime,
+        state.settings.focusDuration,
+        state.isLoading,
+    ]);
+
     // Sync audio manager when soundEnabled setting changes
     useEffect(() => {
         audioManager.setEnabled(state.settings.soundEnabled);
     }, [state.settings.soundEnabled]);
 
-    const startSession = () => {
-        dispatch({ type: 'START_SESSION' });
+    const startSession = (duration: number) => {
+        sessionDurationRef.current = duration;
+        dispatch({
+            type: 'START_SESSION',
+            payload: {
+                startTime: new Date().toISOString(),
+                duration,
+            },
+        });
     };
 
     const pauseSession = () => {
-        dispatch({ type: 'PAUSE_SESSION' });
+        dispatch({
+            type: 'PAUSE_SESSION',
+            payload: { pausedAt: new Date().toISOString() },
+        });
     };
 
     const emergencyPause = () => {
-        dispatch({ type: 'EMERGENCY_PAUSE' });
+        dispatch({
+            type: 'EMERGENCY_PAUSE',
+            payload: { pausedAt: new Date().toISOString() },
+        });
     };
 
     const resumeSession = () => {
-        dispatch({ type: 'RESUME_SESSION' });
+        // Calculate accumulated pause time
+        let newAccumulatedPauseTime = state.accumulatedPauseTime;
+        if (state.sessionPausedAt) {
+            const pausedAt = new Date(state.sessionPausedAt).getTime();
+            const now = Date.now();
+            newAccumulatedPauseTime += (now - pausedAt);
+        }
+        dispatch({
+            type: 'RESUME_SESSION',
+            payload: { accumulatedPauseTime: newAccumulatedPauseTime },
+        });
     };
 
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
@@ -353,6 +488,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const setOnboardingComplete = async () => {
         dispatch({ type: 'SET_ONBOARDING_COMPLETE' });
         await updateSettings({ hasCompletedOnboarding: true });
+    };
+
+    const clearRestoredSession = () => {
+        dispatch({ type: 'CLEAR_RESTORED_SESSION' });
+        clearActiveSession();
     };
 
     // Animal interaction functions
@@ -412,6 +552,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 getPetCooldown,
                 getFeedCooldown,
                 getHappinessLevel,
+                // Session restore functions
+                clearRestoredSession,
             }}
         >
             {children}

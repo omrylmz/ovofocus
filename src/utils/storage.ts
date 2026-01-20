@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
     SHIELD_INVENTORY: '@ovofocus/shield_inventory',
     ANIMAL_INTERACTIONS: '@ovofocus/animal_interactions',
     STREAK_FREEZE: '@ovofocus/streak_freeze',
+    ACTIVE_SESSION: '@ovofocus/active_session',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -50,6 +51,24 @@ export interface DailyProgress {
     completedSessions: number;
     goalAchieved: boolean;
 }
+
+// Active Session persistence for app kill recovery
+export interface PersistedSession {
+    startTime: string;           // ISO timestamp when session started
+    duration: number;            // Total session duration in seconds
+    pauseCount: number;          // Number of pauses used
+    isPaused: boolean;           // Whether session is currently paused
+    pausedAt: string | null;     // ISO timestamp when paused (if isPaused is true)
+    accumulatedPauseTime: number; // Total time spent paused in milliseconds
+    focusDuration: number;       // Focus duration setting in minutes (for stats)
+}
+
+// Discriminated union for session restore results
+export type SessionRestoreResult =
+    | { status: 'restored'; session: PersistedSession; remainingTime: number }
+    | { status: 'expired'; focusMinutes: number }
+    | { status: 'none' }
+    | { status: 'error'; error: string };
 
 export interface ShieldItem {
     animalId: string;
@@ -569,6 +588,99 @@ export function getHappinessLevel(happiness: number): 'sad' | 'neutral' | 'happy
 
 export { INTERACTION_CONSTANTS };
 
+// Active Session Persistence
+// Save the current session state for recovery after app kill
+
+export async function saveActiveSession(session: PersistedSession): Promise<void> {
+    try {
+        await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+    } catch (error) {
+        console.error('[Storage] Failed to save active session:', error);
+    }
+}
+
+export async function clearActiveSession(): Promise<void> {
+    try {
+        await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+    } catch (error) {
+        console.error('[Storage] Failed to clear active session:', error);
+    }
+}
+
+export async function getActiveSession(): Promise<PersistedSession | null> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+        if (!data) return null;
+        return JSON.parse(data) as PersistedSession;
+    } catch (error) {
+        console.error('[Storage] Failed to get active session:', error);
+        return null;
+    }
+}
+
+export async function restoreActiveSession(): Promise<SessionRestoreResult> {
+    try {
+        const session = await getActiveSession();
+
+        if (!session) {
+            return { status: 'none' };
+        }
+
+        // Validate session data
+        if (!session.startTime || typeof session.duration !== 'number' || session.duration <= 0) {
+            console.warn('[Storage] Invalid session data, clearing...');
+            await clearActiveSession();
+            return { status: 'error', error: 'Invalid session data' };
+        }
+
+        const now = Date.now();
+        const startTime = new Date(session.startTime).getTime();
+
+        // Validate timestamp
+        if (isNaN(startTime) || startTime > now) {
+            console.warn('[Storage] Invalid session timestamp, clearing...');
+            await clearActiveSession();
+            return { status: 'error', error: 'Invalid session timestamp' };
+        }
+
+        // Calculate elapsed time, accounting for pauses
+        let elapsedMs: number;
+
+        if (session.isPaused && session.pausedAt) {
+            // Session was paused when app was killed
+            // Elapsed time = (pausedAt - startTime) - accumulatedPauseTime
+            const pausedAt = new Date(session.pausedAt).getTime();
+            elapsedMs = (pausedAt - startTime) - session.accumulatedPauseTime;
+        } else {
+            // Session was running when app was killed
+            // Elapsed time = (now - startTime) - accumulatedPauseTime
+            elapsedMs = (now - startTime) - session.accumulatedPauseTime;
+        }
+
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        const remainingTime = Math.max(0, session.duration - elapsedSeconds);
+
+        // Check if session would have expired
+        if (remainingTime <= 0) {
+            // Session expired while app was killed - treat as failed
+            const focusMinutes = Math.floor(session.duration / 60);
+            await clearActiveSession();
+            return { status: 'expired', focusMinutes };
+        }
+
+        // Session can be restored
+        return {
+            status: 'restored',
+            session,
+            remainingTime,
+        };
+    } catch (error) {
+        console.error('[Storage] Failed to restore active session:', error);
+        await clearActiveSession();
+        return { status: 'error', error: String(error) };
+    }
+}
+
 // Debug
 export async function clearAllData(): Promise<void> {
     try {
@@ -581,9 +693,9 @@ export async function clearAllData(): Promise<void> {
             STORAGE_KEYS.SHIELD_INVENTORY,
             STORAGE_KEYS.ANIMAL_INTERACTIONS,
             STORAGE_KEYS.STREAK_FREEZE,
+            STORAGE_KEYS.ACTIVE_SESSION,
         ]);
     } catch (error) {
         console.error('[Storage] Failed to clear all data:', error);
     }
 }
-

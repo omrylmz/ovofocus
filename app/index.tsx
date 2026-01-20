@@ -283,7 +283,8 @@ export default function HomeScreen() {
     };
 
     const handleStart = () => {
-        startSession();
+        const durationSeconds = state.settings.focusDuration * 60;
+        startSession(durationSeconds);
         startTimer();
         setEmergencyPauseUsed(false);
         setActiveShieldBonus(0);
