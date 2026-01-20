@@ -135,6 +135,7 @@ const initialState: GameState = {
         dailyGoal: 3,
         emergencyPauseDuration: 60,
         reducedMotion: 'system',
+        themeMode: 'system',
         // Ambient sound defaults
         ambientSoundEnabled: false,
         selectedAmbientSound: 'rain',

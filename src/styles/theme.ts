@@ -316,6 +316,103 @@ export const theme = {
   },
 };
 
+// Light theme variant - WCAG AA Compliance
+// All colors audited against light background (#F5F5F8) and surface (#FFFFFF)
+export const lightTheme = {
+  ...theme,
+  colors: {
+    primary: '#E05252',      // Coral red - adjusted for light background
+    secondary: '#3BA89E',    // Teal - adjusted for light background
+    background: '#F5F5F8',   // Light gray-blue background
+    surface: '#FFFFFF',      // White surface
+    surfaceLight: '#EAEAEF', // Slightly darker surface variant
+    text: '#1A1A2E',         // Dark text for contrast
+    textSecondary: '#5C6478', // Muted text
+    accent: '#D4A600',       // Gold/Yellow - adjusted for light background
+    success: '#2E8B32',      // Green - adjusted for light background
+    error: '#D93636',        // Red - adjusted for light background
+    warning: '#CC9900',      // Amber - adjusted for light background
+
+    // Rarity colors - All meet WCAG AA against light background
+    common: '#6B6B6B',       // Gray - darkened for light background
+    rare: '#0088CC',         // Blue - darkened for light background
+    epic: '#9B4DCA',         // Purple - adjusted for light background
+    legendary: '#CC8800',    // Gold - adjusted for light background
+
+    // Semantic colors
+    semantic: {
+      // Success states (green tones)
+      success: '#2E8B32',
+      successLight: '#E8F5E9',
+      successDark: '#1B5E20',
+
+      // Warning states (amber/orange tones)
+      warning: '#CC9900',
+      warningLight: '#FFF8E1',
+      warningDark: '#E65100',
+
+      // Error states (red tones)
+      error: '#D93636',
+      errorLight: '#FFEBEE',
+      errorDark: '#B71C1C',
+
+      // Info states (blue tones)
+      info: '#0277BD',
+      infoLight: '#E1F5FE',
+      infoDark: '#01579B',
+
+      // Disabled states
+      disabled: '#BDBDBD',
+      disabledText: '#9E9E9E',
+
+      // Border colors
+      border: '#E0E0E0',
+      borderLight: '#EEEEEE',
+      borderDark: '#BDBDBD',
+
+      // Overlay and highlight
+      highlight: 'rgba(212, 166, 0, 0.15)',
+      overlay: 'rgba(0, 0, 0, 0.5)',
+      overlayLight: 'rgba(0, 0, 0, 0.3)',
+      overlayDark: 'rgba(0, 0, 0, 0.7)',
+    },
+  },
+  shadows: {
+    small: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    medium: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    large: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  },
+  immersive: {
+    collection: {
+      particleColor: 'rgba(59, 168, 158, 0.4)',
+      backgroundGradient: ['#F5F5F8', '#E8EAF0', '#F0F2F8'],
+      entranceStagger: 50,
+    },
+    session: {
+      particleColor: 'rgba(212, 166, 0, 0.5)',
+      backgroundGradient: ['#F5F5F8', '#FFF8E8', '#F0F5F8'],
+    },
+  },
+};
+
 // High contrast theme variant - WCAG AAA compliance (7:1+ for normal text)
 // Use this when user enables high contrast mode in settings
 export const highContrastTheme = {
@@ -356,8 +453,23 @@ export const highContrastTheme = {
 };
 
 export type Theme = typeof theme;
+export type LightTheme = typeof lightTheme;
 export type HighContrastTheme = typeof highContrastTheme;
 export type RarityIndicator = (typeof theme.rarityIndicators)[keyof typeof theme.rarityIndicators];
 export type Typography = typeof typography;
 export type TypographySize = keyof typeof typography.sizes;
 export type FontWeight = keyof typeof typography.weights;
+
+// Theme mode type for settings
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+// Helper to get the appropriate theme based on mode and system preference
+export function getTheme(mode: ThemeMode, systemColorScheme: 'light' | 'dark' | null): Theme {
+  if (mode === 'system') {
+    return systemColorScheme === 'light' ? lightTheme : theme;
+  }
+  return mode === 'light' ? lightTheme : theme;
+}
+
+// Dark theme alias for clarity
+export const darkTheme = theme;

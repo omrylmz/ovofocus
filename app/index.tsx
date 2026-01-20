@@ -2,8 +2,9 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { theme } from '../src/styles/theme';
+import { theme as darkTheme, Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
+import { useTheme } from '../src/context/ThemeContext';
 import { useTimer } from '../src/hooks/useTimer';
 import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { PixelButton } from '../src/components/PixelButton';
@@ -33,9 +34,97 @@ import {
     InteractiveEgg,
 } from '../src/components/session';
 
+// Create dynamic styles based on current theme
+const createStyles = (theme: Theme) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backgroundLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        elevation: 0,
+    },
+    foregroundLayer: {
+        flex: 1,
+        zIndex: 1,
+        elevation: 1,
+        // Ensure this layer is not affected by background
+        backgroundColor: 'transparent',
+    },
+    content: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: 80,
+    },
+    gestureHintsOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    gestureHintsContent: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.xl,
+        padding: theme.spacing.xl,
+        marginHorizontal: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    gestureHintsTitle: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.lg,
+    },
+    gestureHintItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        width: '100%',
+    },
+    gestureHintIcon: {
+        fontSize: 24,
+        marginRight: theme.spacing.md,
+    },
+    gestureHintText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        flex: 1,
+    },
+    gestureHintsButton: {
+        marginTop: theme.spacing.lg,
+    },
+    debugBadge: {
+        position: 'absolute',
+        bottom: 100,
+        alignSelf: 'center',
+        backgroundColor: theme.colors.warning,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.round,
+    },
+    debugText: {
+        fontSize: theme.fontSize.xs,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.background,
+    },
+});
+
 export default function HomeScreen() {
     const router = useRouter();
     const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
+    const { theme } = useTheme();
+
+    // Create dynamic styles based on current theme
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // Modal states
     const [showHatchModal, setShowHatchModal] = useState(false);
@@ -429,7 +518,7 @@ export default function HomeScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={darkTheme.colors.primary} />
                 </View>
             </SafeAreaView>
         );
@@ -643,85 +732,3 @@ export default function HomeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    backgroundLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
-    },
-    foregroundLayer: {
-        flex: 1,
-        zIndex: 1,
-        elevation: 1,
-        // Ensure this layer is not affected by background
-        backgroundColor: 'transparent',
-    },
-    content: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: 80,
-    },
-    gestureHintsOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 100,
-    },
-    gestureHintsContent: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.xl,
-        marginHorizontal: theme.spacing.xl,
-        alignItems: 'center',
-    },
-    gestureHintsTitle: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.lg,
-    },
-    gestureHintItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.md,
-        width: '100%',
-    },
-    gestureHintIcon: {
-        fontSize: 24,
-        marginRight: theme.spacing.md,
-    },
-    gestureHintText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.text,
-        flex: 1,
-    },
-    gestureHintsButton: {
-        marginTop: theme.spacing.lg,
-    },
-    debugBadge: {
-        position: 'absolute',
-        bottom: 100,
-        alignSelf: 'center',
-        backgroundColor: theme.colors.warning,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.borderRadius.round,
-    },
-    debugText: {
-        fontSize: theme.fontSize.xs,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.background,
-    },
-});

@@ -2,8 +2,9 @@ import React, { useMemo, useState, useCallback, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { theme } from '../src/styles/theme';
+import { theme as darkTheme, Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
+import { useTheme } from '../src/context/ThemeContext';
 import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
 import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
@@ -16,15 +17,198 @@ import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
 type SortOption = 'rarity' | 'recent' | 'name';
 
+// Create dynamic styles based on current theme
+const createStyles = (theme: Theme) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    backgroundLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        elevation: 0,
+    },
+    foregroundLayer: {
+        flex: 1,
+        zIndex: 1,
+        elevation: 1,
+        backgroundColor: 'transparent',
+    },
+    scrollContent: {
+        padding: theme.spacing.lg,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        paddingHorizontal: theme.spacing.md,
+        marginBottom: theme.spacing.md,
+    },
+    searchIcon: {
+        fontSize: 16,
+        marginRight: theme.spacing.sm,
+    },
+    searchInput: {
+        flex: 1,
+        height: 44,
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+    },
+    searchClear: {
+        padding: theme.spacing.sm,
+    },
+    searchClearText: {
+        fontSize: 14,
+        color: theme.colors.textSecondary,
+    },
+    filterRow: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
+    },
+    filterChip: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.round,
+        backgroundColor: theme.colors.surface,
+    },
+    filterChipActive: {
+        backgroundColor: theme.colors.accent,
+    },
+    filterChipText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    filterChipTextActive: {
+        color: theme.colors.background,
+        fontWeight: theme.fontWeight.bold,
+    },
+    sortRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    sortLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+    },
+    sortChip: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.sm,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.colors.surface,
+    },
+    sortChipActive: {
+        borderColor: theme.colors.secondary,
+        backgroundColor: theme.colors.surface,
+    },
+    sortChipText: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+    },
+    sortChipTextActive: {
+        color: theme.colors.secondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    progressCard: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.lg,
+        marginBottom: theme.spacing.lg,
+    },
+    progressTitle: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.md,
+    },
+    progressBar: {
+        height: 12,
+        backgroundColor: theme.colors.surfaceLight,
+        borderRadius: 6,
+        overflow: 'hidden',
+        marginBottom: theme.spacing.sm,
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: theme.colors.accent,
+        borderRadius: 6,
+    },
+    progressText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.xl,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        alignItems: 'center',
+    },
+    statEmoji: {
+        fontSize: 24,
+        marginBottom: theme.spacing.xs,
+    },
+    statValue: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    statLabel: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+    },
+    raritySection: {
+        marginBottom: theme.spacing.xl,
+    },
+    rarityHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    rarityDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: theme.spacing.sm,
+    },
+    rarityTitle: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        flex: 1,
+    },
+    rarityCount: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+    },
+    animalGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+    },
+});
+
 // Filter chip component - memoized to prevent unnecessary re-renders
 interface FilterChipProps {
     label: string;
     value: FilterOption;
     active: boolean;
     onPress: (value: FilterOption) => void;
+    styles: ReturnType<typeof createStyles>;
 }
 
-const FilterChip = React.memo(({ label, value, active, onPress }: FilterChipProps) => (
+const FilterChip = React.memo(({ label, value, active, onPress, styles }: FilterChipProps) => (
     <Pressable
         style={[styles.filterChip, active && styles.filterChipActive]}
         onPress={() => onPress(value)}
@@ -39,9 +223,10 @@ interface SortChipProps {
     value: SortOption;
     active: boolean;
     onPress: (value: SortOption) => void;
+    styles: ReturnType<typeof createStyles>;
 }
 
-const SortChip = React.memo(({ label, value, active, onPress }: SortChipProps) => (
+const SortChip = React.memo(({ label, value, active, onPress, styles }: SortChipProps) => (
     <Pressable
         style={[styles.sortChip, active && styles.sortChipActive]}
         onPress={() => onPress(value)}
@@ -54,6 +239,10 @@ export default function CollectionScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const { state, toggleFavorite, i18n } = useGame();
+    const { theme } = useTheme();
+
+    // Create dynamic styles based on current theme
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // Set dynamic navigation title based on current language
     useLayoutEffect(() => {
@@ -321,18 +510,18 @@ export default function CollectionScreen() {
 
                 {/* Filter Chips */}
                 <View style={styles.filterRow}>
-                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} onPress={handleFilterPress} />
-                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} onPress={handleFilterPress} />
-                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} onPress={handleFilterPress} />
-                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} onPress={handleFilterPress} />
+                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} onPress={handleFilterPress} styles={styles} />
+                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} onPress={handleFilterPress} styles={styles} />
+                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} onPress={handleFilterPress} styles={styles} />
+                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} onPress={handleFilterPress} styles={styles} />
                 </View>
 
                 {/* Sort Chips */}
                 <View style={styles.sortRow}>
                     <Text style={styles.sortLabel}>{i18n('sort')}:</Text>
-                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} onPress={handleSortPress} />
-                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} onPress={handleSortPress} />
-                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} onPress={handleSortPress} />
+                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} onPress={handleSortPress} styles={styles} />
+                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} onPress={handleSortPress} styles={styles} />
+                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} onPress={handleSortPress} styles={styles} />
                 </View>
 
                 {/* Overall Progress */}
@@ -406,184 +595,3 @@ export default function CollectionScreen() {
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    backgroundLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
-    },
-    foregroundLayer: {
-        flex: 1,
-        zIndex: 1,
-        elevation: 1,
-        backgroundColor: 'transparent',
-    },
-    scrollContent: {
-        padding: theme.spacing.lg,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.lg,
-        paddingHorizontal: theme.spacing.md,
-        marginBottom: theme.spacing.md,
-    },
-    searchIcon: {
-        fontSize: 16,
-        marginRight: theme.spacing.sm,
-    },
-    searchInput: {
-        flex: 1,
-        height: 44,
-        fontSize: theme.fontSize.md,
-        color: theme.colors.text,
-    },
-    searchClear: {
-        padding: theme.spacing.sm,
-    },
-    searchClearText: {
-        fontSize: 14,
-        color: theme.colors.textSecondary,
-    },
-    filterRow: {
-        flexDirection: 'row',
-        gap: theme.spacing.sm,
-        marginBottom: theme.spacing.sm,
-    },
-    filterChip: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.round,
-        backgroundColor: theme.colors.surface,
-    },
-    filterChipActive: {
-        backgroundColor: theme.colors.accent,
-    },
-    filterChipText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-        fontWeight: theme.fontWeight.medium,
-    },
-    filterChipTextActive: {
-        color: theme.colors.background,
-        fontWeight: theme.fontWeight.bold,
-    },
-    sortRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.sm,
-        marginBottom: theme.spacing.lg,
-    },
-    sortLabel: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-    },
-    sortChip: {
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.borderRadius.sm,
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: theme.colors.surface,
-    },
-    sortChipActive: {
-        borderColor: theme.colors.secondary,
-        backgroundColor: theme.colors.surface,
-    },
-    sortChipText: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-    },
-    sortChipTextActive: {
-        color: theme.colors.secondary,
-        fontWeight: theme.fontWeight.medium,
-    },
-    progressCard: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.lg,
-        marginBottom: theme.spacing.lg,
-    },
-    progressTitle: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.md,
-    },
-    progressBar: {
-        height: 12,
-        backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 6,
-        overflow: 'hidden',
-        marginBottom: theme.spacing.sm,
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: theme.colors.accent,
-        borderRadius: 6,
-    },
-    progressText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-        textAlign: 'center',
-    },
-    statsGrid: {
-        flexDirection: 'row',
-        gap: theme.spacing.sm,
-        marginBottom: theme.spacing.xl,
-    },
-    statCard: {
-        flex: 1,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
-        alignItems: 'center',
-    },
-    statEmoji: {
-        fontSize: 24,
-        marginBottom: theme.spacing.xs,
-    },
-    statValue: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-    },
-    statLabel: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-    },
-    raritySection: {
-        marginBottom: theme.spacing.xl,
-    },
-    rarityHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.md,
-    },
-    rarityDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        marginRight: theme.spacing.sm,
-    },
-    rarityTitle: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-        flex: 1,
-    },
-    rarityCount: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-    },
-    animalGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
-});

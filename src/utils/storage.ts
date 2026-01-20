@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animal } from '../data/animals';
 import { Language, getDeviceLanguage } from '../i18n/translations';
 import { ReducedMotionPreference } from '../hooks/useReducedMotion';
+import { ThemeMode } from '../styles/theme';
 
 export const STORAGE_KEYS = {
     COLLECTION: '@ovofocus/collection',
@@ -44,6 +45,7 @@ export interface Settings {
     dailyGoal: number; // number of sessions per day
     emergencyPauseDuration: number; // extended pause duration in seconds
     reducedMotion: ReducedMotionPreference; // accessibility: reduce animations
+    themeMode: ThemeMode; // light, dark, or system
     // Ambient sound settings
     ambientSoundEnabled: boolean; // whether to play ambient sounds during sessions
     selectedAmbientSound: string; // 'rain' | 'forest' | 'ocean' | 'white_noise' | 'cafe'
@@ -114,6 +116,7 @@ const defaultSettings: Settings = {
     dailyGoal: 3,
     emergencyPauseDuration: 60,
     reducedMotion: 'system',
+    themeMode: 'system',
     // Ambient sound defaults
     ambientSoundEnabled: false,
     selectedAmbientSound: 'rain',
@@ -236,11 +239,32 @@ function isMoreThanOneDayAgo(dateStr: string): boolean {
     return date.toISOString().split('T')[0] <= twoDaysAgo.toISOString().split('T')[0];
 }
 
+// Valid theme mode values
+const VALID_THEME_MODES: ThemeMode[] = ['light', 'dark', 'system'];
+
+// Helper to validate themeMode value
+function isValidThemeMode(value: unknown): value is ThemeMode {
+    return typeof value === 'string' && VALID_THEME_MODES.includes(value as ThemeMode);
+}
+
 // Settings
 export async function getSettings(): Promise<Settings> {
     try {
         const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-        return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
+        if (!data) {
+            return defaultSettings;
+        }
+
+        const parsed = JSON.parse(data);
+        const settings = { ...defaultSettings, ...parsed };
+
+        // Validate themeMode - reset to default if invalid
+        if (!isValidThemeMode(settings.themeMode)) {
+            console.warn(`[Storage] Invalid themeMode "${settings.themeMode}", resetting to default`);
+            settings.themeMode = defaultSettings.themeMode;
+        }
+
+        return settings;
     } catch (error) {
         console.error('[Storage] Failed to read settings:', error);
         return defaultSettings;

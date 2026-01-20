@@ -123,6 +123,14 @@ export const translations = {
         debugMode: 'Debug Mode',
         debugModeDesc: 'Timer is 10 seconds instead of 25 min',
         statistics: 'Statistics',
+
+        // Theme Settings
+        appearance: 'Appearance',
+        theme: 'Theme',
+        themeLight: 'Light',
+        themeDark: 'Dark',
+        themeSystem: 'System',
+        themeDesc: 'Choose your preferred color theme',
         statsTitle: 'Statistics',
         totalSessions: 'Total Sessions',
         failed: 'Failed',
@@ -480,6 +488,14 @@ export const translations = {
         debugMode: 'Debug Modu',
         debugModeDesc: 'Sayaç 25 dk yerine 10 saniye',
         statistics: 'İstatistikler',
+
+        // Theme Settings
+        appearance: 'Gorunum',
+        theme: 'Tema',
+        themeLight: 'Acik',
+        themeDark: 'Koyu',
+        themeSystem: 'Sistem',
+        themeDesc: 'Tercih ettiginiz renk temasini secin',
         statsTitle: 'İstatistikler',
         totalSessions: 'Toplam Seanslar',
         failed: 'Başarısız',

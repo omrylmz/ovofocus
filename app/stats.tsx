@@ -4,8 +4,9 @@
 import React, { useMemo, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { useNavigation } from 'expo-router';
-import { theme } from '../src/styles/theme';
+import { Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
+import { useTheme } from '../src/context/ThemeContext';
 import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { EmptyState } from '../src/components/EmptyState';
@@ -22,9 +23,65 @@ import {
     calculateCompletionRate,
 } from '../src/utils/statsCalculations';
 
+// Create dynamic styles based on current theme
+const createStyles = (theme: Theme) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    backgroundLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        elevation: 0,
+    },
+    foregroundLayer: {
+        flex: 1,
+        zIndex: 1,
+        elevation: 1,
+        backgroundColor: 'transparent',
+    },
+    scrollContent: {
+        padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xxl,
+    },
+    sectionTitle: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.md,
+    },
+    additionalStats: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.lg,
+        marginBottom: theme.spacing.md,
+    },
+    statRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.surfaceLight,
+    },
+    statLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+    },
+    statValue: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+});
+
 export default function StatsScreen() {
     const navigation = useNavigation();
     const { state, i18n } = useGame();
+    const { theme } = useTheme();
+
+    // Create dynamic styles based on current theme
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // Set dynamic navigation title based on current language
     useLayoutEffect(() => {
@@ -174,54 +231,3 @@ export default function StatsScreen() {
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    backgroundLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
-    },
-    foregroundLayer: {
-        flex: 1,
-        zIndex: 1,
-        elevation: 1,
-        backgroundColor: 'transparent',
-    },
-    scrollContent: {
-        padding: theme.spacing.lg,
-        paddingBottom: theme.spacing.xxl,
-    },
-    sectionTitle: {
-        fontSize: theme.fontSize.md,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.md,
-    },
-    additionalStats: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.lg,
-        marginBottom: theme.spacing.md,
-    },
-    statRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: theme.spacing.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surfaceLight,
-    },
-    statLabel: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-    },
-    statValue: {
-        fontSize: theme.fontSize.md,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-    },
-});
