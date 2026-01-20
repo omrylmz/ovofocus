@@ -6,7 +6,7 @@ interface UseTimerOptions {
     onTick?: (remaining: number) => void;
 }
 
-interface UseTimerReturn {
+export interface UseTimerReturn {
     timeRemaining: number;
     isRunning: boolean;
     progress: number; // 0 to 1
