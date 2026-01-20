@@ -6,6 +6,8 @@ import {
     TextStyle,
     Pressable,
     View,
+    AccessibilityRole,
+    AccessibilityState,
 } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -31,6 +33,8 @@ interface PixelButtonProps {
     hapticStyle?: Haptics.ImpactFeedbackStyle;
     accessibilityLabel?: string;
     accessibilityHint?: string;
+    accessibilityRole?: AccessibilityRole;
+    accessibilityState?: AccessibilityState;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -48,6 +52,8 @@ export function PixelButton({
     hapticStyle = Haptics.ImpactFeedbackStyle.Light,
     accessibilityLabel,
     accessibilityHint,
+    accessibilityRole,
+    accessibilityState,
 }: PixelButtonProps) {
     const scale = useSharedValue(1);
     const translateY = useSharedValue(0);
@@ -161,10 +167,10 @@ export function PixelButton({
                 onPressOut={handlePressOut}
                 disabled={disabled}
                 accessible={true}
-                accessibilityRole="button"
+                accessibilityRole={accessibilityRole || "button"}
                 accessibilityLabel={accessibilityLabel || title}
                 accessibilityHint={accessibilityHint}
-                accessibilityState={{ disabled }}
+                accessibilityState={accessibilityState ? { ...accessibilityState, disabled } : { disabled }}
                 style={[
                     styles.container,
                     variantStyles.container,

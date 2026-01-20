@@ -3,7 +3,7 @@ import { Animal } from '../data/animals';
 import { Language, getDeviceLanguage } from '../i18n/translations';
 import { ReducedMotionPreference } from '../hooks/useReducedMotion';
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
     COLLECTION: '@ovofocus/collection',
     STATS: '@ovofocus/stats',
     SETTINGS: '@ovofocus/settings',
@@ -44,6 +44,10 @@ export interface Settings {
     dailyGoal: number; // number of sessions per day
     emergencyPauseDuration: number; // extended pause duration in seconds
     reducedMotion: ReducedMotionPreference; // accessibility: reduce animations
+    // Ambient sound settings
+    ambientSoundEnabled: boolean; // whether to play ambient sounds during sessions
+    selectedAmbientSound: string; // 'rain' | 'forest' | 'ocean' | 'white_noise' | 'cafe'
+    ambientSoundVolume: number; // volume level 0-100
 }
 
 export interface DailyProgress {
@@ -110,6 +114,10 @@ const defaultSettings: Settings = {
     dailyGoal: 3,
     emergencyPauseDuration: 60,
     reducedMotion: 'system',
+    // Ambient sound defaults
+    ambientSoundEnabled: false,
+    selectedAmbientSound: 'rain',
+    ambientSoundVolume: 50,
 };
 
 // Collection
@@ -256,6 +264,9 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
         }
         if (updates.maxPausesPerSession !== undefined) {
             updates.maxPausesPerSession = Math.max(0, Math.min(10, updates.maxPausesPerSession));
+        }
+        if (updates.ambientSoundVolume !== undefined) {
+            updates.ambientSoundVolume = Math.max(0, Math.min(100, updates.ambientSoundVolume));
         }
 
         const current = await getSettings();

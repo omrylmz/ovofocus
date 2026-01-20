@@ -7,6 +7,7 @@ import { PixelButton } from '../src/components/PixelButton';
 import { clearAllData } from '../src/utils/storage';
 import { requestNotificationPermissions } from '../src/services/notifications';
 import { audioManager } from '../src/services/audioManager';
+import { ambientSoundService, AMBIENT_SOUNDS, AmbientSoundType } from '../src/services/ambientSoundService';
 import { StreakFreezeIndicator } from '../src/components/StreakFreezeIndicator';
 import {
     getStreakFreezeData,
@@ -15,6 +16,7 @@ import {
     STREAK_FREEZE_CONSTANTS,
     StreakFreezeData,
 } from '../src/utils/streakFreeze';
+import { ExportModal } from '../src/components/ExportModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -74,6 +76,7 @@ export default function SettingsScreen() {
         lastMilestoneStreak: 0,
     });
     const [canUseFreezeNow, setCanUseFreezeNow] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     // Check if audio system is functional
     useEffect(() => {
@@ -331,6 +334,85 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
+                {/* ===== AMBIENT SOUNDS ===== */}
+                <View style={styles.section}>
+                    <SectionHeader icon="🎵" title={i18n('ambientSounds')} />
+                    <Text style={styles.settingDescription}>{i18n('ambientSoundsDesc')}</Text>
+
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLabelContainer}>
+                            <Text style={styles.settingRowIcon}>🔈</Text>
+                            <Text style={styles.settingLabel}>{i18n('ambientSounds')}</Text>
+                        </View>
+                        <Switch
+                            value={state.settings.ambientSoundEnabled}
+                            onValueChange={value => updateUserSettings({ ambientSoundEnabled: value })}
+                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
+                            thumbColor={theme.colors.text}
+                        />
+                    </View>
+
+                    {state.settings.ambientSoundEnabled && (
+                        <>
+                            <Text style={styles.settingSubLabel}>{i18n('selectSound')}</Text>
+                            <View style={styles.ambientSoundGrid} accessibilityRole="radiogroup">
+                                {AMBIENT_SOUNDS.map(sound => {
+                                    const soundNameKey = `ambient${sound.id.charAt(0).toUpperCase()}${sound.id.slice(1).replace('_', '')}` as keyof typeof import('../src/i18n/translations').translations.en;
+                                    // Handle special case for white_noise -> WhiteNoise
+                                    const translationKey = sound.id === 'white_noise' ? 'ambientWhiteNoise' : soundNameKey;
+                                    const isSelected = state.settings.selectedAmbientSound === sound.id;
+                                    const soundName = i18n(translationKey as any);
+                                    return (
+                                        <Pressable
+                                            key={sound.id}
+                                            style={[
+                                                styles.ambientSoundOption,
+                                                isSelected && styles.ambientSoundOptionActive,
+                                            ]}
+                                            onPress={() => updateUserSettings({ selectedAmbientSound: sound.id })}
+                                            accessibilityRole="radio"
+                                            accessibilityLabel={soundName}
+                                            accessibilityState={{ selected: isSelected }}
+                                            accessibilityHint={state.settings.language === 'tr'
+                                                ? `${soundName} ortam sesini seçmek için dokunun`
+                                                : `Tap to select ${soundName} ambient sound`}
+                                        >
+                                            <Text style={styles.ambientSoundIcon} importantForAccessibility="no">{sound.icon}</Text>
+                                            <Text style={[
+                                                styles.ambientSoundText,
+                                                isSelected && styles.ambientSoundTextActive,
+                                            ]}>{soundName}</Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+
+                            <Text style={styles.settingSubLabel}>{i18n('soundVolume')}</Text>
+                            <View style={styles.buttonGrid} accessibilityRole="radiogroup">
+                                {[25, 50, 75, 100].map(vol => {
+                                    const isSelected = state.settings.ambientSoundVolume === vol;
+                                    return (
+                                        <View key={vol} style={styles.buttonWrapper}>
+                                            <PixelButton
+                                                title={`${vol}%`}
+                                                onPress={() => updateUserSettings({ ambientSoundVolume: vol })}
+                                                variant={isSelected ? 'primary' : 'ghost'}
+                                                size="small"
+                                                accessibilityRole="radio"
+                                                accessibilityLabel={`${vol}%`}
+                                                accessibilityState={{ selected: isSelected }}
+                                                accessibilityHint={state.settings.language === 'tr'
+                                                    ? `Ses seviyesini ${vol}% olarak ayarla`
+                                                    : `Set volume to ${vol}%`}
+                                            />
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </>
+                    )}
+                </View>
+
                 {/* ===== STATISTICS ===== */}
                 <View style={styles.section}>
                     <SectionHeader icon="📊" title={i18n('statistics')} />
@@ -404,7 +486,19 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* ===== DATA & PRIVACY ===== */}
+                {/* ===== DATA & BACKUP ===== */}
+                <View style={styles.section}>
+                    <SectionHeader icon="💾" title={i18n('dataBackup')} />
+                    <Text style={styles.settingDescription}>{i18n('exportDescription')}</Text>
+                    <PixelButton
+                        title={i18n('dataBackup')}
+                        onPress={() => setShowExportModal(true)}
+                        variant="secondary"
+                        icon="📤"
+                    />
+                </View>
+
+                {/* ===== DANGER ZONE ===== */}
                 <View style={styles.section}>
                     <SectionHeader icon="⚠️" title={i18n('dangerZone')} color={theme.colors.error} />
                     <PixelButton
@@ -422,6 +516,17 @@ export default function SettingsScreen() {
                     <Text style={styles.appTagline}>{i18n('tagline')}</Text>
                 </View>
             </ScrollView>
+
+            {/* Export Modal */}
+            <ExportModal
+                visible={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                language={state.settings.language}
+                onDataRestored={() => {
+                    // Trigger a reload of the app to reflect restored data
+                    Alert.alert(i18n('done'), i18n('importSuccess'));
+                }}
+            />
         </SafeAreaView>
     );
 }
@@ -648,5 +753,45 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         textAlign: 'center',
         paddingVertical: theme.spacing.sm,
+    },
+    // Ambient Sound styles
+    settingSubLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginTop: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
+    },
+    ambientSoundGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.md,
+    },
+    ambientSoundOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.surface,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 2,
+        borderColor: 'transparent',
+        gap: theme.spacing.xs,
+    },
+    ambientSoundOptionActive: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.surfaceLight,
+    },
+    ambientSoundIcon: {
+        fontSize: 18,
+    },
+    ambientSoundText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    ambientSoundTextActive: {
+        color: theme.colors.text,
+        fontWeight: theme.fontWeight.bold,
     },
 });

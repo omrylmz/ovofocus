@@ -21,6 +21,7 @@ import { calculateCollectionBonuses, calculateEffectiveDuration } from '../src/u
 import { DailyRewardModal } from '../src/components/DailyRewardModal';
 import { checkDailyReward, claimDailyReward, RewardType } from '../src/utils/dailyRewards';
 import { audioManager } from '../src/services/audioManager';
+import { ambientSoundService, AmbientSoundType } from '../src/services/ambientSoundService';
 
 // Extracted session components
 import {
@@ -158,6 +159,62 @@ export default function HomeScreen() {
     // Load shield inventory on mount
     useEffect(() => {
         getShieldInventory().then(setShieldInventory);
+    }, []);
+
+    // Handle ambient sound volume changes separately to avoid infinite loops
+    useEffect(() => {
+        const updateVolume = async () => {
+            await ambientSoundService.setVolume(state.settings.ambientSoundVolume);
+        };
+        updateVolume();
+    }, [state.settings.ambientSoundVolume]);
+
+    // Manage ambient sound playback based on session state and sound selection
+    useEffect(() => {
+        const manageAmbientSound = async () => {
+            const { ambientSoundEnabled, selectedAmbientSound } = state.settings;
+
+            // Only play ambient sounds if enabled
+            if (!ambientSoundEnabled) {
+                await ambientSoundService.stop();
+                return;
+            }
+
+            // Start/stop/pause based on session state
+            if (state.sessionState === 'active') {
+                if (state.isPaused) {
+                    // Pause ambient sound when session is paused
+                    await ambientSoundService.pause();
+                } else {
+                    // Play or resume ambient sound when session is active
+                    const currentSound = ambientSoundService.getCurrentSoundType();
+                    if (currentSound !== selectedAmbientSound) {
+                        // Sound type changed, play the new one
+                        await ambientSoundService.play(selectedAmbientSound as AmbientSoundType);
+                    } else if (!ambientSoundService.getIsPlaying()) {
+                        // Same sound but not playing, resume
+                        await ambientSoundService.resume();
+                    }
+                }
+            } else {
+                // Session is idle, completed, or failed - stop ambient sound
+                await ambientSoundService.stop();
+            }
+        };
+
+        manageAmbientSound();
+    }, [
+        state.sessionState,
+        state.isPaused,
+        state.settings.ambientSoundEnabled,
+        state.settings.selectedAmbientSound,
+    ]);
+
+    // Cleanup ambient sound on unmount
+    useEffect(() => {
+        return () => {
+            ambientSoundService.stop();
+        };
     }, []);
 
     // Cleanup emergency pause timeout on unmount
@@ -400,6 +457,7 @@ export default function HomeScreen() {
                     collectionLabel={`📦 ${i18n('collection')}`}
                     onCollectionPress={() => router.push('/collection')}
                     onSettingsPress={() => router.push('/settings')}
+                    onStatsPress={() => router.push('/stats')}
                     language={state.settings.language}
                 />
 

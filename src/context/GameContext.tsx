@@ -135,6 +135,10 @@ const initialState: GameState = {
         dailyGoal: 3,
         emergencyPauseDuration: 60,
         reducedMotion: 'system',
+        // Ambient sound defaults
+        ambientSoundEnabled: false,
+        selectedAmbientSound: 'rain',
+        ambientSoundVolume: 50,
     },
     dailyProgress: {
         date: new Date().toISOString().split('T')[0],

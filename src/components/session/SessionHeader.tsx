@@ -13,6 +13,7 @@ interface SessionHeaderProps {
     collectionLabel: string;
     onCollectionPress: () => void;
     onSettingsPress: () => void;
+    onStatsPress: () => void;
     language?: Language;
 }
 
@@ -23,6 +24,7 @@ export function SessionHeader({
     collectionLabel,
     onCollectionPress,
     onSettingsPress,
+    onStatsPress,
     language = 'en',
 }: SessionHeaderProps) {
     // Accessibility labels
@@ -30,6 +32,8 @@ export function SessionHeader({
         collectionHint: language === 'tr' ? 'Hayvan koleksiyonunuzu görüntüleyin' : 'View your animal collection',
         settingsLabel: language === 'tr' ? 'Ayarları aç' : 'Open settings',
         settingsHint: language === 'tr' ? 'Uygulama tercihlerini düzenleyin' : 'Adjust app preferences',
+        statsLabel: language === 'tr' ? 'İstatistikleri aç' : 'Open statistics',
+        statsHint: language === 'tr' ? 'Odaklanma istatistiklerini görüntüleyin' : 'View your focus statistics',
         streakLabel: language === 'tr'
             ? `Mevcut seri: ${currentStreak} gün`
             : `Current streak: ${currentStreak} days`,
@@ -65,6 +69,18 @@ export function SessionHeader({
                         size={36}
                     />
                 </View>
+                {/* Stats Button */}
+                <Pressable
+                    onPress={onStatsPress}
+                    style={styles.headerButton}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={a11y.statsLabel}
+                    accessibilityHint={a11y.statsHint}
+                >
+                    <Text style={styles.headerButtonText}>📊</Text>
+                </Pressable>
+                {/* Settings Button */}
                 <Pressable
                     onPress={onSettingsPress}
                     style={styles.headerButton}

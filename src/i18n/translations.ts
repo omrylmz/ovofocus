@@ -45,6 +45,7 @@ export const translations = {
 
         // Stats
         best: 'Best',
+        bestBadge: 'BEST!',
 
         // Streak Celebration
         newBestStreak: 'New Best Streak!',
@@ -122,9 +123,25 @@ export const translations = {
         debugMode: 'Debug Mode',
         debugModeDesc: 'Timer is 10 seconds instead of 25 min',
         statistics: 'Statistics',
+        statsTitle: 'Statistics',
         totalSessions: 'Total Sessions',
         failed: 'Failed',
         totalFocus: 'Total Focus',
+
+        // Stats Dashboard
+        weeklySessionsChart: 'Last 7 Days',
+        completionRateChart: 'Completion Rate',
+        monthlyTrendChart: 'Monthly Trend',
+        detailedStats: 'Detailed Statistics',
+        totalFocusTime: 'Total Focus Time',
+        completedSessions: 'Completed Sessions',
+        failedSessions: 'Failed Sessions',
+        completionRate: 'Completion Rate',
+        currentStreak: 'Current Streak',
+        animalsCollectedTotal: 'Animals Collected',
+        days: 'days',
+        noStatsYet: 'No statistics yet',
+        completeSessionsForStats: 'Complete focus sessions to see your statistics here.',
         dangerZone: 'Danger Zone',
         deleteAllData: 'Delete All Data',
         deleteConfirmTitle: 'Delete Data',
@@ -137,6 +154,17 @@ export const translations = {
         tolerance: 'Background Tolerance',
         toleranceDesc: 'Time to return before egg breaks',
         seconds: 'sec',
+
+        // Ambient Sounds
+        ambientSounds: 'Ambient Sounds',
+        ambientSoundsDesc: 'Play calming background sounds during focus sessions',
+        selectSound: 'Select Sound',
+        soundVolume: 'Volume',
+        ambientRain: 'Rain',
+        ambientForest: 'Forest',
+        ambientOcean: 'Ocean',
+        ambientWhiteNoise: 'White Noise',
+        ambientCafe: 'Cafe',
 
         // UX Improvements
         welcomeBack: 'Welcome back! 🎉',
@@ -288,6 +316,29 @@ export const translations = {
         celestial_lion_desc: 'A lion from the stars.',
         void_serpent_desc: 'Lord of darkness.',
 
+        // Data Export/Import
+        dataBackup: 'Data & Backup',
+        exportData: 'Export Data',
+        exportDescription: 'Save your progress to a file for backup or analysis.',
+        jsonExportDesc: 'Full backup (all data)',
+        csvExportDesc: 'Stats only (for spreadsheets)',
+        export: 'Export',
+        restoreBackup: 'Restore Backup',
+        restoreDescription: 'Import data from a previous backup file.',
+        selectBackupFile: 'Select Backup File',
+        exporting: 'Exporting...',
+        processing: 'Processing...',
+        exportSuccess: 'Export completed!',
+        exportError: 'Export failed. Please try again.',
+        importError: 'Import failed. Please try again.',
+        importSuccess: 'Data restored successfully! Restart the app to see changes.',
+        importConfirmTitle: 'Confirm Import',
+        importConfirmWarning: 'This will replace all your current data!',
+        confirmImport: 'Restore',
+        backupDate: 'Backup Date',
+        warnings: 'Warnings',
+        dismiss: 'Dismiss',
+
         // Accessibility
         a11yTimerLabel: 'Focus timer',
         a11yTimerHint: 'Shows remaining time in your focus session',
@@ -351,6 +402,7 @@ export const translations = {
 
         // Stats
         best: 'En İyi',
+        bestBadge: 'EN IYI!',
 
         // Streak Celebration
         newBestStreak: 'Yeni En İyi Seri!',
@@ -428,9 +480,26 @@ export const translations = {
         debugMode: 'Debug Modu',
         debugModeDesc: 'Sayaç 25 dk yerine 10 saniye',
         statistics: 'İstatistikler',
+        statsTitle: 'İstatistikler',
         totalSessions: 'Toplam Seanslar',
         failed: 'Başarısız',
         totalFocus: 'Toplam Odaklanma',
+
+        // Stats Dashboard
+        weeklySessionsChart: 'Son 7 Gun',
+        completionRateChart: 'Tamamlanma Orani',
+        monthlyTrendChart: 'Aylik Trend',
+        detailedStats: 'Detayli Istatistikler',
+        totalFocusTime: 'Toplam Odaklanma Suresi',
+        completedSessions: 'Tamamlanan Seanslar',
+        failedSessions: 'Basarisiz Seanslar',
+        completionRate: 'Tamamlanma Orani',
+        currentStreak: 'Mevcut Seri',
+        animalsCollectedTotal: 'Toplanan Hayvanlar',
+        days: 'gun',
+        noStatsYet: 'Henuz istatistik yok',
+        completeSessionsForStats: 'Istatistiklerinizi gormek icin odaklanma seanslarini tamamlayin.',
+
         dangerZone: 'Tehlikeli Bölge',
         deleteAllData: 'Tüm Verileri Sil',
         deleteConfirmTitle: 'Verileri Sil',
@@ -444,8 +513,19 @@ export const translations = {
         toleranceDesc: 'Yumurta kırılmadan geri dönme süresi',
         seconds: 'sn',
 
+        // Ambient Sounds
+        ambientSounds: 'Ortam Sesleri',
+        ambientSoundsDesc: 'Odaklanma seanslarinda rahatlatici arka plan sesleri cal',
+        selectSound: 'Ses Sec',
+        soundVolume: 'Ses Seviyesi',
+        ambientRain: 'Yagmur',
+        ambientForest: 'Orman',
+        ambientOcean: 'Okyanus',
+        ambientWhiteNoise: 'Beyaz Gurultu',
+        ambientCafe: 'Kafe',
+
         // UX Improvements
-        welcomeBack: 'Hoş geldin! 🎉',
+        welcomeBack: 'Hos geldin! 🎉',
         quickReturnBonus: 'Hızlı dönüş!',
         warningLevel1: 'Acele et! ⚠️',
         warningLevel2: 'Yumurta çatlıyor! 🥚',
@@ -593,6 +673,29 @@ export const translations = {
         cosmic_owl_desc: 'Yıldızlardan gelen baykuş.',
         celestial_lion_desc: 'Yıldızlardan gelen aslan.',
         void_serpent_desc: 'Karanlıkların efendisi.',
+
+        // Data Export/Import
+        dataBackup: 'Veri ve Yedekleme',
+        exportData: 'Veri Aktar',
+        exportDescription: 'Yedekleme veya analiz icin ilerlemenizi bir dosyaya kaydedin.',
+        jsonExportDesc: 'Tam yedekleme (tum veriler)',
+        csvExportDesc: 'Sadece istatistikler (tablo icin)',
+        export: 'Aktar',
+        restoreBackup: 'Yedeği Geri Yükle',
+        restoreDescription: 'Onceki bir yedek dosyasindan verileri iceri aktar.',
+        selectBackupFile: 'Yedek Dosyasi Sec',
+        exporting: 'Aktariliyor...',
+        processing: 'İşleniyor...',
+        exportSuccess: 'Aktarim tamamlandi!',
+        exportError: 'Aktarim basarisiz. Lutfen tekrar deneyin.',
+        importError: 'Iceri aktarim basarisiz. Lutfen tekrar deneyin.',
+        importSuccess: 'Veriler basariyla geri yuklendi! Degisiklikleri gormek icin uygulamayi yeniden baslatin.',
+        importConfirmTitle: 'İçeri Aktarmayı Onayla',
+        importConfirmWarning: 'Bu mevcut tum verilerinizin yerine geçecek!',
+        confirmImport: 'Geri Yukle',
+        backupDate: 'Yedekleme Tarihi',
+        warnings: 'Uyarılar',
+        dismiss: 'Kapat',
 
         // Accessibility
         a11yTimerLabel: 'Odaklanma zamanlayıcısı',

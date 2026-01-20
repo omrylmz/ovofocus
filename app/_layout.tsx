@@ -86,6 +86,22 @@ export default function RootLayout() {
                             sheetInitialDetentIndex: 0,
                         }}
                     />
+                    <Stack.Screen
+                        name="stats"
+                        options={{
+                            title: '',
+                            presentation: 'formSheet',
+                            animation: 'slide_from_bottom',
+                            gestureEnabled: true,
+                            gestureDirection: 'vertical',
+                            // Sheet presentation options for natural modal feel
+                            sheetAllowedDetents: 'fitToContents',
+                            sheetGrabberVisible: true,
+                            sheetCornerRadius: 20,
+                            sheetExpandsWhenScrolledToEdge: true,
+                            sheetInitialDetentIndex: 0,
+                        }}
+                    />
                 </Stack>
             </GameProvider>
         </GestureHandlerRootView>
