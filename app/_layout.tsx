@@ -58,14 +58,32 @@ export default function RootLayout() {
                         name="collection"
                         options={{
                             title: '',
-                            presentation: 'modal',
+                            presentation: 'formSheet',
+                            animation: 'slide_from_bottom',
+                            gestureEnabled: true,
+                            gestureDirection: 'vertical',
+                            // Sheet presentation options for natural modal feel
+                            sheetAllowedDetents: 'fitToContents',
+                            sheetGrabberVisible: true,
+                            sheetCornerRadius: 20,
+                            sheetExpandsWhenScrolledToEdge: true,
+                            sheetInitialDetentIndex: 0,
                         }}
                     />
                     <Stack.Screen
                         name="settings"
                         options={{
                             title: '',
-                            presentation: 'modal',
+                            presentation: 'formSheet',
+                            animation: 'slide_from_bottom',
+                            gestureEnabled: true,
+                            gestureDirection: 'vertical',
+                            // Sheet presentation options for natural modal feel
+                            sheetAllowedDetents: 'fitToContents',
+                            sheetGrabberVisible: true,
+                            sheetCornerRadius: 20,
+                            sheetExpandsWhenScrolledToEdge: true,
+                            sheetInitialDetentIndex: 0,
                         }}
                     />
                 </Stack>
