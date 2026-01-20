@@ -67,6 +67,7 @@ type GameAction =
     | { type: 'FAIL_SESSION'; payload: { focusMinutes: number } }
     | { type: 'RESET_SESSION' }
     | { type: 'ADD_TO_COLLECTION'; payload: CollectedAnimal }
+    | { type: 'SET_COLLECTION'; payload: CollectedAnimal[] }
     | { type: 'UPDATE_STATS'; payload: Stats }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<Settings> }
     | { type: 'UPDATE_DAILY_PROGRESS'; payload: DailyProgress }
@@ -244,6 +245,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             return {
                 ...state,
                 collection: [...state.collection, action.payload],
+            };
+
+        case 'SET_COLLECTION':
+            return {
+                ...state,
+                collection: action.payload,
             };
 
         case 'UPDATE_STATS':
@@ -440,23 +447,52 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const animal = getRandomAnimal();
         const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+        // Capture previous state for potential rollback
+        const previousCollection = [...state.collection];
+        const previousStats = { ...state.stats };
+        const previousDailyProgress = { ...state.dailyProgress };
+
+        // Update UI state immediately for responsive UX
         dispatch({ type: 'COMPLETE_SESSION', payload: { animal, focusMinutes } });
 
-        // Persist to storage - storage functions have built-in error handling
-        // and return fallback data on failure (see storage.ts)
-        const updatedCollection = await addToCollection(animal, sessionId);
-        dispatch({ type: 'ADD_TO_COLLECTION', payload: updatedCollection[updatedCollection.length - 1] });
+        try {
+            // Persist to storage with error handling
+            const updatedCollection = await addToCollection(animal, sessionId);
+            dispatch({ type: 'ADD_TO_COLLECTION', payload: updatedCollection[updatedCollection.length - 1] });
 
-        const updatedStats = await incrementSession(true, focusMinutes);
-        dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+            const updatedStats = await incrementSession(true, focusMinutes);
+            dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
 
-        const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
-        dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
+            const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
+            dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
 
-        // Check and award streak freeze based on streak milestone
-        await checkAndAwardFreeze(updatedStats.currentStreak);
+            // Check and award streak freeze based on streak milestone (non-critical, don't fail session)
+            try {
+                await checkAndAwardFreeze(updatedStats.currentStreak);
+            } catch (freezeError) {
+                console.warn('[completeSession] Failed to check/award streak freeze:', freezeError);
+                // Continue - streak freeze is a bonus feature, shouldn't fail the session
+            }
 
-        return { animal, updatedStats };
+            return { animal, updatedStats };
+        } catch (error) {
+            // Log error for debugging
+            console.error('[completeSession] Failed to persist session data:', error);
+
+            // Rollback all state to maintain consistency
+            // Note: We keep sessionState as 'completed' since the user did complete their focus session
+            // but we restore the previous collection/stats/progress since persistence failed
+            dispatch({ type: 'SET_COLLECTION', payload: previousCollection });
+            dispatch({ type: 'UPDATE_STATS', payload: previousStats });
+            dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: previousDailyProgress });
+
+            // Still return the animal so the user sees a reward for completing their session
+            // This provides graceful degradation - user experience continues even if storage fails
+            // The animal just won't be persisted to their permanent collection
+            console.warn('[completeSession] Session completed but storage failed. Animal awarded for this session but may not persist.');
+
+            return { animal, updatedStats: previousStats };
+        }
     };
 
     const failSession = async (focusMinutes: number): Promise<void> => {
