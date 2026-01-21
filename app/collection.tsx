@@ -2,13 +2,12 @@ import React, { useMemo, useState, useCallback, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { theme as darkTheme, Theme } from '../src/styles/theme';
+import { Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
 import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
 import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
-import { PixelButton } from '../src/components/PixelButton';
 import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { EmptyState } from '../src/components/EmptyState';
@@ -208,14 +207,16 @@ interface FilterChipProps {
     styles: ReturnType<typeof createStyles>;
 }
 
-const FilterChip = React.memo(({ label, value, active, onPress, styles }: FilterChipProps) => (
-    <Pressable
-        style={[styles.filterChip, active && styles.filterChipActive]}
-        onPress={() => onPress(value)}
-    >
-        <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
-    </Pressable>
-));
+const FilterChip = React.memo(function FilterChip({ label, value, active, onPress, styles }: FilterChipProps) {
+    return (
+        <Pressable
+            style={[styles.filterChip, active && styles.filterChipActive]}
+            onPress={() => onPress(value)}
+        >
+            <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+        </Pressable>
+    );
+});
 
 // Sort chip component - memoized to prevent unnecessary re-renders
 interface SortChipProps {
@@ -226,14 +227,16 @@ interface SortChipProps {
     styles: ReturnType<typeof createStyles>;
 }
 
-const SortChip = React.memo(({ label, value, active, onPress, styles }: SortChipProps) => (
-    <Pressable
-        style={[styles.sortChip, active && styles.sortChipActive]}
-        onPress={() => onPress(value)}
-    >
-        <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
-    </Pressable>
-));
+const SortChip = React.memo(function SortChip({ label, value, active, onPress, styles }: SortChipProps) {
+    return (
+        <Pressable
+            style={[styles.sortChip, active && styles.sortChipActive]}
+            onPress={() => onPress(value)}
+        >
+            <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+        </Pressable>
+    );
+});
 
 export default function CollectionScreen() {
     const router = useRouter();
