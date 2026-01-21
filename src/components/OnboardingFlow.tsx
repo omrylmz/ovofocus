@@ -316,7 +316,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(26, 26, 46, 0.98)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1000,
+        zIndex: theme.zIndex.modal,
+        elevation: theme.zIndex.modal, // Android elevation
     },
     content: {
         alignItems: 'center',

@@ -48,13 +48,13 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     backgroundLayer: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
+        zIndex: theme.zIndex.background,
+        elevation: theme.zIndex.background,
     },
     foregroundLayer: {
         flex: 1,
-        zIndex: 1,
-        elevation: 1,
+        zIndex: theme.zIndex.base,
+        elevation: theme.zIndex.base,
         // Ensure this layer is not affected by background
         backgroundColor: 'transparent',
     },
@@ -70,7 +70,8 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100,
+        zIndex: theme.zIndex.modal,
+        elevation: theme.zIndex.modal, // Android elevation
     },
     gestureHintsContent: {
         backgroundColor: theme.colors.surface,
@@ -105,12 +106,14 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     debugBadge: {
         position: 'absolute',
-        bottom: 100,
+        bottom: 20,
         alignSelf: 'center',
         backgroundColor: theme.colors.warning,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.round,
+        zIndex: theme.zIndex.debug,
+        elevation: theme.zIndex.debug, // Android elevation
     },
     debugText: {
         fontSize: theme.fontSize.xs,

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TextInput, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Theme } from '../src/styles/theme';
@@ -24,13 +24,13 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     backgroundLayer: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
+        zIndex: theme.zIndex.background,
+        elevation: theme.zIndex.background,
     },
     foregroundLayer: {
         flex: 1,
-        zIndex: 1,
-        elevation: 1,
+        zIndex: theme.zIndex.base,
+        elevation: theme.zIndex.base,
         backgroundColor: 'transparent',
     },
     scrollContent: {
@@ -194,7 +194,15 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     animalGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        // Use consistent gap that works with our card sizing
         gap: 12,
+        // Prevent overflow during scale animations
+        overflow: 'visible',
+    },
+    // Container for individual cards to prevent animation overflow issues
+    animalCardWrapper: {
+        // Padding creates visual space for scale-down animations without affecting layout
+        padding: 2,
     },
 });
 
@@ -238,11 +246,31 @@ const SortChip = React.memo(function SortChip({ label, value, active, onPress, s
     );
 });
 
+// Constants for grid layout calculations
+const GRID_GAP = 12;
+const CARD_BASE_WIDTH = 80; // Base width for small cards
+const CONTENT_PADDING = 24; // theme.spacing.lg
+
 export default function CollectionScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const { state, toggleFavorite, i18n } = useGame();
     const { theme } = useTheme();
+    const { width: screenWidth } = useWindowDimensions();
+
+    // Calculate responsive card width based on screen size
+    // This ensures cards fit evenly in the grid without overlap
+    const { cardWidth, numColumns } = useMemo(() => {
+        const availableWidth = screenWidth - (CONTENT_PADDING * 2);
+        // Calculate how many cards can fit
+        const cols = Math.floor((availableWidth + GRID_GAP) / (CARD_BASE_WIDTH + GRID_GAP));
+        // Clamp between 3 and 5 columns for reasonable display
+        const clampedCols = Math.max(3, Math.min(5, cols));
+        // Calculate the actual width each card should have
+        const totalGapWidth = (clampedCols - 1) * GRID_GAP;
+        const calculatedWidth = Math.floor((availableWidth - totalGapWidth) / clampedCols);
+        return { cardWidth: calculatedWidth, numColumns: clampedCols };
+    }, [screenWidth]);
 
     // Create dynamic styles based on current theme
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -422,16 +450,18 @@ export default function CollectionScreen() {
                     const isCollected = data && data.count > 0;
 
                     return (
-                        <AnimalCard
-                            key={animal.id}
-                            animal={animal}
-                            collected={isCollected || false}
-                            count={data?.count || 0}
-                            size="small"
-                            language={state.settings.language}
-                            onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
-                            entranceDelay={index * 50}
-                        />
+                        <View key={animal.id} style={styles.animalCardWrapper}>
+                            <AnimalCard
+                                animal={animal}
+                                collected={isCollected || false}
+                                count={data?.count || 0}
+                                size="small"
+                                customWidth={cardWidth}
+                                language={state.settings.language}
+                                onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                                entranceDelay={index * 50}
+                            />
+                        </View>
                     );
                 })}
             </View>
@@ -460,16 +490,18 @@ export default function CollectionScreen() {
                         const isCollected = data && data.count > 0;
 
                         return (
-                            <AnimalCard
-                                key={animal.id}
-                                animal={animal}
-                                collected={isCollected || false}
-                                count={data?.count || 0}
-                                size="small"
-                                language={state.settings.language}
-                                onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
-                                entranceDelay={index * 50}
-                            />
+                            <View key={animal.id} style={styles.animalCardWrapper}>
+                                <AnimalCard
+                                    animal={animal}
+                                    collected={isCollected || false}
+                                    count={data?.count || 0}
+                                    size="small"
+                                    customWidth={cardWidth}
+                                    language={state.settings.language}
+                                    onPress={isCollected ? () => handleAnimalPress(animal) : undefined}
+                                    entranceDelay={index * 50}
+                                />
+                            </View>
                         );
                     })}
                 </View>

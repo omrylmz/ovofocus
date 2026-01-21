@@ -31,13 +31,13 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     backgroundLayer: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-        elevation: 0,
+        zIndex: theme.zIndex.background,
+        elevation: theme.zIndex.background,
     },
     foregroundLayer: {
         flex: 1,
-        zIndex: 1,
-        elevation: 1,
+        zIndex: theme.zIndex.base,
+        elevation: theme.zIndex.base,
         backgroundColor: 'transparent',
     },
     scrollContent: {

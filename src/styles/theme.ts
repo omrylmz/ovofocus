@@ -263,6 +263,34 @@ export const theme = {
     },
   },
 
+  // Z-Index Elevation System
+  // =========================================================================
+  // Centralized z-index values to prevent overlap conflicts across the app.
+  // Use these named levels instead of arbitrary numbers.
+  //
+  // Layer hierarchy (bottom to top):
+  // - background: Animated backgrounds, particles
+  // - base: Normal content flow
+  // - floating: Badges, indicators that float above content
+  // - sticky: Headers, sticky elements
+  // - overlay: Dim overlays, backdrops
+  // - modal: Modal dialogs, bottom sheets
+  // - toast: Toast notifications, snackbars
+  // - tooltip: Tooltips, popovers
+  // - debug: Debug overlays (highest priority)
+  // =========================================================================
+  zIndex: {
+    background: 0,
+    base: 1,
+    floating: 10,
+    sticky: 20,
+    overlay: 100,
+    modal: 200,
+    toast: 300,
+    tooltip: 400,
+    debug: 500,
+  },
+
   audio: {
     volumes: {
       low: 0.3,
@@ -459,6 +487,7 @@ export type RarityIndicator = (typeof theme.rarityIndicators)[keyof typeof theme
 export type Typography = typeof typography;
 export type TypographySize = keyof typeof typography.sizes;
 export type FontWeight = keyof typeof typography.weights;
+export type ZIndexLevel = keyof typeof theme.zIndex;
 
 // Theme mode type for settings
 export type ThemeMode = 'light' | 'dark' | 'system';

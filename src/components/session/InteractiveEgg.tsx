@@ -206,7 +206,7 @@ export function InteractiveEgg({
     };
 
     return (
-        <>
+        <View style={styles.container}>
             {/* Interactive Egg with Gestures */}
             <GestureDetector gesture={composedGesture}>
                 <Animated.View
@@ -234,22 +234,28 @@ export function InteractiveEgg({
                 </Animated.View>
             </GestureDetector>
 
-            {/* Encouragement text */}
+            {/* Encouragement text - flows naturally below egg */}
             {encouragementText && (
-                <Animated.View
-                    style={styles.encouragementContainer}
-                    accessible={true}
-                    accessibilityRole="alert"
-                    accessibilityLiveRegion="polite"
-                >
-                    <Text style={styles.encouragementText}>{encouragementText}</Text>
-                </Animated.View>
+                <View style={styles.encouragementContainer}>
+                    <Text
+                        style={styles.encouragementText}
+                        accessible={true}
+                        accessibilityRole="alert"
+                        accessibilityLiveRegion="polite"
+                    >
+                        {encouragementText}
+                    </Text>
+                </View>
             )}
-        </>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     eggWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -266,12 +272,12 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     encouragementContainer: {
-        position: 'absolute',
-        bottom: 180,
+        marginTop: theme.spacing.md,
         backgroundColor: theme.colors.surface,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.sm,
         borderRadius: theme.borderRadius.round,
+        zIndex: theme.zIndex.floating,
         ...theme.shadows.medium,
     },
     encouragementText: {

@@ -96,7 +96,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-        zIndex: 1000,
+        zIndex: theme.zIndex.toast,
+        elevation: theme.zIndex.toast, // Android elevation
     },
     container: {
         flexDirection: 'row',

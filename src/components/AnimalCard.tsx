@@ -24,6 +24,7 @@ interface AnimalCardProps {
     size?: 'small' | 'medium' | 'large';
     language?: Language;
     entranceDelay?: number;  // For staggered entrance animations
+    customWidth?: number;    // Override width for responsive layouts
 }
 
 export function AnimalCard({
@@ -34,13 +35,13 @@ export function AnimalCard({
     size = 'medium',
     language = 'en',
     entranceDelay,
+    customWidth,
 }: AnimalCardProps) {
     const scale = useSharedValue(1);
     const rotation = useSharedValue(0);
     const idleOffset = useSharedValue(0);
     const shinePosition = useSharedValue(-50);
     const glowOpacity = useSharedValue(0);
-    const zIndexValue = useSharedValue(1);
 
     // Entrance animation values
     const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
@@ -49,7 +50,7 @@ export function AnimalCard({
     const level = getAnimalLevel(count);
     const isMaxLevel = level >= 5;
     const rarityColor = getRarityColor(animal.rarity);
-    const sizeStyles = getSizeStyles(size);
+    const sizeStyles = getSizeStyles(size, customWidth);
 
     // Entrance animation for staggered card appearance
     useEffect(() => {
@@ -105,7 +106,6 @@ export function AnimalCard({
     }, [collected, animal.rarity, isMaxLevel, idleOffset, shinePosition, glowOpacity]);
 
     const handlePressIn = () => {
-        zIndexValue.value = 10;
         scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
         rotation.value = withSequence(
             withTiming(-2, { duration: 50 }),
@@ -118,7 +118,6 @@ export function AnimalCard({
     };
 
     const handlePressOut = () => {
-        zIndexValue.value = 1;
         scale.value = withSpring(1, { damping: 15, stiffness: 300 });
     };
 
@@ -135,8 +134,9 @@ export function AnimalCard({
         }
     };
 
+    // Note: Removed zIndex animation to prevent overlap issues on Android
+    // Android's zIndex handling with flexWrap is unreliable and causes cards to overlap
     const animatedStyle = useAnimatedStyle(() => ({
-        zIndex: zIndexValue.value,
         transform: [
             { scale: scale.value },
             { rotate: `${rotation.value}deg` },
@@ -270,27 +270,35 @@ export function AnimalCard({
     );
 }
 
-function getSizeStyles(size: 'small' | 'medium' | 'large') {
-    switch (size) {
-        case 'small':
-            return {
-                container: { width: 80, height: 100, padding: theme.spacing.xs },
-                emoji: { fontSize: 32 },
-                name: { fontSize: theme.fontSize.xs },
-            };
-        case 'medium':
-            return {
-                container: { width: 100, height: 130, padding: theme.spacing.sm },
-                emoji: { fontSize: 48 },
-                name: { fontSize: theme.fontSize.sm },
-            };
-        case 'large':
-            return {
-                container: { width: 140, height: 180, padding: theme.spacing.md },
-                emoji: { fontSize: 64 },
-                name: { fontSize: theme.fontSize.md },
-            };
+function getSizeStyles(size: 'small' | 'medium' | 'large', customWidth?: number) {
+    // Base dimensions for each size
+    const baseDimensions = {
+        small: { width: 80, height: 100, padding: theme.spacing.xs, emoji: 32, name: theme.fontSize.xs },
+        medium: { width: 100, height: 130, padding: theme.spacing.sm, emoji: 48, name: theme.fontSize.sm },
+        large: { width: 140, height: 180, padding: theme.spacing.md, emoji: 64, name: theme.fontSize.md },
+    };
+
+    const base = baseDimensions[size];
+
+    // If customWidth provided, scale proportionally
+    if (customWidth !== undefined) {
+        const scale = customWidth / base.width;
+        return {
+            container: {
+                width: customWidth,
+                height: Math.round(base.height * scale),
+                padding: base.padding,
+            },
+            emoji: { fontSize: Math.round(base.emoji * Math.min(scale, 1.2)) }, // Cap emoji scaling
+            name: { fontSize: Math.max(10, Math.round(base.name * Math.min(scale, 1.1))) }, // Min 10px, cap scaling
+        };
     }
+
+    return {
+        container: { width: base.width, height: base.height, padding: base.padding },
+        emoji: { fontSize: base.emoji },
+        name: { fontSize: base.name },
+    };
 }
 
 const styles = StyleSheet.create({
