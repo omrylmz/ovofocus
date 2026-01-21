@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme as darkTheme, Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
 import { useTimer } from '../src/hooks/useTimer';
+import { usePomodoroTimer, PomodoroPhase } from '../src/hooks/usePomodoroTimer';
 import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
@@ -116,6 +117,58 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
     },
+    // Pomodoro indicator styles
+    pomodoroIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.round,
+        marginBottom: theme.spacing.md,
+        gap: theme.spacing.md,
+    },
+    pomodoroPhaseContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+    },
+    pomodoroPhaseIcon: {
+        fontSize: 16,
+    },
+    pomodoroPhaseText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    pomodoroPhaseTextWork: {
+        color: theme.colors.primary,
+    },
+    pomodoroPhaseTextBreak: {
+        color: theme.colors.accent,
+    },
+    pomodoroDivider: {
+        width: 1,
+        height: 16,
+        backgroundColor: theme.colors.textSecondary,
+        opacity: 0.3,
+    },
+    pomodoroSessionCounter: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+    },
+    pomodoroSkipButton: {
+        backgroundColor: theme.colors.surfaceLight,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.md,
+    },
+    pomodoroSkipText: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.accent,
+        fontWeight: theme.fontWeight.medium,
+    },
 });
 
 export default function HomeScreen() {
@@ -177,17 +230,30 @@ export default function HomeScreen() {
         return calculateCollectionBonuses(collectionForBonus);
     }, [state.collection]);
 
+    // Pomodoro state
+    const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>('work');
+    const [pomodoroWorkSessions, setPomodoroWorkSessions] = useState(0);
+
     // Debug mode: 10 seconds, Normal: 25 minutes (with focus bonus applied)
     const baseDuration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
     const duration = calculateEffectiveDuration(baseDuration, levelBonuses.focusPercentage);
 
-    const handleTimerComplete = useCallback(async () => {
+    // Pomodoro durations (debug mode uses shorter durations)
+    const pomodoroWorkDuration = state.settings.debugMode ? 10 : state.settings.pomodoroWorkDuration * 60;
+    const pomodoroBreakDuration = state.settings.debugMode ? 5 : state.settings.pomodoroBreakDuration * 60;
+    const pomodoroLongBreakDuration = state.settings.debugMode ? 8 : state.settings.pomodoroLongBreakDuration * 60;
+
+    // Handler for completing a work session (hatching animal)
+    const handleWorkSessionComplete = useCallback(async () => {
         if (state.settings.hapticsEnabled) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
 
         const prevBest = previousBestStreakRef.current;
-        const { animal, updatedStats } = await completeSession(state.settings.focusDuration);
+        const focusMinutes = state.settings.pomodoroEnabled
+            ? state.settings.pomodoroWorkDuration
+            : state.settings.focusDuration;
+        const { animal, updatedStats } = await completeSession(focusMinutes);
         setHatchedAnimal(animal);
         setShowHatchModal(true);
 
@@ -196,8 +262,6 @@ export default function HomeScreen() {
         }
 
         setTimeout(() => {
-            // Use actual streak from updated stats instead of calculating client-side
-            // This correctly handles same-day sessions where streak doesn't increment
             const newStreak = updatedStats.currentStreak;
             if (newStreak > prevBest && newStreak > 1) {
                 setCelebrationStreak(newStreak);
@@ -211,23 +275,108 @@ export default function HomeScreen() {
         completeSession,
         state.settings.hapticsEnabled,
         state.settings.focusDuration,
+        state.settings.pomodoroWorkDuration,
+        state.settings.pomodoroEnabled,
         state.settings.notificationsEnabled,
         state.settings.language,
     ]);
 
+    // Handler for regular timer complete (non-Pomodoro mode)
+    const handleTimerComplete = useCallback(async () => {
+        await handleWorkSessionComplete();
+    }, [handleWorkSessionComplete]);
+
+    // Pomodoro work session complete - hatch animal and transition to break
+    const handlePomodoroWorkComplete = useCallback(async () => {
+        await handleWorkSessionComplete();
+        // Note: The modal close will reset the session, so we don't auto-start break here
+        // The user needs to dismiss the modal, then they can continue with the next phase
+    }, [handleWorkSessionComplete]);
+
+    // Pomodoro break complete - just play a sound, no animal hatching
+    const handlePomodoroBreakComplete = useCallback(() => {
+        if (state.settings.hapticsEnabled) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        audioManager.playSound('session_start'); // Use a positive sound for break end
+    }, [state.settings.hapticsEnabled]);
+
+    // Regular timer (used when Pomodoro is disabled)
+    const regularTimer = useTimer({
+        duration,
+        onComplete: handleTimerComplete,
+    });
+
+    // Pomodoro timer (used when Pomodoro is enabled)
+    const pomodoroTimer = usePomodoroTimer({
+        workDuration: state.settings.pomodoroWorkDuration,
+        shortBreakDuration: state.settings.pomodoroBreakDuration,
+        longBreakDuration: state.settings.pomodoroLongBreakDuration,
+        sessionsBeforeLongBreak: state.settings.sessionsBeforeLongBreak,
+        debugMode: state.settings.debugMode,
+        onWorkComplete: handlePomodoroWorkComplete,
+        onBreakComplete: handlePomodoroBreakComplete,
+    });
+
+    // Unified timer interface - use Pomodoro timer when enabled, regular timer otherwise
+    const isPomodoroMode = state.settings.pomodoroEnabled;
     const {
         formattedTime,
         isRunning,
         progress,
-        start: startTimer,
-        pause: pauseTimer,
-        stop: stopTimer,
-        reset: resetTimer,
         elapsedMinutes,
-    } = useTimer({
-        duration,
-        onComplete: handleTimerComplete,
-    });
+    } = isPomodoroMode ? {
+        formattedTime: pomodoroTimer.formattedTime,
+        isRunning: pomodoroTimer.isRunning,
+        progress: pomodoroTimer.progress,
+        elapsedMinutes: pomodoroTimer.elapsedMinutes,
+    } : {
+        formattedTime: regularTimer.formattedTime,
+        isRunning: regularTimer.isRunning,
+        progress: regularTimer.progress,
+        elapsedMinutes: regularTimer.elapsedMinutes,
+    };
+
+    // Timer control functions that work with both modes
+    const startTimer = useCallback(() => {
+        if (isPomodoroMode) {
+            pomodoroTimer.start();
+        } else {
+            regularTimer.start();
+        }
+    }, [isPomodoroMode, pomodoroTimer, regularTimer]);
+
+    const pauseTimer = useCallback(() => {
+        if (isPomodoroMode) {
+            pomodoroTimer.pause();
+        } else {
+            regularTimer.pause();
+        }
+    }, [isPomodoroMode, pomodoroTimer, regularTimer]);
+
+    const stopTimer = useCallback(() => {
+        if (isPomodoroMode) {
+            pomodoroTimer.stop();
+        } else {
+            regularTimer.stop();
+        }
+    }, [isPomodoroMode, pomodoroTimer, regularTimer]);
+
+    const resetTimer = useCallback(() => {
+        if (isPomodoroMode) {
+            pomodoroTimer.reset();
+        } else {
+            regularTimer.reset();
+        }
+    }, [isPomodoroMode, pomodoroTimer, regularTimer]);
+
+    // Sync Pomodoro phase state for UI
+    useEffect(() => {
+        if (isPomodoroMode) {
+            setPomodoroPhase(pomodoroTimer.currentPhase);
+            setPomodoroWorkSessions(pomodoroTimer.workSessionsCompleted);
+        }
+    }, [isPomodoroMode, pomodoroTimer.currentPhase, pomodoroTimer.workSessionsCompleted]);
 
     const {
         warningLevel,
@@ -314,6 +463,15 @@ export default function HomeScreen() {
             }
         };
     }, []);
+
+    // Clear emergency pause timeout when session ends (give up, fail, or complete)
+    // This prevents the auto-resume from firing after the session is no longer active
+    useEffect(() => {
+        if (state.sessionState !== 'active' && emergencyPauseTimeoutRef.current) {
+            clearTimeout(emergencyPauseTimeoutRef.current);
+            emergencyPauseTimeoutRef.current = null;
+        }
+    }, [state.sessionState]);
 
     // Check for daily reward on app load (after data is loaded and onboarding is complete)
     useEffect(() => {
@@ -500,7 +658,13 @@ export default function HomeScreen() {
     const handleModalClose = () => {
         setShowHatchModal(false);
         setHatchedAnimal(null);
-        resetTimer();
+
+        // In Pomodoro mode, don't reset the timer after work session completes
+        // The phase has already transitioned to break, so we want to preserve progress
+        // Only reset the session state (which completeSession already handled)
+        if (!isPomodoroMode) {
+            resetTimer();
+        }
         resetSession();
     };
 
@@ -574,6 +738,44 @@ export default function HomeScreen() {
                         language={state.settings.language}
                     />
 
+                    {/* Pomodoro Phase Indicator */}
+                    {isPomodoroMode && state.sessionState === 'active' && (
+                        <View style={styles.pomodoroIndicator}>
+                            <View style={styles.pomodoroPhaseContainer}>
+                                <Text style={styles.pomodoroPhaseIcon}>
+                                    {pomodoroPhase === 'work' ? '🍅' : pomodoroPhase === 'longBreak' ? '☕' : '🧘'}
+                                </Text>
+                                <Text style={[
+                                    styles.pomodoroPhaseText,
+                                    pomodoroPhase === 'work' ? styles.pomodoroPhaseTextWork : styles.pomodoroPhaseTextBreak
+                                ]}>
+                                    {pomodoroPhase === 'work'
+                                        ? i18n('pomodoroWork')
+                                        : pomodoroPhase === 'shortBreak'
+                                        ? i18n('pomodoroShortBreak')
+                                        : i18n('pomodoroLongBreak')}
+                                </Text>
+                            </View>
+                            <View style={styles.pomodoroDivider} />
+                            <Text style={styles.pomodoroSessionCounter}>
+                                {i18n('pomodoroSessionCount')} {pomodoroWorkSessions + (pomodoroPhase === 'work' ? 1 : 0)}/{state.settings.sessionsBeforeLongBreak}
+                            </Text>
+                            {pomodoroPhase !== 'work' && (
+                                <Pressable
+                                    style={styles.pomodoroSkipButton}
+                                    onPress={() => {
+                                        pomodoroTimer.skipBreak();
+                                        if (state.settings.hapticsEnabled) {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }
+                                    }}
+                                >
+                                    <Text style={styles.pomodoroSkipText}>{i18n('pomodoroSkipBreak')}</Text>
+                                </Pressable>
+                            )}
+                        </View>
+                    )}
+
                     {/* Interactive Egg */}
                     <InteractiveEgg
                         sessionState={state.sessionState}
@@ -583,6 +785,7 @@ export default function HomeScreen() {
                         language={state.settings.language}
                         hapticsEnabled={state.settings.hapticsEnabled}
                         hasSeenGestureHints={state.settings.hasSeenGestureHints}
+                        eggStyleId={state.settings.selectedEggStyle}
                         onStart={handleStart}
                         onShowGestureHints={() => setShowGestureHints(true)}
                     />

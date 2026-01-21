@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -15,12 +15,15 @@ import { theme } from '../styles/theme';
 import { SessionState } from '../context/GameContext';
 import { Language, t } from '../i18n/translations';
 import { WarningLevel } from '../hooks/useToleranceSystem';
+import { EggStyle, getDefaultEggStyle, getEggStyleById } from '../data/eggStyles';
+import { StyledEgg } from './StyledEgg';
 
 interface EggProps {
     sessionState: SessionState;
     progress?: number; // 0 to 1
     language?: Language;
     warningLevel?: WarningLevel; // 0=none, 1=50%, 2=75%, 3=100%
+    eggStyleId?: string; // ID of the selected egg style
 }
 
 const WARNING_COLORS = {
@@ -30,7 +33,20 @@ const WARNING_COLORS = {
     3: '#FF4444', // Red
 };
 
-export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0 }: EggProps) {
+export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0, eggStyleId }: EggProps) {
+    // Get the current egg style
+    const currentEggStyle = useMemo(() => {
+        if (eggStyleId) {
+            const foundStyle = getEggStyleById(eggStyleId);
+            if (!foundStyle) {
+                console.warn(`[Egg] Invalid egg style ID: "${eggStyleId}". Falling back to default style.`);
+                return getDefaultEggStyle();
+            }
+            return foundStyle;
+        }
+        return getDefaultEggStyle();
+    }, [eggStyleId]);
+
     // Stable initial values - prevents blank flash on Android
     const wobble = useSharedValue(0);
     const scale = useSharedValue(1);
@@ -312,7 +328,14 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             }}
         >
             {/* Outer glow effect */}
-            <Animated.View style={[styles.glow, glowStyle]} importantForAccessibility="no" />
+            <Animated.View
+                style={[
+                    styles.glow,
+                    glowStyle,
+                    { backgroundColor: currentEggStyle.primaryColor }
+                ]}
+                importantForAccessibility="no"
+            />
 
             {/* Warning glow overlay */}
             {warningLevel > 0 && (
@@ -329,19 +352,39 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             {/* Rotating sparkles */}
             {sessionState === 'active' && progress > 0.3 && (
                 <Animated.View style={[styles.sparkleContainer, sparkleStyle]} importantForAccessibility="no">
-                    <Text style={styles.sparkle}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle2]}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle3]}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle4]}>✦</Text>
+                    <Text style={[styles.sparkle, { color: currentEggStyle.primaryColor }]}>✦</Text>
+                    <Text style={[styles.sparkle, styles.sparkle2, { color: currentEggStyle.primaryColor }]}>✦</Text>
+                    <Text style={[styles.sparkle, styles.sparkle3, { color: currentEggStyle.primaryColor }]}>✦</Text>
+                    <Text style={[styles.sparkle, styles.sparkle4, { color: currentEggStyle.primaryColor }]}>✦</Text>
                 </Animated.View>
             )}
 
             {/* Inner glow */}
-            <Animated.View style={[styles.innerGlow, innerGlowStyle]} importantForAccessibility="no" />
+            <Animated.View
+                style={[
+                    styles.innerGlow,
+                    innerGlowStyle,
+                    { backgroundColor: currentEggStyle.primaryColor }
+                ]}
+                importantForAccessibility="no"
+            />
 
             {/* Egg */}
             <Animated.View style={[styles.eggContainer, animatedStyle]} importantForAccessibility="no">
-                <Text style={styles.egg} allowFontScaling={false}>{getCrackEmoji()}</Text>
+                {/* Styled SVG Egg - only show when not broken or hatching */}
+                {sessionState !== 'failed' && sessionState !== 'completed' && (
+                    <StyledEgg
+                        eggStyle={currentEggStyle}
+                        size={80}
+                        showPattern={true}
+                        glowColor={currentEggStyle.primaryColor}
+                        glowIntensity={progress * 0.5}
+                    />
+                )}
+                {/* Show emoji for special states */}
+                {(sessionState === 'failed' || sessionState === 'completed') && (
+                    <Text style={styles.egg} allowFontScaling={false}>{getCrackEmoji()}</Text>
+                )}
 
                 {/* Progress sparkle overlay */}
                 {sessionState === 'active' && progress > 0.25 && (
@@ -367,7 +410,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
             {sessionState === 'active' && (
                 <Text
-                    style={styles.progressText}
+                    style={[styles.progressText, { color: currentEggStyle.primaryColor }]}
                     accessible={true}
                     accessibilityLiveRegion="polite"
                 >

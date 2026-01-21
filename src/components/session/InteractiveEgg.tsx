@@ -26,6 +26,7 @@ interface InteractiveEggProps {
     language: Language;
     hapticsEnabled: boolean;
     hasSeenGestureHints: boolean;
+    eggStyleId?: string; // ID of the selected egg style
     onStart: () => void;
     onShowGestureHints: () => void;
 }
@@ -38,6 +39,7 @@ export function InteractiveEgg({
     language,
     hapticsEnabled,
     hasSeenGestureHints,
+    eggStyleId,
     onStart,
     onShowGestureHints,
 }: InteractiveEggProps) {
@@ -227,6 +229,7 @@ export function InteractiveEgg({
                         progress={progress}
                         language={language}
                         warningLevel={warningLevel}
+                        eggStyleId={eggStyleId}
                     />
                 </Animated.View>
             </GestureDetector>

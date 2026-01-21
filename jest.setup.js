@@ -19,6 +19,26 @@ jest.mock('expo-localization', () => ({
   locale: 'en-US',
 }));
 
+// Mock expo-av (audio/video)
+jest.mock('expo-av', () => ({
+  Audio: {
+    Sound: {
+      createAsync: jest.fn().mockResolvedValue({
+        sound: {
+          playAsync: jest.fn().mockResolvedValue({}),
+          stopAsync: jest.fn().mockResolvedValue({}),
+          unloadAsync: jest.fn().mockResolvedValue({}),
+          setVolumeAsync: jest.fn().mockResolvedValue({}),
+          setIsLoopingAsync: jest.fn().mockResolvedValue({}),
+          setOnPlaybackStatusUpdate: jest.fn(),
+        },
+        status: { isLoaded: true },
+      }),
+    },
+    setAudioModeAsync: jest.fn().mockResolvedValue({}),
+  },
+}));
+
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');

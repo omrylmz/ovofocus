@@ -140,6 +140,14 @@ const initialState: GameState = {
         ambientSoundEnabled: false,
         selectedAmbientSound: 'rain',
         ambientSoundVolume: 50,
+        // Pomodoro defaults
+        pomodoroEnabled: false,
+        pomodoroWorkDuration: 25,
+        pomodoroBreakDuration: 5,
+        pomodoroLongBreakDuration: 15,
+        sessionsBeforeLongBreak: 4,
+        // Egg customization default
+        selectedEggStyle: 'classic',
     },
     dailyProgress: {
         date: new Date().toISOString().split('T')[0],
@@ -158,7 +166,7 @@ const initialState: GameState = {
 };
 
 // Reducer
-function gameReducer(state: GameState, action: GameAction): GameState {
+export function gameReducer(state: GameState, action: GameAction): GameState {
     switch (action.type) {
         case 'SET_LOADING':
             return { ...state, isLoading: action.payload };

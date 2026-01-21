@@ -18,6 +18,9 @@ import {
     StreakFreezeData,
 } from '../src/utils/streakFreeze';
 import { ExportModal } from '../src/components/ExportModal';
+import { EggStylePicker } from '../src/components/EggStylePicker';
+import { getEggStyleById, getDefaultEggStyle, UnlockCheckParams } from '../src/data/eggStyles';
+import { StyledEgg } from '../src/components/StyledEgg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -324,6 +327,39 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         color: theme.colors.text,
         fontWeight: theme.fontWeight.bold,
     },
+    // Egg Customization styles
+    eggCustomizeCard: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+    },
+    eggCustomizeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    eggCustomizeLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.md,
+    },
+    eggCustomizePreview: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    eggCustomizeInfo: {
+        flex: 1,
+    },
+    eggCustomizeLabel: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.medium,
+        color: theme.colors.text,
+    },
+    eggCustomizeStyleName: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginTop: theme.spacing.xs,
+    },
 });
 
 // Section Header Component with Icon
@@ -380,6 +416,7 @@ export default function SettingsScreen() {
     });
     const [canUseFreezeNow, setCanUseFreezeNow] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showEggStylePicker, setShowEggStylePicker] = useState(false);
 
     // Create dynamic styles based on current theme
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -458,6 +495,30 @@ export default function SettingsScreen() {
     const durations = [15, 20, 25, 30, 45, 60];
     const tolerances = [10, 15, 20, 30, 45, 60];
     const dailyGoals = [1, 2, 3, 4, 5, 6];
+
+    // Get the current egg style
+    const currentEggStyle = useMemo(() => {
+        return getEggStyleById(state.settings.selectedEggStyle) || getDefaultEggStyle();
+    }, [state.settings.selectedEggStyle]);
+
+    // Calculate unlock params for egg styles based on collection
+    const eggUnlockParams: UnlockCheckParams = useMemo(() => {
+        // Count unique animals and animals by rarity
+        const uniqueAnimals = new Set(state.collection.map(a => a.id));
+        const rareAnimals = state.collection.filter(a => a.rarity === 'rare');
+        const epicAnimals = state.collection.filter(a => a.rarity === 'epic');
+        const legendaryAnimals = state.collection.filter(a => a.rarity === 'legendary');
+
+        return {
+            currentStreak: state.stats.currentStreak,
+            bestStreak: state.stats.bestStreak,
+            completedSessions: state.stats.completedSessions,
+            uniqueAnimalsCollected: uniqueAnimals.size,
+            rareAnimalsCollected: new Set(rareAnimals.map(a => a.id)).size,
+            epicAnimalsCollected: new Set(epicAnimals.map(a => a.id)).size,
+            legendaryAnimalsCollected: new Set(legendaryAnimals.map(a => a.id)).size,
+        };
+    }, [state.collection, state.stats]);
 
     // Calculate success rate
     const successRate = state.stats.totalSessions > 0
@@ -557,6 +618,40 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
+                {/* ===== EGG CUSTOMIZATION ===== */}
+                <View style={styles.section}>
+                    <SectionHeader styles={styles} icon="🥚" title={i18n('eggCustomization')} />
+                    <Text style={styles.settingDescription}>{i18n('eggCustomizationDesc')}</Text>
+                    <Pressable
+                        style={styles.eggCustomizeCard}
+                        onPress={() => setShowEggStylePicker(true)}
+                    >
+                        <View style={styles.eggCustomizeRow}>
+                            <View style={styles.eggCustomizeLeft}>
+                                <View style={styles.eggCustomizePreview}>
+                                    <StyledEgg
+                                        eggStyle={currentEggStyle}
+                                        size={50}
+                                        showPattern={true}
+                                    />
+                                </View>
+                                <View style={styles.eggCustomizeInfo}>
+                                    <Text style={styles.eggCustomizeLabel}>{i18n('currentEggStyle')}</Text>
+                                    <Text style={styles.eggCustomizeStyleName}>
+                                        {i18n(currentEggStyle.name as any)}
+                                    </Text>
+                                </View>
+                            </View>
+                            <PixelButton
+                                title={i18n('customize')}
+                                onPress={() => setShowEggStylePicker(true)}
+                                variant="secondary"
+                                size="small"
+                            />
+                        </View>
+                    </Pressable>
+                </View>
+
                 {/* ===== TIMER SETTINGS ===== */}
                 <View style={styles.section}>
                     <SectionHeader styles={styles} icon="⏱️" title={i18n('focusDuration')} />
@@ -605,6 +700,85 @@ export default function SettingsScreen() {
                             </View>
                         ))}
                     </View>
+                </View>
+
+                {/* ===== POMODORO SETTINGS ===== */}
+                <View style={styles.section}>
+                    <SectionHeader styles={styles} icon="🍅" title={i18n('pomodoroMode')} />
+                    <Text style={styles.settingDescription}>{i18n('pomodoroEnabledDesc')}</Text>
+
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLabelContainer}>
+                            <Text style={styles.settingRowIcon}>🔄</Text>
+                            <Text style={styles.settingLabel}>{i18n('pomodoroEnabled')}</Text>
+                        </View>
+                        <Switch
+                            value={state.settings.pomodoroEnabled}
+                            onValueChange={value => updateUserSettings({ pomodoroEnabled: value })}
+                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
+                            thumbColor={theme.colors.text}
+                        />
+                    </View>
+
+                    {state.settings.pomodoroEnabled && (
+                        <>
+                            <Text style={styles.settingSubLabel}>{i18n('pomodoroWorkDuration')}</Text>
+                            <View style={styles.buttonGrid}>
+                                {[15, 20, 25, 30, 45].map(mins => (
+                                    <View key={mins} style={styles.buttonWrapper}>
+                                        <PixelButton
+                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
+                                            onPress={() => updateUserSettings({ pomodoroWorkDuration: mins })}
+                                            variant={state.settings.pomodoroWorkDuration === mins ? 'primary' : 'ghost'}
+                                            size="small"
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+
+                            <Text style={styles.settingSubLabel}>{i18n('pomodoroBreakDuration')}</Text>
+                            <View style={styles.buttonGrid}>
+                                {[3, 5, 7, 10].map(mins => (
+                                    <View key={mins} style={styles.buttonWrapper}>
+                                        <PixelButton
+                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
+                                            onPress={() => updateUserSettings({ pomodoroBreakDuration: mins })}
+                                            variant={state.settings.pomodoroBreakDuration === mins ? 'primary' : 'ghost'}
+                                            size="small"
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+
+                            <Text style={styles.settingSubLabel}>{i18n('pomodoroLongBreakDuration')}</Text>
+                            <View style={styles.buttonGrid}>
+                                {[10, 15, 20, 30].map(mins => (
+                                    <View key={mins} style={styles.buttonWrapper}>
+                                        <PixelButton
+                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
+                                            onPress={() => updateUserSettings({ pomodoroLongBreakDuration: mins })}
+                                            variant={state.settings.pomodoroLongBreakDuration === mins ? 'primary' : 'ghost'}
+                                            size="small"
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+
+                            <Text style={styles.settingSubLabel}>{i18n('sessionsBeforeLongBreak')}</Text>
+                            <View style={styles.buttonGrid}>
+                                {[2, 3, 4, 5, 6].map(count => (
+                                    <View key={count} style={styles.buttonWrapper}>
+                                        <PixelButton
+                                            title={`${count}`}
+                                            onPress={() => updateUserSettings({ sessionsBeforeLongBreak: count })}
+                                            variant={state.settings.sessionsBeforeLongBreak === count ? 'primary' : 'ghost'}
+                                            size="small"
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+                        </>
+                    )}
                 </View>
 
                 {/* ===== STREAK FREEZE ===== */}
@@ -882,6 +1056,16 @@ export default function SettingsScreen() {
                     // Trigger a reload of the app to reflect restored data
                     Alert.alert(i18n('done'), i18n('importSuccess'));
                 }}
+            />
+
+            {/* Egg Style Picker Modal */}
+            <EggStylePicker
+                visible={showEggStylePicker}
+                onClose={() => setShowEggStylePicker(false)}
+                selectedStyleId={state.settings.selectedEggStyle}
+                onSelectStyle={(styleId) => updateUserSettings({ selectedEggStyle: styleId })}
+                unlockParams={eggUnlockParams}
+                i18n={i18n}
             />
         </SafeAreaView>
     );

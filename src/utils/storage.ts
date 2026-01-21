@@ -50,6 +50,14 @@ export interface Settings {
     ambientSoundEnabled: boolean; // whether to play ambient sounds during sessions
     selectedAmbientSound: string; // 'rain' | 'forest' | 'ocean' | 'white_noise' | 'cafe'
     ambientSoundVolume: number; // volume level 0-100
+    // Pomodoro settings
+    pomodoroEnabled: boolean; // whether to use Pomodoro technique with work/break cycles
+    pomodoroWorkDuration: number; // work session duration in minutes (default: 25)
+    pomodoroBreakDuration: number; // short break duration in minutes (default: 5)
+    pomodoroLongBreakDuration: number; // long break duration in minutes (default: 15)
+    sessionsBeforeLongBreak: number; // number of work sessions before long break (default: 4)
+    // Egg customization
+    selectedEggStyle: string; // ID of the selected egg style (default: 'classic')
 }
 
 export interface DailyProgress {
@@ -121,6 +129,14 @@ const defaultSettings: Settings = {
     ambientSoundEnabled: false,
     selectedAmbientSound: 'rain',
     ambientSoundVolume: 50,
+    // Pomodoro defaults
+    pomodoroEnabled: false,
+    pomodoroWorkDuration: 25,
+    pomodoroBreakDuration: 5,
+    pomodoroLongBreakDuration: 15,
+    sessionsBeforeLongBreak: 4,
+    // Egg customization default
+    selectedEggStyle: 'classic',
 };
 
 // Collection
@@ -291,6 +307,19 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
         }
         if (updates.ambientSoundVolume !== undefined) {
             updates.ambientSoundVolume = Math.max(0, Math.min(100, updates.ambientSoundVolume));
+        }
+        // Validate Pomodoro settings
+        if (updates.pomodoroWorkDuration !== undefined) {
+            updates.pomodoroWorkDuration = Math.max(1, Math.min(60, updates.pomodoroWorkDuration));
+        }
+        if (updates.pomodoroBreakDuration !== undefined) {
+            updates.pomodoroBreakDuration = Math.max(1, Math.min(30, updates.pomodoroBreakDuration));
+        }
+        if (updates.pomodoroLongBreakDuration !== undefined) {
+            updates.pomodoroLongBreakDuration = Math.max(1, Math.min(60, updates.pomodoroLongBreakDuration));
+        }
+        if (updates.sessionsBeforeLongBreak !== undefined) {
+            updates.sessionsBeforeLongBreak = Math.max(2, Math.min(10, updates.sessionsBeforeLongBreak));
         }
 
         const current = await getSettings();
