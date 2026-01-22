@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, AccessibilityState } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
@@ -51,6 +51,38 @@ export function AnimalCard({
     const isMaxLevel = level >= 5;
     const rarityColor = getRarityColor(animal.rarity);
     const sizeStyles = getSizeStyles(size, customWidth);
+
+    // Accessibility labels and hints
+    const a11y = useMemo(() => {
+        const animalName = getAnimalName(animal.id, language);
+        const rarityLabel = getRarityLabelI18n(animal.rarity, language);
+
+        if (!collected) {
+            return {
+                label: language === 'tr' ? 'Bilinmeyen hayvan' : 'Unknown animal',
+                hint: language === 'tr'
+                    ? 'Bu hayvanı keşfetmek için odaklanma seanslarını tamamlayın'
+                    : 'Complete focus sessions to discover this animal',
+            };
+        }
+
+        const countText = count > 1
+            ? (language === 'tr' ? `, ${count} adet` : `, ${count} collected`)
+            : '';
+        const levelText = level > 1
+            ? (language === 'tr' ? `, seviye ${level}` : `, level ${level}`)
+            : '';
+        const maxLevelText = isMaxLevel
+            ? (language === 'tr' ? ', maksimum seviye' : ', max level')
+            : '';
+
+        return {
+            label: `${animalName}, ${rarityLabel}${countText}${levelText}${maxLevelText}`,
+            hint: onPress
+                ? (language === 'tr' ? 'Detayları görmek için dokunun' : 'Tap to view details')
+                : undefined,
+        };
+    }, [animal.id, animal.rarity, collected, count, level, isMaxLevel, language, onPress]);
 
     // Entrance animation for staggered card appearance
     useEffect(() => {
@@ -167,6 +199,13 @@ export function AnimalCard({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 disabled={!onPress && !collected}
+                accessible={true}
+                accessibilityRole={collected && onPress ? 'button' : 'image'}
+                accessibilityLabel={a11y.label}
+                accessibilityHint={a11y.hint}
+                accessibilityState={{
+                    disabled: !onPress && !collected,
+                } as AccessibilityState}
             >
                 <Animated.View
                     style={[

@@ -424,6 +424,30 @@ export const translations = {
         a11ySessionPaused: 'Session paused',
         a11ySessionCompleted: 'Session completed successfully',
         a11ySessionFailed: 'Session failed',
+
+        // AnimalCard accessibility
+        a11yUnknownAnimal: 'Unknown animal',
+        a11yDiscoverAnimalHint: 'Complete focus sessions to discover this animal',
+        a11yAnimalDetailsHint: 'Tap to view details',
+        a11yCollectedCount: 'collected',
+        a11yLevel: 'level',
+        a11yMaxLevel: 'max level',
+
+        // Collection filter/sort accessibility
+        a11yFilterAll: 'Show all animals',
+        a11yFilterCollected: 'Show collected animals only',
+        a11yFilterUncollected: 'Show missing animals only',
+        a11yFilterFavorites: 'Show favorite animals only',
+        a11ySortByRarity: 'Sort animals by rarity',
+        a11ySortByRecent: 'Sort animals by most recently collected',
+        a11ySortByName: 'Sort animals alphabetically',
+        a11ySearchAnimals: 'Search for animals by name',
+        a11yClearSearch: 'Clear search',
+
+        // Error Boundary
+        errorBoundaryTitle: 'Oops! Something went wrong',
+        errorBoundaryMessage: 'The app encountered an unexpected error. Tap the button below to try again.',
+        errorBoundaryRetryHint: 'Attempt to recover from the error',
     },
 
     tr: {
@@ -839,6 +863,30 @@ export const translations = {
         a11ySessionPaused: 'Seans duraklatıldı',
         a11ySessionCompleted: 'Seans başarıyla tamamlandı',
         a11ySessionFailed: 'Seans başarısız oldu',
+
+        // AnimalCard accessibility
+        a11yUnknownAnimal: 'Bilinmeyen hayvan',
+        a11yDiscoverAnimalHint: 'Bu hayvanı keşfetmek için odaklanma seanslarını tamamlayın',
+        a11yAnimalDetailsHint: 'Detayları görmek için dokunun',
+        a11yCollectedCount: 'adet',
+        a11yLevel: 'seviye',
+        a11yMaxLevel: 'maksimum seviye',
+
+        // Collection filter/sort accessibility
+        a11yFilterAll: 'Tüm hayvanları göster',
+        a11yFilterCollected: 'Sadece toplanan hayvanları göster',
+        a11yFilterUncollected: 'Sadece eksik hayvanları göster',
+        a11yFilterFavorites: 'Sadece favori hayvanları göster',
+        a11ySortByRarity: 'Hayvanları nadirliğe göre sırala',
+        a11ySortByRecent: 'Hayvanları en son toplanana göre sırala',
+        a11ySortByName: 'Hayvanları alfabetik sırala',
+        a11ySearchAnimals: 'Hayvanları isme göre ara',
+        a11yClearSearch: 'Aramayı temizle',
+
+        // Error Boundary
+        errorBoundaryTitle: 'Hay aksi! Bir sorun olustu',
+        errorBoundaryMessage: 'Uygulama beklenmedik bir hatayla karsilasti. Tekrar denemek icin asagidaki butona dokunun.',
+        errorBoundaryRetryHint: 'Hatadan kurtulmaya calis',
     },
 } as const;
 

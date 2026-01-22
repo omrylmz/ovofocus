@@ -213,13 +213,19 @@ interface FilterChipProps {
     active: boolean;
     onPress: (value: FilterOption) => void;
     styles: ReturnType<typeof createStyles>;
+    accessibilityHint?: string;
 }
 
-const FilterChip = React.memo(function FilterChip({ label, value, active, onPress, styles }: FilterChipProps) {
+const FilterChip = React.memo(function FilterChip({ label, value, active, onPress, styles, accessibilityHint }: FilterChipProps) {
     return (
         <Pressable
             style={[styles.filterChip, active && styles.filterChipActive]}
             onPress={() => onPress(value)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityHint={accessibilityHint}
+            accessibilityState={{ selected: active }}
         >
             <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
         </Pressable>
@@ -233,13 +239,19 @@ interface SortChipProps {
     active: boolean;
     onPress: (value: SortOption) => void;
     styles: ReturnType<typeof createStyles>;
+    accessibilityHint?: string;
 }
 
-const SortChip = React.memo(function SortChip({ label, value, active, onPress, styles }: SortChipProps) {
+const SortChip = React.memo(function SortChip({ label, value, active, onPress, styles, accessibilityHint }: SortChipProps) {
     return (
         <Pressable
             style={[styles.sortChip, active && styles.sortChipActive]}
             onPress={() => onPress(value)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityHint={accessibilityHint}
+            accessibilityState={{ selected: active }}
         >
             <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
         </Pressable>
@@ -526,7 +538,7 @@ export default function CollectionScreen() {
             <ScrollView style={styles.foregroundLayer} contentContainerStyle={styles.scrollContent}>
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
-                    <Text style={styles.searchIcon}>🔍</Text>
+                    <Text style={styles.searchIcon} importantForAccessibility="no">🔍</Text>
                     <TextInput
                         style={styles.searchInput}
                         placeholder={i18n('searchPlaceholder')}
@@ -535,32 +547,96 @@ export default function CollectionScreen() {
                         onChangeText={setSearchQuery}
                         autoCapitalize="none"
                         autoCorrect={false}
+                        accessible={true}
+                        accessibilityLabel={i18n('searchPlaceholder')}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları isme göre ara' : 'Search for animals by name'}
                     />
                     {searchQuery.length > 0 && (
-                        <Pressable onPress={() => setSearchQuery('')} style={styles.searchClear}>
+                        <Pressable
+                            onPress={() => setSearchQuery('')}
+                            style={styles.searchClear}
+                            accessible={true}
+                            accessibilityRole="button"
+                            accessibilityLabel={state.settings.language === 'tr' ? 'Aramayı temizle' : 'Clear search'}
+                        >
                             <Text style={styles.searchClearText}>✕</Text>
                         </Pressable>
                     )}
                 </View>
 
                 {/* Filter Chips */}
-                <View style={styles.filterRow}>
-                    <FilterChip label={i18n('filterAll')} value="all" active={activeFilter === 'all'} onPress={handleFilterPress} styles={styles} />
-                    <FilterChip label={i18n('filterCollected')} value="collected" active={activeFilter === 'collected'} onPress={handleFilterPress} styles={styles} />
-                    <FilterChip label={i18n('filterUncollected')} value="uncollected" active={activeFilter === 'uncollected'} onPress={handleFilterPress} styles={styles} />
-                    <FilterChip label="❤️" value="favorites" active={activeFilter === 'favorites'} onPress={handleFilterPress} styles={styles} />
+                <View style={styles.filterRow} accessibilityRole="radiogroup">
+                    <FilterChip
+                        label={i18n('filterAll')}
+                        value="all"
+                        active={activeFilter === 'all'}
+                        onPress={handleFilterPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Tüm hayvanları göster' : 'Show all animals'}
+                    />
+                    <FilterChip
+                        label={i18n('filterCollected')}
+                        value="collected"
+                        active={activeFilter === 'collected'}
+                        onPress={handleFilterPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Sadece toplanan hayvanları göster' : 'Show collected animals only'}
+                    />
+                    <FilterChip
+                        label={i18n('filterUncollected')}
+                        value="uncollected"
+                        active={activeFilter === 'uncollected'}
+                        onPress={handleFilterPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Sadece eksik hayvanları göster' : 'Show missing animals only'}
+                    />
+                    <FilterChip
+                        label={state.settings.language === 'tr' ? 'Favoriler' : 'Favorites'}
+                        value="favorites"
+                        active={activeFilter === 'favorites'}
+                        onPress={handleFilterPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Sadece favori hayvanları göster' : 'Show favorite animals only'}
+                    />
                 </View>
 
                 {/* Sort Chips */}
-                <View style={styles.sortRow}>
-                    <Text style={styles.sortLabel}>{i18n('sort')}:</Text>
-                    <SortChip label={i18n('sortByRarity')} value="rarity" active={activeSort === 'rarity'} onPress={handleSortPress} styles={styles} />
-                    <SortChip label={i18n('sortByRecent')} value="recent" active={activeSort === 'recent'} onPress={handleSortPress} styles={styles} />
-                    <SortChip label={i18n('sortByName')} value="name" active={activeSort === 'name'} onPress={handleSortPress} styles={styles} />
+                <View style={styles.sortRow} accessibilityRole="radiogroup">
+                    <Text style={styles.sortLabel} importantForAccessibility="no">{i18n('sort')}:</Text>
+                    <SortChip
+                        label={i18n('sortByRarity')}
+                        value="rarity"
+                        active={activeSort === 'rarity'}
+                        onPress={handleSortPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları nadirliğe göre sırala' : 'Sort animals by rarity'}
+                    />
+                    <SortChip
+                        label={i18n('sortByRecent')}
+                        value="recent"
+                        active={activeSort === 'recent'}
+                        onPress={handleSortPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları en son toplanana göre sırala' : 'Sort by most recently collected'}
+                    />
+                    <SortChip
+                        label={i18n('sortByName')}
+                        value="name"
+                        active={activeSort === 'name'}
+                        onPress={handleSortPress}
+                        styles={styles}
+                        accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları alfabetik sırala' : 'Sort animals alphabetically'}
+                    />
                 </View>
 
                 {/* Overall Progress */}
-                <View style={styles.progressCard}>
+                <View
+                    style={styles.progressCard}
+                    accessible={true}
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={`${i18n('collectionProgress')}: ${stats.total} ${state.settings.language === 'tr' ? 'hayvan' : 'animals'} / ${stats.max}, ${Math.round((stats.total / stats.max) * 100)}%`}
+                    accessibilityValue={{ min: 0, max: stats.max, now: stats.total }}
+                >
                     <Text style={styles.progressTitle}>{i18n('collectionProgress')}</Text>
                     <View style={styles.progressBar}>
                         <View
@@ -570,25 +646,37 @@ export default function CollectionScreen() {
                             ]}
                         />
                     </View>
-                    <Text style={styles.progressText}>
+                    <Text style={styles.progressText} importantForAccessibility="no">
                         {stats.total} / {stats.max} {i18n('animalsCollected')} ({Math.round((stats.total / stats.max) * 100)}%)
                     </Text>
                 </View>
 
                 {/* Stats Summary */}
-                <View style={styles.statsGrid}>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statEmoji}>⏱️</Text>
+                <View style={styles.statsGrid} accessibilityRole="summary">
+                    <View
+                        style={styles.statCard}
+                        accessible={true}
+                        accessibilityLabel={`${state.stats.totalFocusMinutes} ${i18n('minutes')}`}
+                    >
+                        <Text style={styles.statEmoji} importantForAccessibility="no">⏱️</Text>
                         <Text style={styles.statValue}>{state.stats.totalFocusMinutes}</Text>
                         <Text style={styles.statLabel}>{i18n('minutes')}</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statEmoji}>✅</Text>
+                    <View
+                        style={styles.statCard}
+                        accessible={true}
+                        accessibilityLabel={`${state.stats.completedSessions} ${i18n('completed')}`}
+                    >
+                        <Text style={styles.statEmoji} importantForAccessibility="no">✅</Text>
                         <Text style={styles.statValue}>{state.stats.completedSessions}</Text>
                         <Text style={styles.statLabel}>{i18n('completed')}</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statEmoji}>🔥</Text>
+                    <View
+                        style={styles.statCard}
+                        accessible={true}
+                        accessibilityLabel={`${state.stats.bestStreak} ${i18n('bestStreak')}`}
+                    >
+                        <Text style={styles.statEmoji} importantForAccessibility="no">🔥</Text>
                         <Text style={styles.statValue}>{state.stats.bestStreak}</Text>
                         <Text style={styles.statLabel}>{i18n('bestStreak')}</Text>
                     </View>
