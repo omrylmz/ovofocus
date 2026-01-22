@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     sparkleOverlay: {
         position: 'absolute',
         top: -30,
-        zIndex: 10,
+        zIndex: theme.zIndex.floating,
     },
     sparkleText: {
         fontSize: 24,

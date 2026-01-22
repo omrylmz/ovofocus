@@ -278,6 +278,16 @@ export const theme = {
   // - toast: Toast notifications, snackbars
   // - tooltip: Tooltips, popovers
   // - debug: Debug overlays (highest priority)
+  //
+  // IMPORTANT: Android compatibility
+  // - Always set BOTH zIndex AND elevation properties
+  // - Android uses elevation for native shadow/stacking, iOS uses zIndex
+  //
+  // Modal stacking behavior:
+  // - React Native's <Modal> component renders in a native layer above all
+  //   app content, so explicit zIndex is not needed for Modal components.
+  // - Nested modals stack in render order (last rendered = on top).
+  // - For custom modal-like views (not using <Modal>), use zIndex.modal.
   // =========================================================================
   zIndex: {
     background: 0,
