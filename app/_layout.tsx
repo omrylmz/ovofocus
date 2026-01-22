@@ -8,6 +8,7 @@ import { GameProvider, useGame } from '../src/context/GameContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { theme as darkTheme } from '../src/styles/theme';
 import { audioManager } from '../src/services/audioManager';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 // Inner layout component that can access theme context
 function ThemedLayout({ isLoading }: { isLoading: boolean }) {
@@ -119,11 +120,14 @@ function AppContent() {
     const { state } = useGame();
     const themeMode = state.settings.themeMode;
     const isLoading = state.isLoading;
+    const language = state.settings.language;
 
     return (
-        <ThemeProvider themeMode={themeMode}>
-            <ThemedLayout isLoading={isLoading} />
-        </ThemeProvider>
+        <ErrorBoundary language={language}>
+            <ThemeProvider themeMode={themeMode}>
+                <ThemedLayout isLoading={isLoading} />
+            </ThemeProvider>
+        </ErrorBoundary>
     );
 }
 
