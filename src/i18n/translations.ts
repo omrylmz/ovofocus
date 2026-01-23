@@ -103,6 +103,9 @@ export const translations = {
         // Hatch Modal
         congratulations: 'Congratulations! 🎊',
         addToCollection: 'Add to Collection',
+        sessionNotes: 'Session Notes',
+        sessionNotesPlaceholder: 'What did you accomplish?',
+        optional: 'Optional',
 
         // Collection Screen
         collectionProgress: 'Collection Progress',
@@ -286,6 +289,11 @@ export const translations = {
         cosmic_owl: 'Cosmic Owl',
         celestial_lion: 'Celestial Lion',
         void_serpent: 'Void Serpent',
+        phoenix_king: 'Phoenix King',
+        aurora_fox: 'Aurora Fox',
+        crystal_titan: 'Crystal Titan',
+        shadow_leviathan: 'Shadow Leviathan',
+        starweaver: 'Starweaver',
 
         // Daily Rewards
         dailyReward: 'Daily Reward',
@@ -342,6 +350,11 @@ export const translations = {
         cosmic_owl_desc: 'An owl from the stars.',
         celestial_lion_desc: 'A lion from the stars.',
         void_serpent_desc: 'Lord of darkness.',
+        phoenix_king_desc: 'Ruler of the eternal flames.',
+        aurora_fox_desc: 'A mystical fox born from northern lights.',
+        crystal_titan_desc: 'An ancient giant forged from pure crystal.',
+        shadow_leviathan_desc: 'Mysterious lord of the deep darkness.',
+        starweaver_desc: 'A cosmic being that weaves galaxies.',
 
         // Data Export/Import
         dataBackup: 'Data & Backup',
@@ -541,6 +554,9 @@ export const translations = {
         // Hatch Modal
         congratulations: 'Tebrikler! 🎊',
         addToCollection: 'Koleksiyonuma Ekle',
+        sessionNotes: 'Oturum Notlari',
+        sessionNotesPlaceholder: 'Ne basardin?',
+        optional: 'Istege bagli',
 
         // Collection Screen
         collectionProgress: 'Koleksiyon İlerlemesi',
@@ -725,6 +741,11 @@ export const translations = {
         cosmic_owl: 'Kozmik Baykuş',
         celestial_lion: 'Göksel Aslan',
         void_serpent: 'Boşluk Yılanı',
+        phoenix_king: 'Anka Kralı',
+        aurora_fox: 'Kutup Işığı Tilkisi',
+        crystal_titan: 'Kristal Titan',
+        shadow_leviathan: 'Gölge Leviathan',
+        starweaver: 'Yıldız Dokuyucu',
 
         // Daily Rewards
         dailyReward: 'Gunluk Odul',
@@ -781,6 +802,11 @@ export const translations = {
         cosmic_owl_desc: 'Yıldızlardan gelen baykuş.',
         celestial_lion_desc: 'Yıldızlardan gelen aslan.',
         void_serpent_desc: 'Karanlıkların efendisi.',
+        phoenix_king_desc: 'Sonsuz alevlerin hükümdarı.',
+        aurora_fox_desc: 'Kuzey ışıklarından doğan mistik tilki.',
+        crystal_titan_desc: 'Saf kristalden yaratılmış kadim dev.',
+        shadow_leviathan_desc: 'Derin karanlıkların gizemli efendisi.',
+        starweaver_desc: 'Galaksileri dokuyan kozmik varlık.',
 
         // Data Export/Import
         dataBackup: 'Veri ve Yedekleme',

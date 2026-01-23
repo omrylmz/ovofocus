@@ -61,6 +61,11 @@ export const animals: Animal[] = [
     { id: 'cosmic_owl', name: 'Kozmik Baykuş', emoji: '🌌', rarity: 'legendary', description: 'Yıldızlardan gelen baykuş.' },
     { id: 'celestial_lion', name: 'Göksel Aslan', emoji: '🌟', rarity: 'legendary', description: 'Yıldızlardan gelen aslan.' },
     { id: 'void_serpent', name: 'Boşluk Yılanı', emoji: '🌀', rarity: 'legendary', description: 'Karanlıkların efendisi.' },
+    { id: 'phoenix_king', name: 'Anka Kralı', emoji: '🔥', rarity: 'legendary', description: 'Sonsuz alevlerin hükümdarı.' },
+    { id: 'aurora_fox', name: 'Kutup Işığı Tilkisi', emoji: '🦊', rarity: 'legendary', description: 'Kuzey ışıklarından doğan mistik tilki.' },
+    { id: 'crystal_titan', name: 'Kristal Titan', emoji: '💎', rarity: 'legendary', description: 'Saf kristalden yaratılmış kadim dev.' },
+    { id: 'shadow_leviathan', name: 'Gölge Leviathan', emoji: '🐋', rarity: 'legendary', description: 'Derin karanlıkların gizemli efendisi.' },
+    { id: 'starweaver', name: 'Yıldız Dokuyucu', emoji: '⭐', rarity: 'legendary', description: 'Galaksileri dokuyan kozmik varlık.' },
 ];
 
 // Get random animal based on rarity weights
