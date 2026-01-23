@@ -1,7 +1,13 @@
-import React, { useMemo, useState, useCallback, useLayoutEffect, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useLayoutEffect, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, Pressable, useWindowDimensions } from 'react-native';
-import { FlashList, FlashListProps } from '@shopify/flash-list';
-import type { FlashListRef } from '@shopify/flash-list/dist/FlashListRef';
+import { FlashList, FlashListRef } from '@shopify/flash-list';
+import Animated, {
+    useAnimatedStyle,
+    withTiming,
+    useSharedValue,
+    Easing,
+    cancelAnimation,
+} from 'react-native-reanimated';
 import { useRouter, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Theme } from '../src/styles/theme';
@@ -14,7 +20,7 @@ import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { EmptyState } from '../src/components/EmptyState';
 import { ScrollToTopButton } from '../src/components/ScrollToTopButton';
-import { getRarityLabelI18n, getAnimalName } from '../src/i18n/translations';
+import { getRarityLabelI18n, getAnimalName, Language } from '../src/i18n/translations';
 
 // Types for FlashList items
 type SectionHeaderItem = {
@@ -27,6 +33,7 @@ type AnimalItem = {
     type: 'animal';
     animal: Animal;
     rarity: Rarity;
+    indexInSection: number; // Position within current rarity section for optimized animations
 };
 
 type ProgressCardItem = {
@@ -41,7 +48,17 @@ type FilterHeaderItem = {
     type: 'filter-header';
 };
 
-type ListItem = SectionHeaderItem | AnimalItem | ProgressCardItem | StatsGridItem | FilterHeaderItem;
+type ExpandAllItem = {
+    type: 'expand-all';
+    allExpanded: boolean;
+};
+
+type EmptyStateItem = {
+    type: 'empty-state';
+    variant: 'no-results' | 'no-collection';
+};
+
+type ListItem = SectionHeaderItem | AnimalItem | ProgressCardItem | StatsGridItem | FilterHeaderItem | ExpandAllItem | EmptyStateItem;
 
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
 type SortOption = 'rarity' | 'recent' | 'name';
@@ -280,6 +297,33 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     animalCardWrapper: {
         padding: 2,
     },
+    // Expand/Collapse all button
+    expandAllContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: theme.spacing.sm,
+    },
+    expandAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.surface,
+    },
+    expandAllButtonPressed: {
+        opacity: 0.7,
+    },
+    expandAllText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    expandAllIcon: {
+        fontSize: 12,
+        marginLeft: theme.spacing.xs,
+        color: theme.colors.textSecondary,
+    },
 });
 
 // Unified chip component - memoized to prevent unnecessary re-renders
@@ -333,11 +377,97 @@ const SortSegment = React.memo(function SortSegment({ label, active, onPress, st
     );
 });
 
+// Animated collapsible section header component
+interface SectionHeaderComponentProps {
+    rarity: Rarity;
+    isExpanded: boolean;
+    collectedCount: number;
+    totalCount: number;
+    onToggle: () => void;
+    styles: ReturnType<typeof createStyles>;
+    language: Language;
+}
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const SectionHeaderComponent = React.memo(function SectionHeaderComponent({
+    rarity,
+    isExpanded,
+    collectedCount,
+    totalCount,
+    onToggle,
+    styles,
+    language,
+}: SectionHeaderComponentProps) {
+    const rarityColor = getRarityColor(rarity);
+    const rotation = useSharedValue(isExpanded ? 180 : 0);
+    const scale = useSharedValue(1);
+
+    // Animate chevron rotation when expanded state changes
+    useEffect(() => {
+        rotation.value = withTiming(isExpanded ? 180 : 0, {
+            duration: 200,
+            easing: Easing.out(Easing.ease),
+        });
+
+        return () => {
+            cancelAnimation(rotation);
+            cancelAnimation(scale);
+        };
+    }, [isExpanded, rotation, scale]);
+
+    const chevronStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+    }));
+
+    const containerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = useCallback(() => {
+        scale.value = withTiming(0.98, { duration: 100 });
+    }, [scale]);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withTiming(1, { duration: 100 });
+    }, [scale]);
+
+    return (
+        <AnimatedPressable
+            onPress={onToggle}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={[styles.sectionHeader, containerStyle]}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`${getRarityLabelI18n(rarity, language)} section, ${collectedCount} of ${totalCount}`}
+            accessibilityHint={isExpanded ? 'Double tap to collapse' : 'Double tap to expand'}
+            accessibilityState={{ expanded: isExpanded }}
+        >
+            <View style={[styles.sectionDot, { backgroundColor: rarityColor }]} />
+            <Text style={[styles.sectionTitle, { color: rarityColor }]}>
+                {getRarityLabelI18n(rarity, language)}
+            </Text>
+            <Text style={styles.sectionCount}>
+                {collectedCount} / {totalCount}
+            </Text>
+            <View style={styles.chevronContainer}>
+                <Animated.Text style={[styles.chevron, chevronStyle]}>▼</Animated.Text>
+            </View>
+        </AnimatedPressable>
+    );
+});
+
 // Constants for grid layout calculations
 const GRID_GAP = 12;
 const CARD_BASE_WIDTH = 80; // Base width for small cards
 const CONTENT_PADDING = 24; // theme.spacing.lg
 const SCROLL_TO_TOP_THRESHOLD = 500;
+
+// Animation optimization constants
+const MAX_ANIMATED_ITEMS_PER_SECTION = 12; // Limit staggered animations per section
+const ANIMATION_DELAY_INCREMENT = 25; // ms between each card animation
+const MAX_ANIMATION_DELAY = 200; // Maximum total delay for entrance animations
 
 export default function CollectionScreen() {
     const router = useRouter();
@@ -488,6 +618,15 @@ export default function CollectionScreen() {
     // Check if we're in filtered mode (not default view)
     const isFilteredView = searchQuery.trim() || activeFilter !== 'all' || activeSort !== 'rarity';
 
+    // Check if all sections are expanded or collapsed
+    const allExpanded = useMemo(() =>
+        Object.values(expandedSections).every(v => v),
+        [expandedSections]
+    );
+
+    // Check if collection is empty (no animals collected yet)
+    const hasNoCollection = state.collection.length === 0;
+
     // Build the list data for FlashList
     const listData = useMemo((): ListItem[] => {
         const items: ListItem[] = [];
@@ -502,44 +641,62 @@ export default function CollectionScreen() {
         items.push({ type: 'stats-grid' });
 
         if (isFilteredView) {
-            // Filtered view: flat list of animals
-            filteredAnimals.forEach(animal => {
-                items.push({
-                    type: 'animal',
-                    animal,
-                    rarity: animal.rarity,
-                });
-            });
-        } else {
-            // Default view: grouped by rarity with collapsible sections
-            const rarityOrder: Rarity[] = ['legendary', 'epic', 'rare', 'common'];
-
-            rarityOrder.forEach(rarity => {
-                const animalsInRarity = animalsByRarity[rarity];
-                if (animalsInRarity.length > 0) {
-                    // Add section header
+            // Filtered view: flat list of animals with optimized indexing
+            if (filteredAnimals.length === 0) {
+                // Add empty state for no search/filter results
+                items.push({ type: 'empty-state', variant: 'no-results' });
+            } else {
+                filteredAnimals.forEach((animal, index) => {
                     items.push({
-                        type: 'section-header',
-                        rarity,
-                        isExpanded: expandedSections[rarity],
+                        type: 'animal',
+                        animal,
+                        rarity: animal.rarity,
+                        indexInSection: index, // Use flat index for filtered view
                     });
+                });
+            }
+        } else {
+            // Check if user has no animals collected at all
+            if (hasNoCollection) {
+                items.push({ type: 'empty-state', variant: 'no-collection' });
+            } else {
+                // Default view: grouped by rarity with collapsible sections
+                const rarityOrder: Rarity[] = ['legendary', 'epic', 'rare', 'common'];
 
-                    // Add animals if section is expanded
-                    if (expandedSections[rarity]) {
-                        animalsInRarity.forEach(animal => {
-                            items.push({
-                                type: 'animal',
-                                animal,
-                                rarity,
-                            });
+                // Add expand/collapse all button
+                items.push({
+                    type: 'expand-all',
+                    allExpanded,
+                });
+
+                rarityOrder.forEach(rarity => {
+                    const animalsInRarity = animalsByRarity[rarity];
+                    if (animalsInRarity.length > 0) {
+                        // Add section header
+                        items.push({
+                            type: 'section-header',
+                            rarity,
+                            isExpanded: expandedSections[rarity],
                         });
+
+                        // Add animals if section is expanded
+                        if (expandedSections[rarity]) {
+                            animalsInRarity.forEach((animal, indexInSection) => {
+                                items.push({
+                                    type: 'animal',
+                                    animal,
+                                    rarity,
+                                    indexInSection, // Track position within section for animations
+                                });
+                            });
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
         return items;
-    }, [isFilteredView, filteredAnimals, animalsByRarity, expandedSections]);
+    }, [isFilteredView, filteredAnimals, animalsByRarity, expandedSections, allExpanded, hasNoCollection]);
 
     // Handle tap on animal card
     const handleAnimalPress = useCallback((animal: Animal) => {
@@ -586,6 +743,20 @@ export default function CollectionScreen() {
             [rarity]: !prev[rarity],
         }));
     }, [state.settings.hapticsEnabled]);
+
+    // Toggle all sections at once
+    const toggleAllSections = useCallback(() => {
+        if (state.settings.hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        const newState = !allExpanded;
+        setExpandedSections({
+            legendary: newState,
+            epic: newState,
+            rare: newState,
+            common: newState,
+        });
+    }, [allExpanded, state.settings.hapticsEnabled]);
 
     // Handle scroll for scroll-to-top button
     const handleScroll = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
@@ -778,44 +949,60 @@ export default function CollectionScreen() {
                     </View>
                 );
 
+            case 'expand-all':
+                return (
+                    <View style={styles.expandAllContainer}>
+                        <Pressable
+                            onPress={toggleAllSections}
+                            style={({ pressed }) => [
+                                styles.expandAllButton,
+                                pressed && styles.expandAllButtonPressed,
+                            ]}
+                            accessible={true}
+                            accessibilityRole="button"
+                            accessibilityLabel={item.allExpanded
+                                ? (state.settings.language === 'tr' ? 'Tümünü daralt' : 'Collapse all')
+                                : (state.settings.language === 'tr' ? 'Tümünü genislet' : 'Expand all')}
+                            accessibilityHint={state.settings.language === 'tr'
+                                ? 'Tüm bölümleri genislet veya daralt'
+                                : 'Expand or collapse all sections'}
+                        >
+                            <Text style={styles.expandAllText}>
+                                {item.allExpanded
+                                    ? (state.settings.language === 'tr' ? 'Tümünü daralt' : 'Collapse all')
+                                    : (state.settings.language === 'tr' ? 'Tümünü genislet' : 'Expand all')}
+                            </Text>
+                            <Text style={styles.expandAllIcon}>
+                                {item.allExpanded ? '▲' : '▼'}
+                            </Text>
+                        </Pressable>
+                    </View>
+                );
+
             case 'section-header': {
-                const rarityColor = getRarityColor(item.rarity);
                 const rarityStats = stats.byRarity[item.rarity];
                 return (
-                    <Pressable
-                        onPress={() => toggleSection(item.rarity)}
-                        style={({ pressed }) => [
-                            styles.sectionHeader,
-                            pressed && styles.sectionHeaderPressed,
-                        ]}
-                        accessible={true}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${getRarityLabelI18n(item.rarity, state.settings.language)} section, ${rarityStats.collected} of ${rarityStats.total}`}
-                        accessibilityHint={item.isExpanded ? 'Double tap to collapse' : 'Double tap to expand'}
-                        accessibilityState={{ expanded: item.isExpanded }}
-                    >
-                        <View style={[styles.sectionDot, { backgroundColor: rarityColor }]} />
-                        <Text style={[styles.sectionTitle, { color: rarityColor }]}>
-                            {getRarityLabelI18n(item.rarity, state.settings.language)}
-                        </Text>
-                        <Text style={styles.sectionCount}>
-                            {rarityStats.collected} / {rarityStats.total}
-                        </Text>
-                        <View style={styles.chevronContainer}>
-                            <Text style={[
-                                styles.chevron,
-                                { transform: [{ rotate: item.isExpanded ? '180deg' : '0deg' }] }
-                            ]}>▼</Text>
-                        </View>
-                    </Pressable>
+                    <SectionHeaderComponent
+                        rarity={item.rarity}
+                        isExpanded={item.isExpanded}
+                        collectedCount={rarityStats.collected}
+                        totalCount={rarityStats.total}
+                        onToggle={() => toggleSection(item.rarity)}
+                        styles={styles}
+                        language={state.settings.language}
+                    />
                 );
             }
 
             case 'animal': {
                 const data = collectionData.get(item.animal.id);
                 const isCollected = data && data.count > 0;
-                // Calculate entrance delay based on index within current section
-                const entranceDelay = Math.min(index * 30, 300);
+                // Optimize entrance delay: only animate first N items per section
+                // Items beyond the threshold get no delay (instant render)
+                const shouldAnimate = item.indexInSection < MAX_ANIMATED_ITEMS_PER_SECTION;
+                const entranceDelay = shouldAnimate
+                    ? Math.min(item.indexInSection * ANIMATION_DELAY_INCREMENT, MAX_ANIMATION_DELAY)
+                    : undefined; // Skip animation for items deep in sections
 
                 return (
                     <View style={styles.animalCardWrapper}>
@@ -833,13 +1020,39 @@ export default function CollectionScreen() {
                 );
             }
 
+            case 'empty-state':
+                if (item.variant === 'no-results') {
+                    return (
+                        <EmptyState
+                            type="empty"
+                            title={i18n('noResults')}
+                            message={activeFilter === 'favorites'
+                                ? i18n('noFavoritesYet')
+                                : i18n('tryDifferentSearch')}
+                        />
+                    );
+                }
+                // no-collection variant
+                return (
+                    <EmptyState
+                        type="empty"
+                        title={i18n('noAnimalsYet')}
+                        message={i18n('completeSessionsToHatch')}
+                        actionButton={{
+                            title: i18n('startFocus'),
+                            onPress: () => router.back(),
+                            icon: '🥚',
+                        }}
+                    />
+                );
+
             default:
                 return null;
         }
     }, [
         styles, i18n, theme, searchQuery, activeFilter, activeSort,
         handleFilterPress, handleSortPress, state, stats, collectionData,
-        cardWidth, handleAnimalPress, toggleSection
+        cardWidth, handleAnimalPress, toggleSection, toggleAllSections, router
     ]);
 
     // Get item type for FlashList optimization
@@ -864,6 +1077,10 @@ export default function CollectionScreen() {
                 layout.size = 100;
                 layout.span = numColumns;
                 break;
+            case 'expand-all':
+                layout.size = 40;
+                layout.span = numColumns;
+                break;
             case 'section-header':
                 layout.size = 50;
                 layout.span = numColumns;
@@ -871,6 +1088,10 @@ export default function CollectionScreen() {
             case 'animal':
                 layout.size = Math.round(cardWidth * 1.25) + 4; // Card height + wrapper padding
                 layout.span = 1;
+                break;
+            case 'empty-state':
+                layout.size = 200; // EmptyState component height
+                layout.span = numColumns;
                 break;
         }
     }, [numColumns, cardWidth]);
@@ -884,10 +1105,14 @@ export default function CollectionScreen() {
                 return 'progress-card';
             case 'stats-grid':
                 return 'stats-grid';
+            case 'expand-all':
+                return 'expand-all';
             case 'section-header':
                 return `section-${item.rarity}`;
             case 'animal':
                 return `animal-${item.animal.id}-${item.rarity}`;
+            case 'empty-state':
+                return `empty-state-${item.variant}`;
             default:
                 return `item-${index}`;
         }
@@ -897,36 +1122,6 @@ export default function CollectionScreen() {
     const selectedAnimalData = selectedAnimal
         ? collectionData.get(selectedAnimal.id)
         : null;
-
-    // Empty state for filtered view
-    const ListEmptyComponent = useMemo(() => {
-        if (isFilteredView && filteredAnimals.length === 0) {
-            return (
-                <EmptyState
-                    type="empty"
-                    title={i18n('noResults')}
-                    message={activeFilter === 'favorites'
-                        ? i18n('noFavoritesYet')
-                        : i18n('tryDifferentSearch')}
-                />
-            );
-        }
-        if (state.collection.length === 0) {
-            return (
-                <EmptyState
-                    type="empty"
-                    title={i18n('noAnimalsYet')}
-                    message={i18n('completeSessionsToHatch')}
-                    actionButton={{
-                        title: i18n('startFocus'),
-                        onPress: () => router.back(),
-                        icon: '🥚',
-                    }}
-                />
-            );
-        }
-        return null;
-    }, [isFilteredView, filteredAnimals.length, activeFilter, state.collection.length, i18n, router]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -950,7 +1145,7 @@ export default function CollectionScreen() {
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
                     showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={ListEmptyComponent}
+                    drawDistance={250}
                 />
 
                 {/* Scroll to top button */}
