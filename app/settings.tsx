@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, Dimensions, Modal, TextInput } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { theme as darkTheme, ThemeMode, Theme } from '../src/styles/theme';
 import { useTheme } from '../src/context/ThemeContext';
@@ -41,22 +42,58 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     scrollContent: {
         padding: theme.spacing.lg,
     },
-    section: {
+    // Main Section Container with visual separation
+    sectionContainer: {
         marginBottom: theme.spacing.xl,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        overflow: 'hidden',
     },
-    // Section Header styles
-    sectionHeader: {
+    // Section Header styles - more prominent
+    sectionHeaderContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.md,
+        backgroundColor: theme.colors.surfaceLight,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.semantic.border,
         gap: theme.spacing.sm,
     },
     sectionIcon: {
-        fontSize: 20,
+        fontSize: 22,
+        width: 28,
+        textAlign: 'center',
     },
     sectionTitle: {
         fontSize: theme.fontSize.lg,
         fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        flex: 1,
+    },
+    // Section content padding
+    sectionContent: {
+        padding: theme.spacing.md,
+    },
+    // Subsection styles (within a main section)
+    subsection: {
+        marginBottom: theme.spacing.md,
+    },
+    subsectionLast: {
+        marginBottom: 0,
+    },
+    subsectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+        gap: theme.spacing.xs,
+    },
+    subsectionIcon: {
+        fontSize: 16,
+    },
+    subsectionTitle: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.semibold,
         color: theme.colors.text,
     },
     // Language styles
@@ -69,7 +106,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         borderWidth: 2,
@@ -101,7 +138,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         borderWidth: 2,
@@ -149,10 +186,13 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.sm,
+    },
+    settingRowLast: {
+        marginBottom: 0,
     },
     settingLabelContainer: {
         flexDirection: 'row',
@@ -170,9 +210,50 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         color: theme.colors.text,
         fontWeight: theme.fontWeight.medium,
     },
+    // Slider styles
+    sliderContainer: {
+        backgroundColor: theme.colors.background,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        marginBottom: theme.spacing.sm,
+    },
+    sliderHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    sliderLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    sliderLabelText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        fontWeight: theme.fontWeight.medium,
+    },
+    sliderValue: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.primary,
+    },
+    slider: {
+        width: '100%',
+        height: 40,
+    },
+    sliderMarks: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: theme.spacing.xs,
+    },
+    sliderMark: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+    },
     // Statistics styles
     statsCard: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         borderRadius: theme.borderRadius.md,
         overflow: 'hidden',
     },
@@ -258,7 +339,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     // Streak Freeze styles
     freezeCard: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
     },
@@ -304,7 +385,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     ambientSoundOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         paddingVertical: theme.spacing.sm,
         paddingHorizontal: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
@@ -330,7 +411,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     // Egg Customization styles
     eggCustomizeCard: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
     },
@@ -453,9 +534,15 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     deleteModalButtonWrapper: {
         flex: 1,
     },
+    // Divider between subsections
+    divider: {
+        height: 1,
+        backgroundColor: theme.colors.semantic.border,
+        marginVertical: theme.spacing.md,
+    },
 });
 
-// Section Header Component with Icon
+// Section Header Component with Icon (for main sections)
 interface SectionHeaderProps {
     icon: string;
     title: string;
@@ -465,9 +552,25 @@ interface SectionHeaderProps {
 
 function SectionHeader({ icon, title, color, styles }: SectionHeaderProps) {
     return (
-        <View style={styles.sectionHeader}>
+        <View style={styles.sectionHeaderContainer}>
             <Text style={styles.sectionIcon}>{icon}</Text>
             <Text style={[styles.sectionTitle, color ? { color } : null]}>{title}</Text>
+        </View>
+    );
+}
+
+// Subsection Header Component (for items within a main section)
+interface SubsectionHeaderProps {
+    icon: string;
+    title: string;
+    styles: ReturnType<typeof createStyles>;
+}
+
+function SubsectionHeader({ icon, title, styles }: SubsectionHeaderProps) {
+    return (
+        <View style={styles.subsectionHeader}>
+            <Text style={styles.subsectionIcon}>{icon}</Text>
+            <Text style={styles.subsectionTitle}>{title}</Text>
         </View>
     );
 }
@@ -595,9 +698,21 @@ export default function SettingsScreen() {
         }
     };
 
-    const durations = [15, 20, 25, 30, 45, 60];
+    // Slider duration options
+    const durationOptions = [15, 20, 25, 30, 45, 60];
     const tolerances = [10, 15, 20, 30, 45, 60];
     const dailyGoals = [1, 2, 3, 4, 5, 6];
+
+    // Handle slider value change - snap to nearest option
+    const handleDurationSliderChange = (value: number) => {
+        // Find the closest option
+        const closest = durationOptions.reduce((prev, curr) =>
+            Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+        );
+        if (closest !== state.settings.focusDuration) {
+            updateUserSettings({ focusDuration: closest });
+        }
+    };
 
     // Get the current egg style
     const currentEggStyle = useMemo(() => {
@@ -638,527 +753,620 @@ export default function SettingsScreen() {
         return `${minutes}m`;
     };
 
+    const minLabel = state.settings.language === 'tr' ? 'dk' : 'min';
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* ===== DISPLAY SETTINGS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🎨" title={i18n('language')} />
-                    <View style={styles.languageGrid}>
-                        <Pressable
-                            style={[
-                                styles.languageOption,
-                                state.settings.language === 'en' && styles.languageOptionActive,
-                            ]}
-                            onPress={() => updateUserSettings({ language: 'en' })}
-                        >
-                            <Text style={styles.languageFlag}>🇬🇧</Text>
-                            <Text style={[
-                                styles.languageText,
-                                state.settings.language === 'en' && styles.languageTextActive,
-                            ]}>English</Text>
-                        </Pressable>
-                        <Pressable
-                            style={[
-                                styles.languageOption,
-                                state.settings.language === 'tr' && styles.languageOptionActive,
-                            ]}
-                            onPress={() => updateUserSettings({ language: 'tr' })}
-                        >
-                            <Text style={styles.languageFlag}>🇹🇷</Text>
-                            <Text style={[
-                                styles.languageText,
-                                state.settings.language === 'tr' && styles.languageTextActive,
-                            ]}>Türkçe</Text>
-                        </Pressable>
-                    </View>
-                </View>
-
-                {/* ===== THEME SETTINGS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🌓" title={i18n('appearance')} />
-                    <Text style={styles.settingDescription}>{i18n('themeDesc')}</Text>
-                    <View style={styles.themeGrid}>
-                        <Pressable
-                            style={[
-                                styles.themeOption,
-                                state.settings.themeMode === 'light' && styles.themeOptionActive,
-                            ]}
-                            onPress={() => updateUserSettings({ themeMode: 'light' })}
-                        >
-                            <Text style={styles.themeIcon}>☀️</Text>
-                            <Text style={[
-                                styles.themeText,
-                                state.settings.themeMode === 'light' && styles.themeTextActive,
-                            ]}>{i18n('themeLight')}</Text>
-                        </Pressable>
-                        <Pressable
-                            style={[
-                                styles.themeOption,
-                                state.settings.themeMode === 'dark' && styles.themeOptionActive,
-                            ]}
-                            onPress={() => updateUserSettings({ themeMode: 'dark' })}
-                        >
-                            <Text style={styles.themeIcon}>🌙</Text>
-                            <Text style={[
-                                styles.themeText,
-                                state.settings.themeMode === 'dark' && styles.themeTextActive,
-                            ]}>{i18n('themeDark')}</Text>
-                        </Pressable>
-                        <Pressable
-                            style={[
-                                styles.themeOption,
-                                state.settings.themeMode === 'system' && styles.themeOptionActive,
-                            ]}
-                            onPress={() => updateUserSettings({ themeMode: 'system' })}
-                        >
-                            <Text style={styles.themeIcon}>📱</Text>
-                            <Text style={[
-                                styles.themeText,
-                                state.settings.themeMode === 'system' && styles.themeTextActive,
-                            ]}>{i18n('themeSystem')}</Text>
-                        </Pressable>
-                    </View>
-                </View>
-
-                {/* ===== EGG CUSTOMIZATION ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🥚" title={i18n('eggCustomization')} />
-                    <Text style={styles.settingDescription}>{i18n('eggCustomizationDesc')}</Text>
-                    <Pressable
-                        style={styles.eggCustomizeCard}
-                        onPress={() => setShowEggStylePicker(true)}
-                    >
-                        <View style={styles.eggCustomizeRow}>
-                            <View style={styles.eggCustomizeLeft}>
-                                <View style={styles.eggCustomizePreview}>
-                                    <StyledEgg
-                                        eggStyle={currentEggStyle}
-                                        size={50}
-                                        showPattern={true}
-                                    />
+                {/* ===== SESSION SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="⏱️" title={i18n('sectionSession')} />
+                    <View style={styles.sectionContent}>
+                        {/* Focus Duration with Slider */}
+                        <View style={styles.subsection}>
+                            <View style={styles.sliderContainer}>
+                                <View style={styles.sliderHeader}>
+                                    <View style={styles.sliderLabel}>
+                                        <Text style={styles.settingRowIcon}>🎯</Text>
+                                        <Text style={styles.sliderLabelText}>{i18n('focusDuration')}</Text>
+                                    </View>
+                                    <Text style={styles.sliderValue}>{state.settings.focusDuration} {minLabel}</Text>
                                 </View>
-                                <View style={styles.eggCustomizeInfo}>
-                                    <Text style={styles.eggCustomizeLabel}>{i18n('currentEggStyle')}</Text>
-                                    <Text style={styles.eggCustomizeStyleName}>
-                                        {i18n(currentEggStyle.name as any)}
-                                    </Text>
+                                <Slider
+                                    style={styles.slider}
+                                    minimumValue={15}
+                                    maximumValue={60}
+                                    step={5}
+                                    value={state.settings.focusDuration}
+                                    onSlidingComplete={handleDurationSliderChange}
+                                    minimumTrackTintColor={theme.colors.primary}
+                                    maximumTrackTintColor={theme.colors.surfaceLight}
+                                    thumbTintColor={theme.colors.primary}
+                                    accessibilityLabel={i18n('focusDuration')}
+                                    accessibilityHint={i18n('focusDurationDesc')}
+                                />
+                                <View style={styles.sliderMarks}>
+                                    {durationOptions.map(d => (
+                                        <Text key={d} style={styles.sliderMark}>{d}</Text>
+                                    ))}
                                 </View>
                             </View>
-                            <PixelButton
-                                title={i18n('customize')}
-                                onPress={() => setShowEggStylePicker(true)}
-                                variant="secondary"
-                                size="small"
-                            />
                         </View>
-                    </Pressable>
-                </View>
 
-                {/* ===== TIMER SETTINGS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="⏱️" title={i18n('focusDuration')} />
-                    <View style={styles.buttonGrid}>
-                        {durations.map(duration => (
-                            <View key={duration} style={styles.buttonWrapper}>
-                                <PixelButton
-                                    title={`${duration} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
-                                    onPress={() => updateUserSettings({ focusDuration: duration })}
-                                    variant={state.settings.focusDuration === duration ? 'primary' : 'ghost'}
-                                    size="small"
-                                />
+                        <View style={styles.divider} />
+
+                        {/* Daily Goal */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="📈" title={i18n('dailyGoalSetting')} />
+                            <View style={styles.buttonGrid}>
+                                {dailyGoals.map(goal => (
+                                    <View key={goal} style={styles.buttonWrapper}>
+                                        <PixelButton
+                                            title={`${goal}`}
+                                            onPress={() => updateUserSettings({ dailyGoal: goal })}
+                                            variant={state.settings.dailyGoal === goal ? 'primary' : 'ghost'}
+                                            size="small"
+                                            accessibilityLabel={`${goal} ${i18n('sessions')}`}
+                                        />
+                                    </View>
+                                ))}
                             </View>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🛡️" title={i18n('tolerance')} />
-                    <Text style={styles.settingDescription}>{i18n('toleranceDesc')}</Text>
-                    <View style={styles.buttonGrid}>
-                        {tolerances.map(secs => (
-                            <View key={secs} style={styles.buttonWrapper}>
-                                <PixelButton
-                                    title={`${secs} ${i18n('seconds')}`}
-                                    onPress={() => updateUserSettings({ toleranceSeconds: secs })}
-                                    variant={state.settings.toleranceSeconds === secs ? 'primary' : 'ghost'}
-                                    size="small"
-                                />
-                            </View>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🎯" title={i18n('dailyGoalSetting')} />
-                    <View style={styles.buttonGrid}>
-                        {dailyGoals.map(goal => (
-                            <View key={goal} style={styles.buttonWrapper}>
-                                <PixelButton
-                                    title={`${goal}`}
-                                    onPress={() => updateUserSettings({ dailyGoal: goal })}
-                                    variant={state.settings.dailyGoal === goal ? 'primary' : 'ghost'}
-                                    size="small"
-                                />
-                            </View>
-                        ))}
-                    </View>
-                </View>
-
-                {/* ===== POMODORO SETTINGS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🍅" title={i18n('pomodoroMode')} />
-                    <Text style={styles.settingDescription}>{i18n('pomodoroEnabledDesc')}</Text>
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLabelContainer}>
-                            <Text style={styles.settingRowIcon}>🔄</Text>
-                            <Text style={styles.settingLabel}>{i18n('pomodoroEnabled')}</Text>
                         </View>
-                        <Switch
-                            value={state.settings.pomodoroEnabled}
-                            onValueChange={value => updateUserSettings({ pomodoroEnabled: value })}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
-                            thumbColor={theme.colors.text}
-                        />
-                    </View>
 
-                    {state.settings.pomodoroEnabled && (
-                        <>
-                            <Text style={styles.settingSubLabel}>{i18n('pomodoroWorkDuration')}</Text>
+                        <View style={styles.divider} />
+
+                        {/* Background Tolerance */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="🛡️" title={i18n('tolerance')} />
+                            <Text style={styles.settingDescription}>{i18n('toleranceDesc')}</Text>
                             <View style={styles.buttonGrid}>
-                                {[15, 20, 25, 30, 45].map(mins => (
-                                    <View key={mins} style={styles.buttonWrapper}>
+                                {tolerances.map(secs => (
+                                    <View key={secs} style={styles.buttonWrapper}>
                                         <PixelButton
-                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
-                                            onPress={() => updateUserSettings({ pomodoroWorkDuration: mins })}
-                                            variant={state.settings.pomodoroWorkDuration === mins ? 'primary' : 'ghost'}
+                                            title={`${secs} ${i18n('seconds')}`}
+                                            onPress={() => updateUserSettings({ toleranceSeconds: secs })}
+                                            variant={state.settings.toleranceSeconds === secs ? 'primary' : 'ghost'}
                                             size="small"
+                                            accessibilityLabel={`${secs} ${i18n('seconds')}`}
                                         />
                                     </View>
                                 ))}
                             </View>
-
-                            <Text style={styles.settingSubLabel}>{i18n('pomodoroBreakDuration')}</Text>
-                            <View style={styles.buttonGrid}>
-                                {[3, 5, 7, 10].map(mins => (
-                                    <View key={mins} style={styles.buttonWrapper}>
-                                        <PixelButton
-                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
-                                            onPress={() => updateUserSettings({ pomodoroBreakDuration: mins })}
-                                            variant={state.settings.pomodoroBreakDuration === mins ? 'primary' : 'ghost'}
-                                            size="small"
-                                        />
-                                    </View>
-                                ))}
-                            </View>
-
-                            <Text style={styles.settingSubLabel}>{i18n('pomodoroLongBreakDuration')}</Text>
-                            <View style={styles.buttonGrid}>
-                                {[10, 15, 20, 30].map(mins => (
-                                    <View key={mins} style={styles.buttonWrapper}>
-                                        <PixelButton
-                                            title={`${mins} ${state.settings.language === 'tr' ? 'dk' : 'min'}`}
-                                            onPress={() => updateUserSettings({ pomodoroLongBreakDuration: mins })}
-                                            variant={state.settings.pomodoroLongBreakDuration === mins ? 'primary' : 'ghost'}
-                                            size="small"
-                                        />
-                                    </View>
-                                ))}
-                            </View>
-
-                            <Text style={styles.settingSubLabel}>{i18n('sessionsBeforeLongBreak')}</Text>
-                            <View style={styles.buttonGrid}>
-                                {[2, 3, 4, 5, 6].map(count => (
-                                    <View key={count} style={styles.buttonWrapper}>
-                                        <PixelButton
-                                            title={`${count}`}
-                                            onPress={() => updateUserSettings({ sessionsBeforeLongBreak: count })}
-                                            variant={state.settings.sessionsBeforeLongBreak === count ? 'primary' : 'ghost'}
-                                            size="small"
-                                        />
-                                    </View>
-                                ))}
-                            </View>
-                        </>
-                    )}
-                </View>
-
-                {/* ===== CALENDAR INTEGRATION ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="📅" title={i18n('calendarIntegration')} />
-                    <Text style={styles.settingDescription}>{i18n('calendarDesc')}</Text>
-                    <PixelButton
-                        title={i18n('viewCalendar')}
-                        onPress={() => setShowCalendarView(true)}
-                        variant="secondary"
-                        icon="📅"
-                    />
-                </View>
-
-                {/* ===== STREAK FREEZE ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="❄️" title={i18n('streakFreezes')} />
-                    <View style={styles.freezeCard}>
-                        <View style={styles.freezeHeader}>
-                            <StreakFreezeIndicator freezeCount={freezeData.freezeCount} />
-                            <Text style={styles.freezeCountText}>
-                                {freezeData.freezeCount} / {STREAK_FREEZE_CONSTANTS.MAX_FREEZES} {i18n('freezesAvailable')}
-                            </Text>
                         </View>
-                        <Text style={styles.freezeDescription}>
-                            {i18n('nextFreezeAt')} {freezeData.lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS} {i18n('dayStreak')}
-                        </Text>
-                        {canUseFreezeNow ? (
-                            <View style={styles.freezeButtonContainer}>
-                                <PixelButton
-                                    title={i18n('useFreeze')}
-                                    onPress={handleUseFreeze}
-                                    variant="secondary"
-                                    icon="*"
+
+                        <View style={styles.divider} />
+
+                        {/* Pomodoro Mode */}
+                        <View style={[styles.subsection, styles.subsectionLast]}>
+                            <SubsectionHeader styles={styles} icon="🍅" title={i18n('pomodoroMode')} />
+                            <Text style={styles.settingDescription}>{i18n('pomodoroEnabledDesc')}</Text>
+
+                            <View style={[styles.settingRow, !state.settings.pomodoroEnabled && styles.settingRowLast]}>
+                                <View style={styles.settingLabelContainer}>
+                                    <Text style={styles.settingRowIcon}>🔄</Text>
+                                    <Text style={styles.settingLabel}>{i18n('pomodoroEnabled')}</Text>
+                                </View>
+                                <Switch
+                                    value={state.settings.pomodoroEnabled}
+                                    onValueChange={value => updateUserSettings({ pomodoroEnabled: value })}
+                                    trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
+                                    thumbColor={theme.colors.text}
+                                    accessibilityLabel={i18n('pomodoroEnabled')}
                                 />
                             </View>
-                        ) : (
-                            <Text style={styles.freezeStatusText}>
-                                {freezeData.freezeCount === 0
-                                    ? i18n('noFreezesAvailable')
-                                    : freezeData.lastFreezeUsedDate === new Date().toISOString().split('T')[0]
-                                    ? i18n('alreadyUsedFreeze')
-                                    : i18n('sessionCompletedToday')}
-                            </Text>
+
+                            {state.settings.pomodoroEnabled && (
+                                <>
+                                    <Text style={styles.settingSubLabel}>{i18n('pomodoroWorkDuration')}</Text>
+                                    <View style={styles.buttonGrid}>
+                                        {[15, 20, 25, 30, 45].map(mins => (
+                                            <View key={mins} style={styles.buttonWrapper}>
+                                                <PixelButton
+                                                    title={`${mins} ${minLabel}`}
+                                                    onPress={() => updateUserSettings({ pomodoroWorkDuration: mins })}
+                                                    variant={state.settings.pomodoroWorkDuration === mins ? 'primary' : 'ghost'}
+                                                    size="small"
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <Text style={styles.settingSubLabel}>{i18n('pomodoroBreakDuration')}</Text>
+                                    <View style={styles.buttonGrid}>
+                                        {[3, 5, 7, 10].map(mins => (
+                                            <View key={mins} style={styles.buttonWrapper}>
+                                                <PixelButton
+                                                    title={`${mins} ${minLabel}`}
+                                                    onPress={() => updateUserSettings({ pomodoroBreakDuration: mins })}
+                                                    variant={state.settings.pomodoroBreakDuration === mins ? 'primary' : 'ghost'}
+                                                    size="small"
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <Text style={styles.settingSubLabel}>{i18n('pomodoroLongBreakDuration')}</Text>
+                                    <View style={styles.buttonGrid}>
+                                        {[10, 15, 20, 30].map(mins => (
+                                            <View key={mins} style={styles.buttonWrapper}>
+                                                <PixelButton
+                                                    title={`${mins} ${minLabel}`}
+                                                    onPress={() => updateUserSettings({ pomodoroLongBreakDuration: mins })}
+                                                    variant={state.settings.pomodoroLongBreakDuration === mins ? 'primary' : 'ghost'}
+                                                    size="small"
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <Text style={styles.settingSubLabel}>{i18n('sessionsBeforeLongBreak')}</Text>
+                                    <View style={styles.buttonGrid}>
+                                        {[2, 3, 4, 5, 6].map(count => (
+                                            <View key={count} style={styles.buttonWrapper}>
+                                                <PixelButton
+                                                    title={`${count}`}
+                                                    onPress={() => updateUserSettings({ sessionsBeforeLongBreak: count })}
+                                                    variant={state.settings.sessionsBeforeLongBreak === count ? 'primary' : 'ghost'}
+                                                    size="small"
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+                        </View>
+                    </View>
+                </View>
+
+                {/* ===== SOUNDS & HAPTICS SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="🔊" title={i18n('sectionSoundsHaptics')} />
+                    <View style={styles.sectionContent}>
+                        {isAudioAvailable && (
+                            <View style={styles.settingRow}>
+                                <View style={styles.settingLabelContainer}>
+                                    <Text style={styles.settingRowIcon}>🎵</Text>
+                                    <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
+                                </View>
+                                <Switch
+                                    value={state.settings.soundEnabled}
+                                    onValueChange={value => updateUserSettings({ soundEnabled: value })}
+                                    trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
+                                    thumbColor={theme.colors.text}
+                                    accessibilityLabel={i18n('soundEffects')}
+                                />
+                            </View>
                         )}
-                    </View>
-                </View>
 
-                {/* ===== SOUND & HAPTICS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🔔" title={i18n('notifications')} />
-
-                    {isAudioAvailable && (
                         <View style={styles.settingRow}>
                             <View style={styles.settingLabelContainer}>
-                                <Text style={styles.settingRowIcon}>🔊</Text>
-                                <Text style={styles.settingLabel}>{i18n('soundEffects')}</Text>
+                                <Text style={styles.settingRowIcon}>📳</Text>
+                                <Text style={styles.settingLabel}>{i18n('vibration')}</Text>
                             </View>
                             <Switch
-                                value={state.settings.soundEnabled}
-                                onValueChange={value => updateUserSettings({ soundEnabled: value })}
-                                trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
+                                value={state.settings.hapticsEnabled}
+                                onValueChange={value => updateUserSettings({ hapticsEnabled: value })}
+                                trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
                                 thumbColor={theme.colors.text}
+                                accessibilityLabel={i18n('vibration')}
                             />
                         </View>
-                    )}
 
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLabelContainer}>
-                            <Text style={styles.settingRowIcon}>📳</Text>
-                            <Text style={styles.settingLabel}>{i18n('vibration')}</Text>
-                        </View>
-                        <Switch
-                            value={state.settings.hapticsEnabled}
-                            onValueChange={value => updateUserSettings({ hapticsEnabled: value })}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
-                            thumbColor={theme.colors.text}
-                        />
-                    </View>
+                        <View style={styles.divider} />
 
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLabelContainer}>
-                            <Text style={styles.settingRowIcon}>📱</Text>
-                            <Text style={styles.settingLabel}>{i18n('pushNotifications')}</Text>
+                        {/* Ambient Sounds */}
+                        <View style={[styles.subsection, styles.subsectionLast]}>
+                            <SubsectionHeader styles={styles} icon="🎧" title={i18n('ambientSounds')} />
+                            <Text style={styles.settingDescription}>{i18n('ambientSoundsDesc')}</Text>
+
+                            <View style={[styles.settingRow, !state.settings.ambientSoundEnabled && styles.settingRowLast]}>
+                                <View style={styles.settingLabelContainer}>
+                                    <Text style={styles.settingRowIcon}>🔈</Text>
+                                    <Text style={styles.settingLabel}>{i18n('ambientSounds')}</Text>
+                                </View>
+                                <Switch
+                                    value={state.settings.ambientSoundEnabled}
+                                    onValueChange={value => updateUserSettings({ ambientSoundEnabled: value })}
+                                    trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
+                                    thumbColor={theme.colors.text}
+                                    accessibilityLabel={i18n('ambientSounds')}
+                                />
+                            </View>
+
+                            {state.settings.ambientSoundEnabled && (
+                                <>
+                                    <Text style={styles.settingSubLabel}>{i18n('selectSound')}</Text>
+                                    <View style={styles.ambientSoundGrid} accessibilityRole="radiogroup">
+                                        {AMBIENT_SOUNDS.map(sound => {
+                                            const soundNameKey = `ambient${sound.id.charAt(0).toUpperCase()}${sound.id.slice(1).replace('_', '')}` as keyof typeof import('../src/i18n/translations').translations.en;
+                                            // Handle special case for white_noise -> WhiteNoise
+                                            const translationKey = sound.id === 'white_noise' ? 'ambientWhiteNoise' : soundNameKey;
+                                            const isSelected = state.settings.selectedAmbientSound === sound.id;
+                                            const soundName = i18n(translationKey as any);
+                                            return (
+                                                <Pressable
+                                                    key={sound.id}
+                                                    style={[
+                                                        styles.ambientSoundOption,
+                                                        isSelected && styles.ambientSoundOptionActive,
+                                                    ]}
+                                                    onPress={() => updateUserSettings({ selectedAmbientSound: sound.id })}
+                                                    accessibilityRole="radio"
+                                                    accessibilityLabel={soundName}
+                                                    accessibilityState={{ selected: isSelected }}
+                                                    accessibilityHint={state.settings.language === 'tr'
+                                                        ? `${soundName} ortam sesini secmek icin dokunun`
+                                                        : `Tap to select ${soundName} ambient sound`}
+                                                >
+                                                    <Text style={styles.ambientSoundIcon} importantForAccessibility="no">{sound.icon}</Text>
+                                                    <Text style={[
+                                                        styles.ambientSoundText,
+                                                        isSelected && styles.ambientSoundTextActive,
+                                                    ]}>{soundName}</Text>
+                                                </Pressable>
+                                            );
+                                        })}
+                                    </View>
+
+                                    <Text style={styles.settingSubLabel}>{i18n('soundVolume')}</Text>
+                                    <View style={styles.buttonGrid} accessibilityRole="radiogroup">
+                                        {[25, 50, 75, 100].map(vol => {
+                                            const isSelected = state.settings.ambientSoundVolume === vol;
+                                            return (
+                                                <View key={vol} style={styles.buttonWrapper}>
+                                                    <PixelButton
+                                                        title={`${vol}%`}
+                                                        onPress={() => updateUserSettings({ ambientSoundVolume: vol })}
+                                                        variant={isSelected ? 'primary' : 'ghost'}
+                                                        size="small"
+                                                        accessibilityRole="radio"
+                                                        accessibilityLabel={`${vol}%`}
+                                                        accessibilityState={{ selected: isSelected }}
+                                                        accessibilityHint={state.settings.language === 'tr'
+                                                            ? `Ses seviyesini ${vol}% olarak ayarla`
+                                                            : `Set volume to ${vol}%`}
+                                                    />
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                </>
+                            )}
                         </View>
-                        <Switch
-                            value={state.settings.notificationsEnabled}
-                            onValueChange={handleNotificationToggle}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
-                            thumbColor={theme.colors.text}
-                        />
                     </View>
                 </View>
 
-                {/* ===== AMBIENT SOUNDS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🎵" title={i18n('ambientSounds')} />
-                    <Text style={styles.settingDescription}>{i18n('ambientSoundsDesc')}</Text>
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLabelContainer}>
-                            <Text style={styles.settingRowIcon}>🔈</Text>
-                            <Text style={styles.settingLabel}>{i18n('ambientSounds')}</Text>
-                        </View>
-                        <Switch
-                            value={state.settings.ambientSoundEnabled}
-                            onValueChange={value => updateUserSettings({ ambientSoundEnabled: value })}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
-                            thumbColor={theme.colors.text}
-                        />
-                    </View>
-
-                    {state.settings.ambientSoundEnabled && (
-                        <>
-                            <Text style={styles.settingSubLabel}>{i18n('selectSound')}</Text>
-                            <View style={styles.ambientSoundGrid} accessibilityRole="radiogroup">
-                                {AMBIENT_SOUNDS.map(sound => {
-                                    const soundNameKey = `ambient${sound.id.charAt(0).toUpperCase()}${sound.id.slice(1).replace('_', '')}` as keyof typeof import('../src/i18n/translations').translations.en;
-                                    // Handle special case for white_noise -> WhiteNoise
-                                    const translationKey = sound.id === 'white_noise' ? 'ambientWhiteNoise' : soundNameKey;
-                                    const isSelected = state.settings.selectedAmbientSound === sound.id;
-                                    const soundName = i18n(translationKey as any);
-                                    return (
-                                        <Pressable
-                                            key={sound.id}
-                                            style={[
-                                                styles.ambientSoundOption,
-                                                isSelected && styles.ambientSoundOptionActive,
-                                            ]}
-                                            onPress={() => updateUserSettings({ selectedAmbientSound: sound.id })}
-                                            accessibilityRole="radio"
-                                            accessibilityLabel={soundName}
-                                            accessibilityState={{ selected: isSelected }}
-                                            accessibilityHint={state.settings.language === 'tr'
-                                                ? `${soundName} ortam sesini seçmek için dokunun`
-                                                : `Tap to select ${soundName} ambient sound`}
-                                        >
-                                            <Text style={styles.ambientSoundIcon} importantForAccessibility="no">{sound.icon}</Text>
-                                            <Text style={[
-                                                styles.ambientSoundText,
-                                                isSelected && styles.ambientSoundTextActive,
-                                            ]}>{soundName}</Text>
-                                        </Pressable>
-                                    );
-                                })}
+                {/* ===== NOTIFICATIONS SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="🔔" title={i18n('sectionNotifications')} />
+                    <View style={styles.sectionContent}>
+                        <View style={[styles.settingRow, styles.settingRowLast]}>
+                            <View style={styles.settingLabelContainer}>
+                                <Text style={styles.settingRowIcon}>📱</Text>
+                                <Text style={styles.settingLabel}>{i18n('pushNotifications')}</Text>
                             </View>
+                            <Switch
+                                value={state.settings.notificationsEnabled}
+                                onValueChange={handleNotificationToggle}
+                                trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
+                                thumbColor={theme.colors.text}
+                                accessibilityLabel={i18n('pushNotifications')}
+                            />
+                        </View>
+                    </View>
+                </View>
 
-                            <Text style={styles.settingSubLabel}>{i18n('soundVolume')}</Text>
-                            <View style={styles.buttonGrid} accessibilityRole="radiogroup">
-                                {[25, 50, 75, 100].map(vol => {
-                                    const isSelected = state.settings.ambientSoundVolume === vol;
-                                    return (
-                                        <View key={vol} style={styles.buttonWrapper}>
-                                            <PixelButton
-                                                title={`${vol}%`}
-                                                onPress={() => updateUserSettings({ ambientSoundVolume: vol })}
-                                                variant={isSelected ? 'primary' : 'ghost'}
-                                                size="small"
-                                                accessibilityRole="radio"
-                                                accessibilityLabel={`${vol}%`}
-                                                accessibilityState={{ selected: isSelected }}
-                                                accessibilityHint={state.settings.language === 'tr'
-                                                    ? `Ses seviyesini ${vol}% olarak ayarla`
-                                                    : `Set volume to ${vol}%`}
+                {/* ===== APPEARANCE SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="🎨" title={i18n('sectionAppearance')} />
+                    <View style={styles.sectionContent}>
+                        {/* Language */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="🌍" title={i18n('language')} />
+                            <View style={styles.languageGrid}>
+                                <Pressable
+                                    style={[
+                                        styles.languageOption,
+                                        state.settings.language === 'en' && styles.languageOptionActive,
+                                    ]}
+                                    onPress={() => updateUserSettings({ language: 'en' })}
+                                    accessibilityLabel="English"
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: state.settings.language === 'en' }}
+                                >
+                                    <Text style={styles.languageFlag}>🇬🇧</Text>
+                                    <Text style={[
+                                        styles.languageText,
+                                        state.settings.language === 'en' && styles.languageTextActive,
+                                    ]}>English</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[
+                                        styles.languageOption,
+                                        state.settings.language === 'tr' && styles.languageOptionActive,
+                                    ]}
+                                    onPress={() => updateUserSettings({ language: 'tr' })}
+                                    accessibilityLabel="Turkish"
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: state.settings.language === 'tr' }}
+                                >
+                                    <Text style={styles.languageFlag}>🇹🇷</Text>
+                                    <Text style={[
+                                        styles.languageText,
+                                        state.settings.language === 'tr' && styles.languageTextActive,
+                                    ]}>Turkce</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        {/* Theme */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="🌓" title={i18n('appearance')} />
+                            <Text style={styles.settingDescription}>{i18n('themeDesc')}</Text>
+                            <View style={styles.themeGrid}>
+                                <Pressable
+                                    style={[
+                                        styles.themeOption,
+                                        state.settings.themeMode === 'light' && styles.themeOptionActive,
+                                    ]}
+                                    onPress={() => updateUserSettings({ themeMode: 'light' })}
+                                    accessibilityLabel={i18n('themeLight')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: state.settings.themeMode === 'light' }}
+                                >
+                                    <Text style={styles.themeIcon}>☀️</Text>
+                                    <Text style={[
+                                        styles.themeText,
+                                        state.settings.themeMode === 'light' && styles.themeTextActive,
+                                    ]}>{i18n('themeLight')}</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[
+                                        styles.themeOption,
+                                        state.settings.themeMode === 'dark' && styles.themeOptionActive,
+                                    ]}
+                                    onPress={() => updateUserSettings({ themeMode: 'dark' })}
+                                    accessibilityLabel={i18n('themeDark')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: state.settings.themeMode === 'dark' }}
+                                >
+                                    <Text style={styles.themeIcon}>🌙</Text>
+                                    <Text style={[
+                                        styles.themeText,
+                                        state.settings.themeMode === 'dark' && styles.themeTextActive,
+                                    ]}>{i18n('themeDark')}</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[
+                                        styles.themeOption,
+                                        state.settings.themeMode === 'system' && styles.themeOptionActive,
+                                    ]}
+                                    onPress={() => updateUserSettings({ themeMode: 'system' })}
+                                    accessibilityLabel={i18n('themeSystem')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: state.settings.themeMode === 'system' }}
+                                >
+                                    <Text style={styles.themeIcon}>📱</Text>
+                                    <Text style={[
+                                        styles.themeText,
+                                        state.settings.themeMode === 'system' && styles.themeTextActive,
+                                    ]}>{i18n('themeSystem')}</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        {/* Egg Customization */}
+                        <View style={[styles.subsection, styles.subsectionLast]}>
+                            <SubsectionHeader styles={styles} icon="🥚" title={i18n('eggCustomization')} />
+                            <Text style={styles.settingDescription}>{i18n('eggCustomizationDesc')}</Text>
+                            <Pressable
+                                style={styles.eggCustomizeCard}
+                                onPress={() => setShowEggStylePicker(true)}
+                                accessibilityLabel={i18n('customize')}
+                                accessibilityHint={i18n('eggCustomizationDesc')}
+                            >
+                                <View style={styles.eggCustomizeRow}>
+                                    <View style={styles.eggCustomizeLeft}>
+                                        <View style={styles.eggCustomizePreview}>
+                                            <StyledEgg
+                                                eggStyle={currentEggStyle}
+                                                size={50}
+                                                showPattern={true}
                                             />
                                         </View>
-                                    );
-                                })}
-                            </View>
-                        </>
-                    )}
-                </View>
-
-                {/* ===== STATISTICS ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="📊" title={i18n('statistics')} />
-                    <View style={styles.statsCard}>
-                        {/* Summary Row */}
-                        <View style={styles.statsSummary}>
-                            <View style={styles.statsSummaryItem}>
-                                <Text style={styles.statsSummaryValue}>{state.stats.totalSessions}</Text>
-                                <Text style={styles.statsSummaryLabel}>{i18n('totalSessions')}</Text>
-                            </View>
-                            <View style={styles.statsSummaryDivider} />
-                            <View style={styles.statsSummaryItem}>
-                                <Text style={[styles.statsSummaryValue, { color: theme.colors.accent }]}>
-                                    {successRate}%
-                                </Text>
-                                <Text style={styles.statsSummaryLabel}>{i18n('completed')}</Text>
-                            </View>
-                            <View style={styles.statsSummaryDivider} />
-                            <View style={styles.statsSummaryItem}>
-                                <Text style={[styles.statsSummaryValue, { color: theme.colors.primary }]}>
-                                    {state.stats.bestStreak}
-                                </Text>
-                                <Text style={styles.statsSummaryLabel}>{i18n('bestStreak')}</Text>
-                            </View>
-                        </View>
-
-                        {/* Detailed Stats */}
-                        <View style={styles.statsDetails}>
-                            <StatItem
-                                styles={styles}
-                                icon="✅"
-                                label={i18n('completed')}
-                                value={state.stats.completedSessions}
-                                valueColor={theme.colors.success}
-                            />
-                            <StatItem
-                                styles={styles}
-                                icon="❌"
-                                label={i18n('failed')}
-                                value={state.stats.failedSessions}
-                                valueColor={theme.colors.error}
-                            />
-                            <StatItem
-                                styles={styles}
-                                icon="⏰"
-                                label={i18n('totalFocus')}
-                                value={formatFocusTime(state.stats.totalFocusMinutes)}
-                                isLast
-                            />
+                                        <View style={styles.eggCustomizeInfo}>
+                                            <Text style={styles.eggCustomizeLabel}>{i18n('currentEggStyle')}</Text>
+                                            <Text style={styles.eggCustomizeStyleName}>
+                                                {i18n(currentEggStyle.name as any)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <PixelButton
+                                        title={i18n('customize')}
+                                        onPress={() => setShowEggStylePicker(true)}
+                                        variant="secondary"
+                                        size="small"
+                                    />
+                                </View>
+                            </Pressable>
                         </View>
                     </View>
                 </View>
 
-                {/* ===== DEVELOPER ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="🛠️" title={i18n('developer')} />
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLabelContainerWithDesc}>
-                            <View style={styles.settingLabelContainer}>
-                                <Text style={styles.settingRowIcon}>🐛</Text>
-                                <Text style={styles.settingLabel}>{i18n('debugMode')}</Text>
-                            </View>
-                            <Text style={styles.settingDescriptionSmall}>
-                                {i18n('debugModeDesc')}
-                            </Text>
+                {/* ===== PROGRESS & STATS SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="📊" title={i18n('sectionProgress')} />
+                    <View style={styles.sectionContent}>
+                        {/* Calendar */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="📅" title={i18n('calendarIntegration')} />
+                            <Text style={styles.settingDescription}>{i18n('calendarDesc')}</Text>
+                            <PixelButton
+                                title={i18n('viewCalendar')}
+                                onPress={() => setShowCalendarView(true)}
+                                variant="secondary"
+                                icon="📅"
+                                accessibilityLabel={i18n('viewCalendar')}
+                            />
                         </View>
-                        <Switch
-                            value={state.settings.debugMode}
-                            onValueChange={value => updateUserSettings({ debugMode: value })}
-                            trackColor={{ false: theme.colors.surface, true: theme.colors.warning }}
-                            thumbColor={theme.colors.text}
+
+                        <View style={styles.divider} />
+
+                        {/* Streak Freeze */}
+                        <View style={styles.subsection}>
+                            <SubsectionHeader styles={styles} icon="❄️" title={i18n('streakFreezes')} />
+                            <View style={styles.freezeCard}>
+                                <View style={styles.freezeHeader}>
+                                    <StreakFreezeIndicator freezeCount={freezeData.freezeCount} />
+                                    <Text style={styles.freezeCountText}>
+                                        {freezeData.freezeCount} / {STREAK_FREEZE_CONSTANTS.MAX_FREEZES} {i18n('freezesAvailable')}
+                                    </Text>
+                                </View>
+                                <Text style={styles.freezeDescription}>
+                                    {i18n('nextFreezeAt')} {freezeData.lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS} {i18n('dayStreak')}
+                                </Text>
+                                {canUseFreezeNow ? (
+                                    <View style={styles.freezeButtonContainer}>
+                                        <PixelButton
+                                            title={i18n('useFreeze')}
+                                            onPress={handleUseFreeze}
+                                            variant="secondary"
+                                            icon="*"
+                                            accessibilityLabel={i18n('useFreeze')}
+                                        />
+                                    </View>
+                                ) : (
+                                    <Text style={styles.freezeStatusText}>
+                                        {freezeData.freezeCount === 0
+                                            ? i18n('noFreezesAvailable')
+                                            : freezeData.lastFreezeUsedDate === new Date().toISOString().split('T')[0]
+                                            ? i18n('alreadyUsedFreeze')
+                                            : i18n('sessionCompletedToday')}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        {/* Statistics */}
+                        <View style={[styles.subsection, styles.subsectionLast]}>
+                            <SubsectionHeader styles={styles} icon="📈" title={i18n('statistics')} />
+                            <View style={styles.statsCard}>
+                                {/* Summary Row */}
+                                <View style={styles.statsSummary}>
+                                    <View style={styles.statsSummaryItem}>
+                                        <Text style={styles.statsSummaryValue}>{state.stats.totalSessions}</Text>
+                                        <Text style={styles.statsSummaryLabel}>{i18n('totalSessions')}</Text>
+                                    </View>
+                                    <View style={styles.statsSummaryDivider} />
+                                    <View style={styles.statsSummaryItem}>
+                                        <Text style={[styles.statsSummaryValue, { color: theme.colors.accent }]}>
+                                            {successRate}%
+                                        </Text>
+                                        <Text style={styles.statsSummaryLabel}>{i18n('completed')}</Text>
+                                    </View>
+                                    <View style={styles.statsSummaryDivider} />
+                                    <View style={styles.statsSummaryItem}>
+                                        <Text style={[styles.statsSummaryValue, { color: theme.colors.primary }]}>
+                                            {state.stats.bestStreak}
+                                        </Text>
+                                        <Text style={styles.statsSummaryLabel}>{i18n('bestStreak')}</Text>
+                                    </View>
+                                </View>
+
+                                {/* Detailed Stats */}
+                                <View style={styles.statsDetails}>
+                                    <StatItem
+                                        styles={styles}
+                                        icon="✅"
+                                        label={i18n('completed')}
+                                        value={state.stats.completedSessions}
+                                        valueColor={theme.colors.success}
+                                    />
+                                    <StatItem
+                                        styles={styles}
+                                        icon="❌"
+                                        label={i18n('failed')}
+                                        value={state.stats.failedSessions}
+                                        valueColor={theme.colors.error}
+                                    />
+                                    <StatItem
+                                        styles={styles}
+                                        icon="⏰"
+                                        label={i18n('totalFocus')}
+                                        value={formatFocusTime(state.stats.totalFocusMinutes)}
+                                        isLast
+                                    />
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
+                {/* ===== DATA & BACKUP SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="💾" title={i18n('sectionData')} />
+                    <View style={styles.sectionContent}>
+                        <Text style={styles.settingDescription}>{i18n('exportDescription')}</Text>
+                        <PixelButton
+                            title={i18n('dataBackup')}
+                            onPress={() => setShowExportModal(true)}
+                            variant="secondary"
+                            icon="📤"
+                            accessibilityLabel={i18n('dataBackup')}
                         />
                     </View>
                 </View>
 
-                {/* ===== DATA & BACKUP ===== */}
-                <View style={styles.section}>
-                    <SectionHeader styles={styles} icon="💾" title={i18n('dataBackup')} />
-                    <Text style={styles.settingDescription}>{i18n('exportDescription')}</Text>
-                    <PixelButton
-                        title={i18n('dataBackup')}
-                        onPress={() => setShowExportModal(true)}
-                        variant="secondary"
-                        icon="📤"
-                    />
+                {/* ===== DEVELOPER SECTION ===== */}
+                <View style={styles.sectionContainer}>
+                    <SectionHeader styles={styles} icon="🛠️" title={i18n('sectionDeveloper')} />
+                    <View style={styles.sectionContent}>
+                        <View style={[styles.settingRow, styles.settingRowLast]}>
+                            <View style={styles.settingLabelContainerWithDesc}>
+                                <View style={styles.settingLabelContainer}>
+                                    <Text style={styles.settingRowIcon}>🐛</Text>
+                                    <Text style={styles.settingLabel}>{i18n('debugMode')}</Text>
+                                </View>
+                                <Text style={styles.settingDescriptionSmall}>
+                                    {i18n('debugModeDesc')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={state.settings.debugMode}
+                                onValueChange={value => updateUserSettings({ debugMode: value })}
+                                trackColor={{ false: theme.colors.background, true: theme.colors.warning }}
+                                thumbColor={theme.colors.text}
+                                accessibilityLabel={i18n('debugMode')}
+                            />
+                        </View>
+                    </View>
                 </View>
 
                 {/* ===== DANGER ZONE ===== */}
-                <View style={styles.section}>
+                <View style={styles.sectionContainer}>
                     <SectionHeader styles={styles} icon="⚠️" title={i18n('dangerZone')} color={theme.colors.error} />
-                    <View style={styles.dangerZoneContainer}>
-                        <View style={styles.dangerZoneWarning}>
-                            <Text style={styles.dangerZoneWarningIcon}>🚨</Text>
-                            <Text style={styles.dangerZoneWarningText}>
-                                {i18n('dangerZoneWarning')}
-                            </Text>
+                    <View style={styles.sectionContent}>
+                        <View style={styles.dangerZoneContainer}>
+                            <View style={styles.dangerZoneWarning}>
+                                <Text style={styles.dangerZoneWarningIcon}>🚨</Text>
+                                <Text style={styles.dangerZoneWarningText}>
+                                    {i18n('dangerZoneWarning')}
+                                </Text>
+                            </View>
+                            <PixelButton
+                                title={i18n('deleteAllData')}
+                                onPress={handleOpenDeleteModal}
+                                variant="danger"
+                                icon="🗑️"
+                                accessibilityLabel={i18n('deleteAllData')}
+                            />
                         </View>
-                        <PixelButton
-                            title={i18n('deleteAllData')}
-                            onPress={handleOpenDeleteModal}
-                            variant="danger"
-                            icon="🗑️"
-                        />
                     </View>
                 </View>
 
@@ -1230,6 +1438,7 @@ export default function SettingsScreen() {
                             placeholderTextColor={theme.colors.textSecondary}
                             autoCapitalize="characters"
                             autoCorrect={false}
+                            accessibilityLabel={i18n('deleteConfirmationType')}
                         />
 
                         {isDeleteConfirmValid() && (
