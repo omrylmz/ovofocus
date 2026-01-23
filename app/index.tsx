@@ -1184,10 +1184,13 @@ export default function HomeScreen() {
                     collectionCount={state.collection.length}
                     dailyProgress={state.dailyProgress}
                     dailyGoal={state.settings.dailyGoal}
+                    currentStreak={state.stats.currentStreak}
+                    bestStreak={state.stats.bestStreak}
                     labels={{
                         session: i18n('session'),
                         animals: i18n('animals'),
                         dailyGoalProgress: i18n('dailyGoalProgress'),
+                        streak: i18n('dayStreak'),
                     }}
                 />
 
