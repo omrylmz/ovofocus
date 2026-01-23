@@ -2,13 +2,13 @@
  * Achievement definitions for milestone celebrations
  *
  * This module defines all achievements available in the app,
- * organized by category (session, streak, collection).
+ * organized by category (session, streak, collection, milestone).
  */
 
 import { Rarity } from './animals';
 
-// Achievement categories
-export type AchievementCategory = 'session' | 'streak' | 'collection';
+// Achievement categories - added 'milestone' for special one-time celebrations
+export type AchievementCategory = 'session' | 'streak' | 'collection' | 'milestone';
 
 // Achievement tiers with increasing prestige
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
@@ -33,8 +33,9 @@ export interface UnlockedAchievement {
 
 // Milestone definitions
 export const SESSION_MILESTONES = [10, 25, 50, 100, 250, 500] as const;
-export const STREAK_MILESTONES = [7, 14, 30, 60, 100] as const;
+export const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100] as const; // Added 3-day streak
 export const COLLECTION_PERCENTAGES = [25, 50, 75, 100] as const;
+export const COLLECTION_COUNT_MILESTONES = [1, 10, 25, 50, 100] as const; // Total animals hatched
 
 // Get tier based on threshold for session milestones
 function getSessionTier(threshold: number): AchievementTier {
@@ -49,6 +50,14 @@ function getStreakTier(threshold: number): AchievementTier {
     if (threshold >= 60) return 'platinum';
     if (threshold >= 30) return 'gold';
     if (threshold >= 14) return 'silver';
+    return 'bronze';
+}
+
+// Get tier for collection count milestones
+function getCollectionCountTier(count: number): AchievementTier {
+    if (count >= 100) return 'platinum';
+    if (count >= 50) return 'gold';
+    if (count >= 25) return 'silver';
     return 'bronze';
 }
 
@@ -86,11 +95,21 @@ const SESSION_ICONS: Record<number, string> = {
 
 // Streak milestones icons
 const STREAK_ICONS: Record<number, string> = {
-    7: '\uD83D\uDD25',
-    14: '\u26A1',
-    30: '\uD83C\uDF1F',
-    60: '\uD83D\uDCAB',
-    100: '\uD83C\uDF08',
+    3: '\uD83D\uDD25',  // Fire for 3-day streak
+    7: '\u26A1',        // Lightning for 7-day
+    14: '\uD83D\uDCAA', // Muscle for 14-day
+    30: '\uD83C\uDF1F', // Star for 30-day
+    60: '\uD83D\uDCAB', // Dizzy for 60-day
+    100: '\uD83C\uDF08', // Rainbow for 100-day
+};
+
+// Collection count milestone icons
+const COLLECTION_COUNT_ICONS: Record<number, string> = {
+    1: '\uD83D\uDC23',   // Baby chick - first animal!
+    10: '\uD83C\uDF89',  // Party popper
+    25: '\uD83C\uDF81',  // Wrapped gift
+    50: '\uD83C\uDFC5',  // Medal
+    100: '\uD83D\uDC51', // Crown
 };
 
 // Rarity icons for first catches
@@ -151,12 +170,24 @@ const collectionPercentAchievements: Achievement[] = COLLECTION_PERCENTAGES.map(
     })
 );
 
+// Collection count milestones (total animals hatched)
+const collectionCountAchievements: Achievement[] = COLLECTION_COUNT_MILESTONES.map(
+    (count) => ({
+        id: count === 1 ? 'first_animal' : `hatch_${count}`,
+        category: count === 1 ? ('milestone' as AchievementCategory) : ('collection' as AchievementCategory),
+        tier: getCollectionCountTier(count),
+        icon: COLLECTION_COUNT_ICONS[count] || '\uD83C\uDF89',
+        threshold: count,
+    })
+);
+
 // Export all achievements
 export const ACHIEVEMENTS: Achievement[] = [
     ...sessionAchievements,
     ...streakAchievements,
     ...firstRarityAchievements,
     ...collectionPercentAchievements,
+    ...collectionCountAchievements,
 ];
 
 // Helper functions for achievement lookups
@@ -323,4 +354,84 @@ export function checkCollectionMilestone(
         }
     }
     return null;
+}
+
+/**
+ * Check if the first animal milestone has been reached (very first hatch!)
+ * This triggers a special celebration
+ */
+export function checkFirstAnimalMilestone(
+    totalAnimalsHatched: number,
+    unlockedIds: string[]
+): Achievement | null {
+    if (totalAnimalsHatched === 1 && !unlockedIds.includes('first_animal')) {
+        return getAchievementById('first_animal') || null;
+    }
+    return null;
+}
+
+/**
+ * Check if a collection count milestone has been reached (total animals hatched)
+ */
+export function checkCollectionCountMilestone(
+    totalAnimalsHatched: number,
+    unlockedIds: string[]
+): Achievement | null {
+    for (const milestone of COLLECTION_COUNT_MILESTONES) {
+        if (milestone === 1) continue; // Skip first_animal, handled separately
+        const id = `hatch_${milestone}`;
+        if (totalAnimalsHatched >= milestone && !unlockedIds.includes(id)) {
+            return getAchievementById(id) || null;
+        }
+    }
+    return null;
+}
+
+/**
+ * Check for early streak milestones (3-day)
+ */
+export function checkEarlyStreakMilestone(
+    currentStreak: number,
+    unlockedIds: string[]
+): Achievement | null {
+    const id = 'streak_3';
+    if (currentStreak >= 3 && !unlockedIds.includes(id)) {
+        return getAchievementById(id) || null;
+    }
+    return null;
+}
+
+/**
+ * Determine if this is a special milestone that deserves an enhanced celebration
+ */
+export type MilestoneCategory =
+    | 'first_animal'
+    | 'collection_count'
+    | 'streak'
+    | 'rarity'
+    | 'collection_percent'
+    | 'session';
+
+export function getMilestoneCategory(achievement: Achievement): MilestoneCategory {
+    if (achievement.id === 'first_animal') return 'first_animal';
+    if (achievement.id.startsWith('hatch_')) return 'collection_count';
+    if (achievement.id.startsWith('streak_')) return 'streak';
+    if (achievement.id.startsWith('first_')) return 'rarity';
+    if (achievement.id.startsWith('collection_')) return 'collection_percent';
+    return 'session';
+}
+
+/**
+ * Check if an achievement deserves a milestone celebration
+ * (vs regular achievement notification)
+ */
+export function isMilestoneCelebration(achievement: Achievement): boolean {
+    const category = getMilestoneCategory(achievement);
+    // These categories get the enhanced milestone celebration
+    return [
+        'first_animal',
+        'collection_count',
+        'streak',
+        'rarity',
+    ].includes(category);
 }

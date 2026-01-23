@@ -40,6 +40,7 @@ interface GameState {
   restoredSession: { session: PersistedSession; remainingTime: number } | null;
   unlockedAchievements: UnlockedAchievement[];
   pendingAchievement: Achievement | null;
+  pendingMilestone: Achievement | null;
 }
 
 type GameAction =
@@ -73,7 +74,8 @@ type GameAction =
   | { type: 'RESTORE_SESSION'; payload: { session: PersistedSession; remainingTime: number } }
   | { type: 'CLEAR_RESTORED_SESSION' }
   | { type: 'SET_PENDING_ACHIEVEMENT'; payload: Achievement | null }
-  | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement };
+  | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement }
+  | { type: 'SET_PENDING_MILESTONE'; payload: Achievement | null };
 
 // ============================================================================
 // Factory Functions for Test Data
@@ -89,6 +91,8 @@ function createDefaultSettings(): Settings {
     language: 'en',
     debugMode: false,
     hasSeenGestureHints: false,
+    lastGestureHintSession: 0,
+    gestureHintIntervalSessions: 5,
     maxPausesPerSession: 3,
     hasCompletedOnboarding: false,
     dailyGoal: 3,
@@ -147,6 +151,7 @@ function createInitialState(overrides?: Partial<GameState>): GameState {
     restoredSession: null,
     unlockedAchievements: [],
     pendingAchievement: null,
+    pendingMilestone: null,
     ...overrides,
   };
 }

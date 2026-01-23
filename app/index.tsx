@@ -23,6 +23,8 @@ import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
 import { StreakCelebration } from '../src/components/StreakCelebration';
 import { AchievementModal } from '../src/components/AchievementModal';
+import { MilestoneCelebration, MilestoneData } from '../src/components/MilestoneCelebration';
+import { getMilestoneCategory } from '../src/data/achievements';
 import { OnboardingFlow } from '../src/components/OnboardingFlow';
 import { QuickReturnToast } from '../src/components/QuickReturnToast';
 import { ShieldSelector } from '../src/components/ShieldSelector';
@@ -45,6 +47,7 @@ import {
     PowerUpControls,
     InteractiveEgg,
 } from '../src/components/session';
+import { GestureHint } from '../src/components/GestureHint';
 
 // Create animated SVG components
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -483,45 +486,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         paddingHorizontal: theme.spacing.lg,
         paddingBottom: 80,
     },
-    gestureHintsOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: theme.zIndex.modal,
-        elevation: theme.zIndex.modal, // Android elevation
-    },
-    gestureHintsContent: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.spacing.xl,
-        marginHorizontal: theme.spacing.xl,
-        alignItems: 'center',
-    },
-    gestureHintsTitle: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.lg,
-    },
-    gestureHintItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.md,
-        width: '100%',
-    },
-    gestureHintIcon: {
-        fontSize: 24,
-        marginRight: theme.spacing.md,
-    },
-    gestureHintText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.text,
-        flex: 1,
-    },
-    gestureHintsButton: {
-        marginTop: theme.spacing.lg,
-    },
     debugBadge: {
         position: 'absolute',
         bottom: 20,
@@ -594,7 +558,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, dismissAchievement, i18n } = useGame();
+    const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, updateUserSettings, setGestureHintsSeen, setOnboardingComplete, dismissAchievement, dismissMilestone, i18n } = useGame();
     const { theme } = useTheme();
 
     // Create dynamic styles based on current theme
@@ -654,6 +618,57 @@ export default function HomeScreen() {
     // Pomodoro state
     const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>('work');
     const [pomodoroWorkSessions, setPomodoroWorkSessions] = useState(0);
+
+    // Compute milestone data when there's a pending milestone
+    const milestoneData = useMemo<MilestoneData | null>(() => {
+        if (!state.pendingMilestone) return null;
+
+        const achievement = state.pendingMilestone;
+        const category = getMilestoneCategory(achievement);
+        const lang = state.settings.language;
+
+        // Get localized title and subtitle based on category
+        switch (category) {
+            case 'first_animal':
+                return {
+                    type: 'first_animal',
+                    title: i18n('milestone_first_animal' as any) || 'Welcome to Ovo Focus!',
+                    subtitle: i18n('milestone_first_animal_subtitle' as any) || 'Your focus journey begins!',
+                    icon: achievement.icon,
+                    color: '#FFD700', // Gold for first animal
+                };
+            case 'collection_count':
+                return {
+                    type: 'collection_milestone',
+                    title: i18n('milestoneCollectionTitle' as any) || 'Collection Milestone!',
+                    subtitle: `${achievement.threshold} ${i18n('milestoneCollectionSubtitle' as any) || 'animals hatched!'}`,
+                    icon: achievement.icon,
+                    value: achievement.threshold,
+                    color: '#4FC3F7', // Light blue
+                };
+            case 'streak':
+                return {
+                    type: 'streak_milestone',
+                    title: i18n('milestoneStreakTitle' as any) || 'Streak Milestone!',
+                    subtitle: `${achievement.threshold} ${i18n('milestoneStreakSubtitle' as any) || 'days in a row!'}`,
+                    icon: achievement.icon,
+                    value: achievement.threshold,
+                    color: '#FF6B6B', // Orange-red for fire
+                };
+            case 'rarity':
+                return {
+                    type: 'rarity_discovery',
+                    title: i18n('milestoneRarityTitle' as any) || 'New Discovery!',
+                    subtitle: i18n(`achievement_${achievement.id}_desc` as any) || `First ${achievement.rarityRequired} animal!`,
+                    icon: achievement.icon,
+                    color: achievement.rarityRequired === 'legendary' ? '#FFD700' :
+                           achievement.rarityRequired === 'epic' ? '#BA68C8' :
+                           achievement.rarityRequired === 'rare' ? '#4FC3F7' : '#A5D6A7',
+                };
+            default:
+                return null;
+        }
+    }, [state.pendingMilestone, state.settings.language, i18n]);
 
     // Debug mode: 10 seconds, Normal: 25 minutes (with focus bonus applied)
     const baseDuration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
@@ -1018,7 +1033,18 @@ export default function HomeScreen() {
         if (state.settings.hapticsEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        if (!state.settings.hasSeenGestureHints) {
+
+        // Show gesture hints for first-time users or periodically
+        const totalSessions = state.stats.completedSessions;
+        const lastHintSession = state.settings.lastGestureHintSession || 0;
+        const hintInterval = state.settings.gestureHintIntervalSessions || 5;
+        const sessionsSinceLastHint = totalSessions - lastHintSession;
+
+        // Show hints if: never seen before, OR interval has passed (and interval > 0)
+        const shouldShowHints = !state.settings.hasSeenGestureHints ||
+            (hintInterval > 0 && sessionsSinceLastHint >= hintInterval);
+
+        if (shouldShowHints) {
             setTimeout(() => setShowGestureHints(true), 1000);
         }
     };
@@ -1069,6 +1095,8 @@ export default function HomeScreen() {
     const handleDismissGestureHints = () => {
         setShowGestureHints(false);
         setGestureHintsSeen();
+        // Track when hints were last shown for periodic reminder feature
+        updateUserSettings({ lastGestureHintSession: state.stats.completedSessions });
     };
 
     const handleReset = () => {
@@ -1283,11 +1311,19 @@ export default function HomeScreen() {
                 language={state.settings.language}
             />
 
-            {/* Achievement Modal */}
+            {/* Achievement Modal (for regular achievements) */}
             <AchievementModal
                 visible={!!state.pendingAchievement}
                 achievement={state.pendingAchievement}
                 onClose={dismissAchievement}
+                language={state.settings.language}
+            />
+
+            {/* Milestone Celebration (for special milestones with enhanced celebrations) */}
+            <MilestoneCelebration
+                visible={!!state.pendingMilestone && !!milestoneData}
+                milestone={milestoneData}
+                onDismiss={dismissMilestone}
                 language={state.settings.language}
             />
 
@@ -1298,46 +1334,12 @@ export default function HomeScreen() {
                 language={state.settings.language}
             />
 
-            {/* Gesture Hints Overlay */}
-            {showGestureHints && (
-                <View
-                    style={styles.gestureHintsOverlay}
-                    accessible={true}
-                    accessibilityViewIsModal={true}
-                    accessibilityRole="alert"
-                >
-                    <View style={styles.gestureHintsContent}>
-                        <Text
-                            style={styles.gestureHintsTitle}
-                            accessible={true}
-                            accessibilityRole="header"
-                        >
-                            💡 Tips
-                        </Text>
-                        <View style={styles.gestureHintItem} accessible={true}>
-                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👆</Text>
-                            <Text style={styles.gestureHintText}>{i18n('gestureHintTap')}</Text>
-                        </View>
-                        <View style={styles.gestureHintItem} accessible={true}>
-                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👆👆</Text>
-                            <Text style={styles.gestureHintText}>{i18n('gestureHintDoubleTap')}</Text>
-                        </View>
-                        <View style={styles.gestureHintItem} accessible={true}>
-                            <Text style={styles.gestureHintIcon} importantForAccessibility="no">👇</Text>
-                            <Text style={styles.gestureHintText}>{i18n('gestureHintLongPress')}</Text>
-                        </View>
-                        <View style={styles.gestureHintsButton}>
-                            <PixelButton
-                                title={i18n('gotIt')}
-                                onPress={handleDismissGestureHints}
-                                variant="primary"
-                                size="medium"
-                                accessibilityHint={state.settings.language === 'tr' ? 'İpuçlarını kapat' : 'Dismiss tips'}
-                            />
-                        </View>
-                    </View>
-                </View>
-            )}
+            {/* Animated Gesture Hints Overlay */}
+            <GestureHint
+                visible={showGestureHints}
+                onDismiss={handleDismissGestureHints}
+                language={state.settings.language}
+            />
 
             {/* Quick Return Toast */}
             <QuickReturnToast

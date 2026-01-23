@@ -507,6 +507,8 @@ export const translations = {
         achievement_session_500: 'Legendary Focus',
         achievement_session_500_desc: 'Complete 500 focus sessions',
         // Streak achievements
+        achievement_streak_3: 'Getting Warmed Up',
+        achievement_streak_3_desc: 'Maintain a 3-day streak',
         achievement_streak_7: 'Week Warrior',
         achievement_streak_7_desc: 'Maintain a 7-day streak',
         achievement_streak_14: 'Fortnight Champion',
@@ -535,6 +537,29 @@ export const translations = {
         achievement_collection_75_desc: 'Collect 75% of all animals',
         achievement_collection_100: 'Completionist',
         achievement_collection_100_desc: 'Collect all animals',
+
+        // Milestone achievements
+        milestone_first_animal: 'Welcome to Ovo Focus!',
+        milestone_first_animal_desc: 'You hatched your very first animal!',
+        milestone_first_animal_subtitle: 'Your focus journey begins!',
+        achievement_hatch_10: 'Growing Family',
+        achievement_hatch_10_desc: 'Hatch 10 animals total',
+        achievement_hatch_25: 'Animal Lover',
+        achievement_hatch_25_desc: 'Hatch 25 animals total',
+        achievement_hatch_50: 'Zoo Keeper',
+        achievement_hatch_50_desc: 'Hatch 50 animals total',
+        achievement_hatch_100: 'Animal Kingdom',
+        achievement_hatch_100_desc: 'Hatch 100 animals total',
+
+        // Milestone celebration messages
+        milestoneCelebration: 'Milestone Reached!',
+        milestoneStreakTitle: 'Streak Milestone!',
+        milestoneStreakSubtitle: 'days in a row!',
+        milestoneCollectionTitle: 'Collection Milestone!',
+        milestoneCollectionSubtitle: 'animals hatched!',
+        milestoneRarityTitle: 'New Discovery!',
+        milestoneDailyGoalTitle: 'Daily Goal Achieved!',
+        milestoneDailyGoalSubtitle: 'Great work today!',
 
         // Calendar Integration
         calendar: 'Calendar',
@@ -1050,6 +1075,8 @@ export const translations = {
         achievement_session_500: 'Efsanevi Odaklanma',
         achievement_session_500_desc: '500 odaklanma seansini tamamla',
         // Streak achievements
+        achievement_streak_3: 'Isinan Eller',
+        achievement_streak_3_desc: '3 gunluk seri yap',
         achievement_streak_7: 'Hafta Savascisi',
         achievement_streak_7_desc: '7 gunluk seri yap',
         achievement_streak_14: 'Iki Hafta Sampiyonu',
@@ -1078,6 +1105,29 @@ export const translations = {
         achievement_collection_75_desc: 'Tum hayvanlarin %75ini topla',
         achievement_collection_100: 'Tamamlayici',
         achievement_collection_100_desc: 'Tum hayvanlari topla',
+
+        // Milestone achievements
+        milestone_first_animal: 'Ovo Focus\'a Hosgeldin!',
+        milestone_first_animal_desc: 'Ilk hayvanini kuluceladin!',
+        milestone_first_animal_subtitle: 'Odaklanma yolculugun basliyor!',
+        achievement_hatch_10: 'Buyuyen Aile',
+        achievement_hatch_10_desc: 'Toplam 10 hayvan kulucele',
+        achievement_hatch_25: 'Hayvan Sever',
+        achievement_hatch_25_desc: 'Toplam 25 hayvan kulucele',
+        achievement_hatch_50: 'Hayvanat Bahcesi Bakicisi',
+        achievement_hatch_50_desc: 'Toplam 50 hayvan kulucele',
+        achievement_hatch_100: 'Hayvan Kralligi',
+        achievement_hatch_100_desc: 'Toplam 100 hayvan kulucele',
+
+        // Milestone celebration messages
+        milestoneCelebration: 'Kilometre Tasi!',
+        milestoneStreakTitle: 'Seri Kilometre Tasi!',
+        milestoneStreakSubtitle: 'gun ust uste!',
+        milestoneCollectionTitle: 'Koleksiyon Kilometre Tasi!',
+        milestoneCollectionSubtitle: 'hayvan kulucelandi!',
+        milestoneRarityTitle: 'Yeni Kesif!',
+        milestoneDailyGoalTitle: 'Gunluk Hedef Tamamlandi!',
+        milestoneDailyGoalSubtitle: 'Bugun harika is cikardin!',
 
         // Calendar Integration
         calendar: 'Takvim',
@@ -1567,6 +1617,8 @@ export const translations = {
         achievement_session_500: 'Enfoque Legendario',
         achievement_session_500_desc: 'Completa 500 sesiones de enfoque',
         // Streak achievements
+        achievement_streak_3: 'Calentando Motores',
+        achievement_streak_3_desc: 'Mantén una racha de 3 días',
         achievement_streak_7: 'Guerrero de la Semana',
         achievement_streak_7_desc: 'Mantén una racha de 7 días',
         achievement_streak_14: 'Campeón Quincenal',
@@ -1595,6 +1647,29 @@ export const translations = {
         achievement_collection_75_desc: 'Colecciona el 75% de todos los animales',
         achievement_collection_100: 'Completista',
         achievement_collection_100_desc: 'Colecciona todos los animales',
+
+        // Milestone achievements
+        milestone_first_animal: '¡Bienvenido a Ovo Focus!',
+        milestone_first_animal_desc: '¡Eclosionaste tu primer animal!',
+        milestone_first_animal_subtitle: '¡Tu viaje de enfoque comienza!',
+        achievement_hatch_10: 'Familia Creciente',
+        achievement_hatch_10_desc: 'Eclosiona 10 animales en total',
+        achievement_hatch_25: 'Amante de los Animales',
+        achievement_hatch_25_desc: 'Eclosiona 25 animales en total',
+        achievement_hatch_50: 'Cuidador del Zoológico',
+        achievement_hatch_50_desc: 'Eclosiona 50 animales en total',
+        achievement_hatch_100: 'Reino Animal',
+        achievement_hatch_100_desc: 'Eclosiona 100 animales en total',
+
+        // Milestone celebration messages
+        milestoneCelebration: '¡Meta Alcanzada!',
+        milestoneStreakTitle: '¡Meta de Racha!',
+        milestoneStreakSubtitle: '¡días seguidos!',
+        milestoneCollectionTitle: '¡Meta de Colección!',
+        milestoneCollectionSubtitle: '¡animales eclosionados!',
+        milestoneRarityTitle: '¡Nuevo Descubrimiento!',
+        milestoneDailyGoalTitle: '¡Meta Diaria Lograda!',
+        milestoneDailyGoalSubtitle: '¡Gran trabajo hoy!',
 
         // Calendar Integration
         calendar: 'Calendario',

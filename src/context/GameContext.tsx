@@ -7,6 +7,10 @@ import {
     checkStreakMilestone,
     checkFirstRarityAchievement,
     checkCollectionMilestone,
+    checkFirstAnimalMilestone,
+    checkCollectionCountMilestone,
+    checkEarlyStreakMilestone,
+    isMilestoneCelebration,
 } from '../data/achievements';
 import { audioManager } from '../services/audioManager';
 import {
@@ -79,6 +83,8 @@ interface GameState {
     // Achievement state
     unlockedAchievements: UnlockedAchievement[];
     pendingAchievement: Achievement | null;
+    // Milestone celebration state (for enhanced celebrations)
+    pendingMilestone: Achievement | null;
 }
 
 type GameAction =
@@ -102,7 +108,8 @@ type GameAction =
     | { type: 'RESTORE_SESSION'; payload: { session: PersistedSession; remainingTime: number } }
     | { type: 'CLEAR_RESTORED_SESSION' }
     | { type: 'SET_PENDING_ACHIEVEMENT'; payload: Achievement | null }
-    | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement };
+    | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement }
+    | { type: 'SET_PENDING_MILESTONE'; payload: Achievement | null };
 
 export interface CompleteSessionResult {
     animal: Animal;
@@ -142,6 +149,8 @@ interface GameContextType {
     clearRestoredSession: () => void;
     // Achievement functions
     dismissAchievement: () => void;
+    // Milestone celebration functions
+    dismissMilestone: () => void;
 }
 
 // Initial state
@@ -167,6 +176,8 @@ const initialState: GameState = {
         language: getDeviceLanguage(),
         debugMode: false,
         hasSeenGestureHints: false,
+        lastGestureHintSession: 0,
+        gestureHintIntervalSessions: 5,
         maxPausesPerSession: 3,
         hasCompletedOnboarding: false,
         dailyGoal: 3,
@@ -203,6 +214,8 @@ const initialState: GameState = {
     // Achievement state
     unlockedAchievements: [],
     pendingAchievement: null,
+    // Milestone celebration state
+    pendingMilestone: null,
 };
 
 // Reducer
@@ -370,6 +383,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 unlockedAchievements: [...state.unlockedAchievements, action.payload],
             };
 
+        case 'SET_PENDING_MILESTONE':
+            return {
+                ...state,
+                pendingMilestone: action.payload,
+            };
+
         default:
             return state;
     }
@@ -518,29 +537,49 @@ export function GameProvider({ children }: { children: ReactNode }) {
         currentUnlocked: UnlockedAchievement[]
     ): Promise<void> => {
         const unlockedIds = currentUnlocked.map(a => a.id);
+        const totalAnimalsHatched = collection.length;
 
-        // Check session milestone
-        let achievement = checkSessionMilestone(stats.completedSessions, unlockedIds);
+        // PRIORITY 1: Check first animal milestone (very special celebration!)
+        let achievement = checkFirstAnimalMilestone(totalAnimalsHatched, unlockedIds);
         if (achievement) {
             await triggerAchievement(achievement);
             return; // Only show one achievement at a time
         }
 
-        // Check streak milestone
-        achievement = checkStreakMilestone(stats.currentStreak, unlockedIds);
-        if (achievement) {
-            await triggerAchievement(achievement);
-            return;
-        }
-
-        // Check first rarity achievement
+        // PRIORITY 2: Check first rarity achievement (exciting discovery!)
         achievement = checkFirstRarityAchievement(newAnimal.rarity, unlockedIds);
         if (achievement) {
             await triggerAchievement(achievement);
             return;
         }
 
-        // Check collection milestones
+        // PRIORITY 3: Check streak milestones (including early 3-day streak)
+        achievement = checkEarlyStreakMilestone(stats.currentStreak, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+        achievement = checkStreakMilestone(stats.currentStreak, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+
+        // PRIORITY 4: Check collection count milestones (total hatched)
+        achievement = checkCollectionCountMilestone(totalAnimalsHatched, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+
+        // PRIORITY 5: Check session milestone
+        achievement = checkSessionMilestone(stats.completedSessions, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+
+        // PRIORITY 6: Check collection percentage milestones
         const uniqueAnimalIds = new Set(collection.map(a => a.id));
         const totalAnimals = animals.length;
         achievement = checkCollectionMilestone(uniqueAnimalIds.size, totalAnimals, unlockedIds);
@@ -562,13 +601,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
         };
         dispatch({ type: 'ADD_UNLOCKED_ACHIEVEMENT', payload: newUnlockedAchievement });
 
-        // Show the achievement modal
-        dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: achievement });
+        // Check if this achievement deserves an enhanced milestone celebration
+        if (isMilestoneCelebration(achievement)) {
+            // Show the enhanced milestone celebration modal
+            dispatch({ type: 'SET_PENDING_MILESTONE', payload: achievement });
+        } else {
+            // Show the regular achievement modal
+            dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: achievement });
+        }
     };
 
     // Dismiss the currently displayed achievement
     const dismissAchievement = (): void => {
         dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: null });
+    };
+
+    // Dismiss the currently displayed milestone celebration
+    const dismissMilestone = (): void => {
+        dispatch({ type: 'SET_PENDING_MILESTONE', payload: null });
     };
 
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
@@ -788,6 +838,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 clearRestoredSession,
                 // Achievement functions
                 dismissAchievement,
+                // Milestone celebration functions
+                dismissMilestone,
             }}
         >
             {children}
