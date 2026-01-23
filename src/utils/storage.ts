@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
 export interface CollectedAnimal extends Animal {
     collectedAt: string;
     sessionId: string;
+    notes?: string;
 }
 
 export interface Stats {
@@ -172,6 +173,20 @@ export async function clearCollection(): Promise<void> {
         await AsyncStorage.removeItem(STORAGE_KEYS.COLLECTION);
     } catch (error) {
         console.error('[Storage] Failed to clear collection:', error);
+    }
+}
+
+// Update notes for the most recently collected animal
+export async function updateLastAnimalNotes(notes: string): Promise<void> {
+    try {
+        const collection = await getCollection();
+        if (collection.length > 0) {
+            const lastAnimal = collection[collection.length - 1];
+            lastAnimal.notes = notes.trim();
+            await AsyncStorage.setItem(STORAGE_KEYS.COLLECTION, JSON.stringify(collection));
+        }
+    } catch (error) {
+        console.error("[Storage] Failed to update animal notes:", error);
     }
 }
 

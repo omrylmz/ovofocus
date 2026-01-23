@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Modal } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -20,9 +20,11 @@ import { audioManager } from '../services/audioManager';
 interface HatchModalProps {
     visible: boolean;
     animal: Animal | null;
-    onClose: () => void;
+    onClose: (notes?: string) => void;
     language?: Language;
 }
+
+const NOTES_MAX_LENGTH = 200;
 
 // Confetti particle component
 function ConfettiParticle({ delay, startX, color }: { delay: number; startX: number; color: string }) {
@@ -78,6 +80,9 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
     const auraPulse = useSharedValue(0);
     const bounceValue = useSharedValue(0);
 
+    // Notes state
+    const [notes, setNotes] = useState('');
+
     // Staggered text animations
     const congratsOpacity = useSharedValue(0);
     const congratsTranslateY = useSharedValue(20);
@@ -87,6 +92,8 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
     const rarityScale = useSharedValue(0.8);
     const descOpacity = useSharedValue(0);
     const descTranslateY = useSharedValue(15);
+    const notesOpacity = useSharedValue(0);
+    const notesTranslateY = useSharedValue(15);
     const buttonOpacity = useSharedValue(0);
     const buttonTranslateY = useSharedValue(20);
 
@@ -162,8 +169,11 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
             descOpacity.value = withDelay(textBaseDelay + 300, withTiming(1, { duration: 250 }));
             descTranslateY.value = withDelay(textBaseDelay + 300, withSpring(0, { damping: 12 }));
 
-            buttonOpacity.value = withDelay(textBaseDelay + 450, withTiming(1, { duration: 300 }));
-            buttonTranslateY.value = withDelay(textBaseDelay + 450, withSpring(0, { damping: 12 }));
+            notesOpacity.value = withDelay(textBaseDelay + 400, withTiming(1, { duration: 250 }));
+            notesTranslateY.value = withDelay(textBaseDelay + 400, withSpring(0, { damping: 12 }));
+
+            buttonOpacity.value = withDelay(textBaseDelay + 550, withTiming(1, { duration: 300 }));
+            buttonTranslateY.value = withDelay(textBaseDelay + 550, withSpring(0, { damping: 12 }));
 
             // Shine effect - sweeps across the animal
             shinePosition.value = withDelay(500, withRepeat(
@@ -203,8 +213,12 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
             rarityScale.value = 0.8;
             descOpacity.value = 0;
             descTranslateY.value = 15;
+            notesOpacity.value = 0;
+            notesTranslateY.value = 15;
             buttonOpacity.value = 0;
             buttonTranslateY.value = 20;
+            // Reset notes state
+            setNotes('');
         }
     }, [visible, animal]);
 
@@ -245,6 +259,11 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
         transform: [{ translateY: descTranslateY.value }],
     }));
 
+    const notesStyle = useAnimatedStyle(() => ({
+        opacity: notesOpacity.value,
+        transform: [{ translateY: notesTranslateY.value }],
+    }));
+
     const buttonStyle = useAnimatedStyle(() => ({
         opacity: buttonOpacity.value,
         transform: [{ translateY: buttonTranslateY.value }],
@@ -259,6 +278,10 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
         transform: [{ scale: 1 + auraPulse.value * 0.1 }],
     }));
 
+    const handleClose = () => {
+        onClose(notes.trim() || undefined);
+    };
+
     if (!animal) return null;
 
     const rarityColor = getRarityColor(animal.rarity);
@@ -269,75 +292,105 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
 
     return (
         <Modal visible={visible} transparent animationType="none">
-            <Animated.View style={[styles.overlay, backgroundStyle]}>
-                <View style={styles.container}>
-                    {/* Confetti particles */}
-                    <View style={styles.confettiContainer}>
-                        {confettiColors.map((color, i) => (
-                            <ConfettiParticle
-                                key={i}
-                                delay={i * 50}
-                                startX={(i % 5 - 2) * 40}
-                                color={color}
-                            />
-                        ))}
-                    </View>
-
-                    {/* Emoji particles */}
-                    <Animated.View style={[styles.particles, particleStyle]}>
-                        <Text style={styles.particleText}>✨ 🎉 ⭐ 💫 ✨</Text>
-                    </Animated.View>
-
-                    {/* Aura for rare animals */}
-                    {isRare && (
-                        <Animated.View
-                            style={[
-                                styles.aura,
-                                { backgroundColor: rarityColor },
-                                auraStyle
-                            ]}
-                        />
-                    )}
-
-                    {/* Animal */}
-                    <Animated.View style={[styles.animalContainer, animalStyle]}>
-                        <View style={[styles.animalCircle, { borderColor: rarityColor }]}>
-                            {/* Shine overlay */}
-                            <View style={styles.shineContainer}>
-                                <Animated.View style={[styles.shine, shineStyle]} />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardAvoid}
+            >
+                <Animated.View style={[styles.overlay, backgroundStyle]}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.container}>
+                            {/* Confetti particles */}
+                            <View style={styles.confettiContainer}>
+                                {confettiColors.map((color, i) => (
+                                    <ConfettiParticle
+                                        key={i}
+                                        delay={i * 50}
+                                        startX={(i % 5 - 2) * 40}
+                                        color={color}
+                                    />
+                                ))}
                             </View>
-                            <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+
+                            {/* Emoji particles */}
+                            <Animated.View style={[styles.particles, particleStyle]}>
+                                <Text style={styles.particleText}>✨ 🎉 ⭐ 💫 ✨</Text>
+                            </Animated.View>
+
+                            {/* Aura for rare animals */}
+                            {isRare && (
+                                <Animated.View
+                                    style={[
+                                        styles.aura,
+                                        { backgroundColor: rarityColor },
+                                        auraStyle
+                                    ]}
+                                />
+                            )}
+
+                            {/* Animal */}
+                            <Animated.View style={[styles.animalContainer, animalStyle]}>
+                                <View style={[styles.animalCircle, { borderColor: rarityColor }]}>
+                                    {/* Shine overlay */}
+                                    <View style={styles.shineContainer}>
+                                        <Animated.View style={[styles.shine, shineStyle]} />
+                                    </View>
+                                    <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                                </View>
+                            </Animated.View>
+
+                            {/* Text with staggered animation */}
+                            <View style={styles.textContainer}>
+                                <Animated.Text style={[styles.congratsText, congratsStyle]}>
+                                    {t('congratulations', language)}
+                                </Animated.Text>
+                                <Animated.Text style={[styles.animalName, nameStyle]}>
+                                    {getAnimalName(animal.id, language)}
+                                </Animated.Text>
+                                <Animated.View style={[styles.rarityBadge, { backgroundColor: rarityColor }, rarityStyle]}>
+                                    <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
+                                </Animated.View>
+                                <Animated.Text style={[styles.description, descStyle]}>
+                                    {getAnimalDescription(animal.id, language)}
+                                </Animated.Text>
+                            </View>
+
+                            {/* Session Notes Input */}
+                            <Animated.View style={[styles.notesContainer, notesStyle]}>
+                                <View style={styles.notesHeader}>
+                                    <Text style={styles.notesLabel}>{t('sessionNotes', language)}</Text>
+                                    <Text style={styles.notesOptional}>({t('optional', language)})</Text>
+                                </View>
+                                <TextInput
+                                    style={styles.notesInput}
+                                    placeholder={t('sessionNotesPlaceholder', language)}
+                                    placeholderTextColor={theme.colors.textSecondary}
+                                    value={notes}
+                                    onChangeText={(text) => setNotes(text.slice(0, NOTES_MAX_LENGTH))}
+                                    multiline
+                                    maxLength={NOTES_MAX_LENGTH}
+                                    textAlignVertical="top"
+                                />
+                                <Text style={styles.notesCharCount}>{notes.length}/{NOTES_MAX_LENGTH}</Text>
+                            </Animated.View>
+
+                            {/* Close button with animation */}
+                            <Animated.View style={[styles.buttonContainer, buttonStyle]}>
+                                <PixelButton
+                                    title={t('addToCollection', language)}
+                                    onPress={handleClose}
+                                    variant="primary"
+                                    size="large"
+                                    icon="📦"
+                                />
+                            </Animated.View>
                         </View>
-                    </Animated.View>
-
-                    {/* Text with staggered animation */}
-                    <View style={styles.textContainer}>
-                        <Animated.Text style={[styles.congratsText, congratsStyle]}>
-                            {t('congratulations', language)}
-                        </Animated.Text>
-                        <Animated.Text style={[styles.animalName, nameStyle]}>
-                            {getAnimalName(animal.id, language)}
-                        </Animated.Text>
-                        <Animated.View style={[styles.rarityBadge, { backgroundColor: rarityColor }, rarityStyle]}>
-                            <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
-                        </Animated.View>
-                        <Animated.Text style={[styles.description, descStyle]}>
-                            {getAnimalDescription(animal.id, language)}
-                        </Animated.Text>
-                    </View>
-
-                    {/* Close button with animation */}
-                    <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-                        <PixelButton
-                            title={t('addToCollection', language)}
-                            onPress={onClose}
-                            variant="primary"
-                            size="large"
-                            icon="📦"
-                        />
-                    </Animated.View>
-                </View>
-            </Animated.View>
+                    </ScrollView>
+                </Animated.View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 }
@@ -358,6 +411,13 @@ function getConfettiColors(rarity: Rarity): string[] {
 }
 
 const styles = StyleSheet.create({
+    keyboardAvoid: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
+    },
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.92)',
@@ -398,12 +458,12 @@ const styles = StyleSheet.create({
         borderRadius: 120,
     },
     animalContainer: {
-        marginBottom: theme.spacing.xl,
+        marginBottom: theme.spacing.lg,
     },
     animalCircle: {
-        width: 180,
-        height: 180,
-        borderRadius: 90,
+        width: 150,
+        height: 150,
+        borderRadius: 75,
         backgroundColor: theme.colors.surface,
         borderWidth: 4,
         justifyContent: 'center',
@@ -424,29 +484,29 @@ const styles = StyleSheet.create({
         top: -20,
     },
     animalEmoji: {
-        fontSize: 100,
+        fontSize: 80,
     },
     textContainer: {
         alignItems: 'center',
-        marginBottom: theme.spacing.xl,
+        marginBottom: theme.spacing.md,
     },
     congratsText: {
-        fontSize: theme.fontSize.xxl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.accent,
-        marginBottom: theme.spacing.sm,
-    },
-    animalName: {
         fontSize: theme.fontSize.xl,
         fontWeight: theme.fontWeight.bold,
+        color: theme.colors.accent,
+        marginBottom: theme.spacing.xs,
+    },
+    animalName: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
-        marginBottom: theme.spacing.sm,
+        marginBottom: theme.spacing.xs,
     },
     rarityBadge: {
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.round,
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
     },
     rarityText: {
         fontSize: theme.fontSize.sm,
@@ -454,12 +514,49 @@ const styles = StyleSheet.create({
         color: '#000',
     },
     description: {
-        fontSize: theme.fontSize.md,
+        fontSize: theme.fontSize.sm,
         color: theme.colors.textSecondary,
         textAlign: 'center',
         maxWidth: 280,
     },
+    notesContainer: {
+        width: '100%',
+        maxWidth: 300,
+        marginBottom: theme.spacing.md,
+    },
+    notesHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    notesLabel: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.medium,
+        color: theme.colors.text,
+    },
+    notesOptional: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        marginLeft: theme.spacing.xs,
+    },
+    notesInput: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceLight,
+        padding: theme.spacing.sm,
+        color: theme.colors.text,
+        fontSize: theme.fontSize.sm,
+        minHeight: 60,
+        maxHeight: 100,
+    },
+    notesCharCount: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        textAlign: 'right',
+        marginTop: theme.spacing.xs,
+    },
     buttonContainer: {
-        marginTop: theme.spacing.lg,
+        marginTop: theme.spacing.sm,
     },
 });
