@@ -99,8 +99,16 @@ export interface AnimalInteraction {
     happiness: number;        // 0-100
     lastPetTime: string | null;
     lastFeedTime: string | null;
+    lastPlayTime: string | null;
+    lastTrainTime: string | null;
+    lastGroomTime: string | null;
+    lastTalkTime: string | null;
     petCount: number;
     feedCount: number;
+    playCount: number;
+    trainCount: number;
+    groomCount: number;
+    talkCount: number;
 }
 
 const defaultStats: Stats = {
@@ -500,8 +508,16 @@ export async function grantShieldFromAnimal(animalId: string, animalName: string
 const INTERACTION_CONSTANTS = {
     PET_COOLDOWN_HOURS: 4,
     FEED_COOLDOWN_HOURS: 8,
+    PLAY_COOLDOWN_HOURS: 2,
+    TRAIN_COOLDOWN_HOURS: 12,
+    GROOM_COOLDOWN_HOURS: 6,
+    TALK_COOLDOWN_HOURS: 1,
     PET_HAPPINESS_BONUS: 10,
     FEED_HAPPINESS_BONUS: 15,
+    PLAY_HAPPINESS_BONUS: 12,
+    TRAIN_HAPPINESS_BONUS: 8,
+    GROOM_HAPPINESS_BONUS: 10,
+    TALK_HAPPINESS_BONUS: 5,
     DAILY_DECAY: 5,
     MAX_HAPPINESS: 100,
     MIN_HAPPINESS: 0,
@@ -513,14 +529,29 @@ function getDefaultInteraction(animalId: string): AnimalInteraction {
         happiness: 50, // Start at neutral happiness
         lastPetTime: null,
         lastFeedTime: null,
+        lastPlayTime: null,
+        lastTrainTime: null,
+        lastGroomTime: null,
+        lastTalkTime: null,
         petCount: 0,
         feedCount: 0,
+        playCount: 0,
+        trainCount: 0,
+        groomCount: 0,
+        talkCount: 0,
     };
 }
 
 function calculateHappinessDecay(interaction: AnimalInteraction): number {
-    // Get the most recent interaction time (not first truthy value)
-    const times = [interaction.lastPetTime, interaction.lastFeedTime]
+    // Get the most recent interaction time from all interaction types
+    const times = [
+        interaction.lastPetTime,
+        interaction.lastFeedTime,
+        interaction.lastPlayTime,
+        interaction.lastTrainTime,
+        interaction.lastGroomTime,
+        interaction.lastTalkTime,
+    ]
         .filter(Boolean)
         .map(t => new Date(t!).getTime());
 
@@ -652,12 +683,160 @@ export async function feedAnimal(animalId: string): Promise<FeedResult> {
     return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
 }
 
+export interface PlayResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number;
+}
+
+export async function playWithAnimal(animalId: string): Promise<PlayResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastPlayTime,
+        INTERACTION_CONSTANTS.PLAY_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.PLAY_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastPlayTime: new Date().toISOString(),
+        playCount: (interaction.playCount || 0) + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
+export interface TrainResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number;
+}
+
+export async function trainAnimal(animalId: string): Promise<TrainResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastTrainTime,
+        INTERACTION_CONSTANTS.TRAIN_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.TRAIN_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastTrainTime: new Date().toISOString(),
+        trainCount: (interaction.trainCount || 0) + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
+export interface GroomResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number;
+}
+
+export async function groomAnimal(animalId: string): Promise<GroomResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastGroomTime,
+        INTERACTION_CONSTANTS.GROOM_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.GROOM_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastGroomTime: new Date().toISOString(),
+        groomCount: (interaction.groomCount || 0) + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
+export interface TalkResult {
+    success: boolean;
+    interaction: AnimalInteraction;
+    cooldownRemaining: number;
+}
+
+export async function talkToAnimal(animalId: string): Promise<TalkResult> {
+    const interaction = await getAnimalInteraction(animalId);
+    const cooldownRemaining = getCooldownRemaining(
+        interaction.lastTalkTime,
+        INTERACTION_CONSTANTS.TALK_COOLDOWN_HOURS
+    );
+
+    if (cooldownRemaining > 0) {
+        return { success: false, interaction, cooldownRemaining };
+    }
+
+    const newHappiness = Math.min(
+        INTERACTION_CONSTANTS.MAX_HAPPINESS,
+        interaction.happiness + INTERACTION_CONSTANTS.TALK_HAPPINESS_BONUS
+    );
+
+    const updatedInteraction: AnimalInteraction = {
+        ...interaction,
+        happiness: newHappiness,
+        lastTalkTime: new Date().toISOString(),
+        talkCount: (interaction.talkCount || 0) + 1,
+    };
+
+    await updateAnimalInteraction(updatedInteraction);
+    return { success: true, interaction: updatedInteraction, cooldownRemaining: 0 };
+}
+
 export function getPetCooldownRemaining(interaction: AnimalInteraction): number {
     return getCooldownRemaining(interaction.lastPetTime, INTERACTION_CONSTANTS.PET_COOLDOWN_HOURS);
 }
 
 export function getFeedCooldownRemaining(interaction: AnimalInteraction): number {
     return getCooldownRemaining(interaction.lastFeedTime, INTERACTION_CONSTANTS.FEED_COOLDOWN_HOURS);
+}
+
+export function getPlayCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastPlayTime, INTERACTION_CONSTANTS.PLAY_COOLDOWN_HOURS);
+}
+
+export function getTrainCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastTrainTime, INTERACTION_CONSTANTS.TRAIN_COOLDOWN_HOURS);
+}
+
+export function getGroomCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastGroomTime, INTERACTION_CONSTANTS.GROOM_COOLDOWN_HOURS);
+}
+
+export function getTalkCooldownRemaining(interaction: AnimalInteraction): number {
+    return getCooldownRemaining(interaction.lastTalkTime, INTERACTION_CONSTANTS.TALK_COOLDOWN_HOURS);
 }
 
 export function getHappinessLevel(happiness: number): 'sad' | 'neutral' | 'happy' | 'ecstatic' {

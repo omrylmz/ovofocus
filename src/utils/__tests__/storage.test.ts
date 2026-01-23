@@ -1181,8 +1181,16 @@ describe('Storage Utility', () => {
       happiness: 50,
       lastPetTime: null,
       lastFeedTime: null,
+      lastPlayTime: null,
+      lastTrainTime: null,
+      lastGroomTime: null,
+      lastTalkTime: null,
       petCount: 0,
       feedCount: 0,
+      playCount: 0,
+      trainCount: 0,
+      groomCount: 0,
+      talkCount: 0,
     };
 
     describe('getAllInteractions', () => {
@@ -1232,8 +1240,16 @@ describe('Storage Utility', () => {
           happiness: 80,
           lastPetTime: threeDaysAgo,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 5,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
         await updateAnimalInteraction(savedInteraction);
 
@@ -1252,8 +1268,16 @@ describe('Storage Utility', () => {
           happiness: 30,
           lastPetTime: thirtyDaysAgo,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 1,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
         await updateAnimalInteraction(savedInteraction);
 
@@ -1272,8 +1296,16 @@ describe('Storage Utility', () => {
           happiness: 80,
           lastPetTime: oneDayAgo,
           lastFeedTime: threeDaysAgo,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 1,
           feedCount: 1,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
         await updateAnimalInteraction(savedInteraction);
 
@@ -1347,8 +1379,16 @@ describe('Storage Utility', () => {
           happiness: 95,
           lastPetTime: null,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 0,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
         await updateAnimalInteraction(highHappinessInteraction);
 
@@ -1387,8 +1427,16 @@ describe('Storage Utility', () => {
           happiness: 90,
           lastPetTime: null,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 0,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
         await updateAnimalInteraction(highHappinessInteraction);
 
@@ -1405,8 +1453,16 @@ describe('Storage Utility', () => {
           happiness: 50,
           lastPetTime: null,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 0,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
 
         const cooldown = getPetCooldownRemaining(interaction);
@@ -1421,8 +1477,16 @@ describe('Storage Utility', () => {
           happiness: 50,
           lastPetTime: oneHourAgo,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 1,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
 
         const cooldown = getPetCooldownRemaining(interaction);
@@ -1437,8 +1501,16 @@ describe('Storage Utility', () => {
           happiness: 50,
           lastPetTime: null,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 0,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
 
         const cooldown = getFeedCooldownRemaining(interaction);
@@ -1453,8 +1525,16 @@ describe('Storage Utility', () => {
           happiness: 50,
           lastPetTime: null,
           lastFeedTime: fourHoursAgo,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 0,
           feedCount: 1,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
 
         const cooldown = getFeedCooldownRemaining(interaction);
@@ -1471,8 +1551,16 @@ describe('Storage Utility', () => {
           happiness: 50,
           lastPetTime: fiveHoursAgo,
           lastFeedTime: null,
+          lastPlayTime: null,
+          lastTrainTime: null,
+          lastGroomTime: null,
+          lastTalkTime: null,
           petCount: 1,
           feedCount: 0,
+          playCount: 0,
+          trainCount: 0,
+          groomCount: 0,
+          talkCount: 0,
         };
 
         const cooldown = getPetCooldownRemaining(interaction);

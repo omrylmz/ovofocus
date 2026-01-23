@@ -39,6 +39,10 @@ export type SoundType =
     | 'celebration'
     | 'pet'
     | 'feed'
+    | 'play'
+    | 'train'
+    | 'groom'
+    | 'talk'
     | 'session_fail';
 
 interface SoundConfig {
@@ -173,6 +177,39 @@ const SOUND_CONFIG: Record<SoundType, SoundConfig> = {
             { frequency: 300, startTime: 0, duration: 0.08, volume: 0.5 },
             { frequency: 350, startTime: 0.06, duration: 0.08, volume: 0.5 },
             { frequency: 300, startTime: 0.12, duration: 0.08, volume: 0.4 },
+        ],
+    },
+    play: {
+        volume: 0.5,
+        tones: [
+            { frequency: 659, startTime: 0, duration: 0.1, volume: 0.6 },       // E5
+            { frequency: 784, startTime: 0.08, duration: 0.1, volume: 0.7 },    // G5
+            { frequency: 988, startTime: 0.16, duration: 0.12, volume: 0.6 },   // B5
+            { frequency: 784, startTime: 0.26, duration: 0.1, volume: 0.5 },    // G5
+        ],
+    },
+    train: {
+        volume: 0.45,
+        tones: [
+            { frequency: 392, startTime: 0, duration: 0.15, volume: 0.5 },      // G4
+            { frequency: 440, startTime: 0.12, duration: 0.15, volume: 0.6 },   // A4
+            { frequency: 523, startTime: 0.24, duration: 0.2, volume: 0.7 },    // C5
+        ],
+    },
+    groom: {
+        volume: 0.35,
+        tones: [
+            { frequency: 880, startTime: 0, duration: 0.06, volume: 0.4 },      // A5
+            { frequency: 1047, startTime: 0.04, duration: 0.08, volume: 0.5 },  // C6
+            { frequency: 1319, startTime: 0.1, duration: 0.1, volume: 0.4 },    // E6
+        ],
+    },
+    talk: {
+        volume: 0.4,
+        tones: [
+            { frequency: 440, startTime: 0, duration: 0.08, volume: 0.4 },      // A4
+            { frequency: 523, startTime: 0.06, duration: 0.08, volume: 0.5 },   // C5
+            { frequency: 440, startTime: 0.12, duration: 0.06, volume: 0.4 },   // A4
         ],
     },
     session_fail: {

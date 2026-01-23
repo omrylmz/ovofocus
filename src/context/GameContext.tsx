@@ -17,6 +17,10 @@ import {
     AnimalInteraction,
     PetResult,
     FeedResult,
+    PlayResult,
+    TrainResult,
+    GroomResult,
+    TalkResult,
     PersistedSession,
     SessionRestoreResult,
     getCollection,
@@ -32,8 +36,16 @@ import {
     getAnimalInteraction,
     petAnimal as petAnimalStorage,
     feedAnimal as feedAnimalStorage,
+    playWithAnimal as playWithAnimalStorage,
+    trainAnimal as trainAnimalStorage,
+    groomAnimal as groomAnimalStorage,
+    talkToAnimal as talkToAnimalStorage,
     getPetCooldownRemaining,
     getFeedCooldownRemaining,
+    getPlayCooldownRemaining,
+    getTrainCooldownRemaining,
+    getGroomCooldownRemaining,
+    getTalkCooldownRemaining,
     getHappinessLevel,
     saveActiveSession,
     clearActiveSession,
@@ -115,8 +127,16 @@ interface GameContextType {
     getInteraction: (animalId: string) => Promise<AnimalInteraction>;
     petAnimal: (animalId: string) => Promise<PetResult>;
     feedAnimal: (animalId: string) => Promise<FeedResult>;
+    playWithAnimal: (animalId: string) => Promise<PlayResult>;
+    trainAnimal: (animalId: string) => Promise<TrainResult>;
+    groomAnimal: (animalId: string) => Promise<GroomResult>;
+    talkToAnimal: (animalId: string) => Promise<TalkResult>;
     getPetCooldown: (interaction: AnimalInteraction) => number;
     getFeedCooldown: (interaction: AnimalInteraction) => number;
+    getPlayCooldown: (interaction: AnimalInteraction) => number;
+    getTrainCooldown: (interaction: AnimalInteraction) => number;
+    getGroomCooldown: (interaction: AnimalInteraction) => number;
+    getTalkCooldown: (interaction: AnimalInteraction) => number;
     getHappinessLevel: (happiness: number) => 'sad' | 'neutral' | 'happy' | 'ecstatic';
     // Session restore functions
     clearRestoredSession: () => void;
@@ -672,12 +692,60 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return result;
     };
 
+    const playWithAnimal = async (animalId: string): Promise<PlayResult> => {
+        const result = await playWithAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('play');
+        }
+        return result;
+    };
+
+    const trainAnimal = async (animalId: string): Promise<TrainResult> => {
+        const result = await trainAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('train');
+        }
+        return result;
+    };
+
+    const groomAnimal = async (animalId: string): Promise<GroomResult> => {
+        const result = await groomAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('groom');
+        }
+        return result;
+    };
+
+    const talkToAnimal = async (animalId: string): Promise<TalkResult> => {
+        const result = await talkToAnimalStorage(animalId);
+        if (result.success) {
+            audioManager.playSound('talk');
+        }
+        return result;
+    };
+
     const getPetCooldown = (interaction: AnimalInteraction): number => {
         return getPetCooldownRemaining(interaction);
     };
 
     const getFeedCooldown = (interaction: AnimalInteraction): number => {
         return getFeedCooldownRemaining(interaction);
+    };
+
+    const getPlayCooldown = (interaction: AnimalInteraction): number => {
+        return getPlayCooldownRemaining(interaction);
+    };
+
+    const getTrainCooldown = (interaction: AnimalInteraction): number => {
+        return getTrainCooldownRemaining(interaction);
+    };
+
+    const getGroomCooldown = (interaction: AnimalInteraction): number => {
+        return getGroomCooldownRemaining(interaction);
+    };
+
+    const getTalkCooldown = (interaction: AnimalInteraction): number => {
+        return getTalkCooldownRemaining(interaction);
     };
 
     // Translation helper
@@ -705,8 +773,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 getInteraction,
                 petAnimal,
                 feedAnimal,
+                playWithAnimal,
+                trainAnimal,
+                groomAnimal,
+                talkToAnimal,
                 getPetCooldown,
                 getFeedCooldown,
+                getPlayCooldown,
+                getTrainCooldown,
+                getGroomCooldown,
+                getTalkCooldown,
                 getHappinessLevel,
                 // Session restore functions
                 clearRestoredSession,

@@ -116,12 +116,32 @@ export function AnimalDetailModal({
     isFavorite = false,
     language = 'en',
 }: AnimalDetailModalProps) {
-    const { getInteraction, petAnimal, feedAnimal, getPetCooldown, getFeedCooldown, getHappinessLevel, state } = useGame();
+    const {
+        getInteraction,
+        petAnimal,
+        feedAnimal,
+        playWithAnimal,
+        trainAnimal,
+        groomAnimal,
+        talkToAnimal,
+        getPetCooldown,
+        getFeedCooldown,
+        getPlayCooldown,
+        getTrainCooldown,
+        getGroomCooldown,
+        getTalkCooldown,
+        getHappinessLevel,
+        state,
+    } = useGame();
 
     // Interaction state
     const [interaction, setInteraction] = useState<AnimalInteraction | null>(null);
     const [petCooldown, setPetCooldown] = useState(0);
     const [feedCooldown, setFeedCooldown] = useState(0);
+    const [playCooldown, setPlayCooldown] = useState(0);
+    const [trainCooldown, setTrainCooldown] = useState(0);
+    const [groomCooldown, setGroomCooldown] = useState(0);
+    const [talkCooldown, setTalkCooldown] = useState(0);
 
     // Get collection history from state
     const collectionHistory = useMemo(() => {
@@ -161,9 +181,16 @@ export function AnimalDetailModal({
     // Interaction animation values
     const petButtonScale = useSharedValue(1);
     const feedButtonScale = useSharedValue(1);
+    const playButtonScale = useSharedValue(1);
+    const trainButtonScale = useSharedValue(1);
+    const groomButtonScale = useSharedValue(1);
+    const talkButtonScale = useSharedValue(1);
     const happinessGlow = useSharedValue(0);
     const floatingHeart = useSharedValue(0);
     const floatingHeartOpacity = useSharedValue(0);
+    const floatingIcon = useSharedValue(0);
+    const floatingIconOpacity = useSharedValue(0);
+    const [floatingEmoji, setFloatingEmoji] = useState('\u{2764}\uFE0F');
 
     // Load interaction data when modal opens
     useEffect(() => {
@@ -179,6 +206,10 @@ export function AnimalDetailModal({
         const updateCooldowns = () => {
             setPetCooldown(getPetCooldown(interaction));
             setFeedCooldown(getFeedCooldown(interaction));
+            setPlayCooldown(getPlayCooldown(interaction));
+            setTrainCooldown(getTrainCooldown(interaction));
+            setGroomCooldown(getGroomCooldown(interaction));
+            setTalkCooldown(getTalkCooldown(interaction));
         };
 
         updateCooldowns();
@@ -193,6 +224,10 @@ export function AnimalDetailModal({
         setInteraction(data);
         setPetCooldown(getPetCooldown(data));
         setFeedCooldown(getFeedCooldown(data));
+        setPlayCooldown(getPlayCooldown(data));
+        setTrainCooldown(getTrainCooldown(data));
+        setGroomCooldown(getGroomCooldown(data));
+        setTalkCooldown(getTalkCooldown(data));
     };
 
     // Entrance animations
@@ -415,6 +450,192 @@ export function AnimalDetailModal({
         }
     };
 
+    const handlePlay = async () => {
+        if (!animal || playCooldown > 0) return;
+
+        playButtonScale.value = withSequence(
+            withSpring(0.85, { damping: 15 }),
+            withSpring(1.1, { damping: 8 }),
+            withSpring(1, { damping: 10 })
+        );
+
+        const result = await playWithAnimal(animal.id);
+        if (result.success) {
+            setInteraction(result.interaction);
+            setPlayCooldown(0);
+
+            // Bouncy animal animation for play
+            bounceValue.value = withSequence(
+                withSpring(-20, { damping: 6, stiffness: 400 }),
+                withSpring(10, { damping: 8 }),
+                withSpring(-5, { damping: 10 }),
+                withSpring(0, { damping: 12 })
+            );
+
+            // Wiggle rotation
+            rotation.value = withSequence(
+                withTiming(-15, { duration: 100 }),
+                withTiming(15, { duration: 100 }),
+                withTiming(-10, { duration: 100 }),
+                withTiming(10, { duration: 100 }),
+                withTiming(0, { duration: 100 })
+            );
+
+            // Floating ball emoji
+            setFloatingEmoji('\u{26BD}');
+            floatingIconOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 800 })
+            );
+            floatingIcon.value = withSequence(
+                withTiming(0, { duration: 0 }),
+                withTiming(-50, { duration: 900, easing: Easing.out(Easing.ease) })
+            );
+
+            happinessGlow.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withTiming(0, { duration: 400 })
+            );
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            setPlayCooldown(result.cooldownRemaining);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+    };
+
+    const handleTrain = async () => {
+        if (!animal || trainCooldown > 0) return;
+
+        trainButtonScale.value = withSequence(
+            withSpring(0.85, { damping: 15 }),
+            withSpring(1, { damping: 10 })
+        );
+
+        const result = await trainAnimal(animal.id);
+        if (result.success) {
+            setInteraction(result.interaction);
+            setTrainCooldown(0);
+
+            // Strong pulse for training
+            modalScale.value = withSequence(
+                withSpring(1.05, { damping: 6 }),
+                withSpring(0.95, { damping: 8 }),
+                withSpring(1.02, { damping: 10 }),
+                withSpring(1, { damping: 12 })
+            );
+
+            // Star floating up
+            setFloatingEmoji('\u{2B50}');
+            floatingIconOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 1000 })
+            );
+            floatingIcon.value = withSequence(
+                withTiming(0, { duration: 0 }),
+                withTiming(-60, { duration: 1100, easing: Easing.out(Easing.ease) })
+            );
+
+            happinessGlow.value = withSequence(
+                withTiming(1, { duration: 300 }),
+                withTiming(0, { duration: 500 })
+            );
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            setTrainCooldown(result.cooldownRemaining);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+    };
+
+    const handleGroom = async () => {
+        if (!animal || groomCooldown > 0) return;
+
+        groomButtonScale.value = withSequence(
+            withSpring(0.85, { damping: 15 }),
+            withSpring(1, { damping: 10 })
+        );
+
+        const result = await groomAnimal(animal.id);
+        if (result.success) {
+            setInteraction(result.interaction);
+            setGroomCooldown(0);
+
+            // Gentle shimmer animation
+            bounceValue.value = withSequence(
+                withSpring(-3, { damping: 12 }),
+                withSpring(3, { damping: 12 }),
+                withSpring(-2, { damping: 12 }),
+                withSpring(0, { damping: 12 })
+            );
+
+            // Sparkle emoji
+            setFloatingEmoji('\u{2728}');
+            floatingIconOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 700 })
+            );
+            floatingIcon.value = withSequence(
+                withTiming(0, { duration: 0 }),
+                withTiming(-35, { duration: 800, easing: Easing.out(Easing.ease) })
+            );
+
+            happinessGlow.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withTiming(0, { duration: 400 })
+            );
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            setGroomCooldown(result.cooldownRemaining);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+    };
+
+    const handleTalk = async () => {
+        if (!animal || talkCooldown > 0) return;
+
+        talkButtonScale.value = withSequence(
+            withSpring(0.85, { damping: 15 }),
+            withSpring(1, { damping: 10 })
+        );
+
+        const result = await talkToAnimal(animal.id);
+        if (result.success) {
+            setInteraction(result.interaction);
+            setTalkCooldown(0);
+
+            // Gentle nod animation
+            rotation.value = withSequence(
+                withTiming(5, { duration: 150 }),
+                withTiming(-5, { duration: 150 }),
+                withTiming(3, { duration: 150 }),
+                withTiming(0, { duration: 150 })
+            );
+
+            // Speech bubble emoji
+            setFloatingEmoji('\u{1F4AC}');
+            floatingIconOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 600 })
+            );
+            floatingIcon.value = withSequence(
+                withTiming(0, { duration: 0 }),
+                withTiming(-30, { duration: 700, easing: Easing.out(Easing.ease) })
+            );
+
+            happinessGlow.value = withSequence(
+                withTiming(1, { duration: 150 }),
+                withTiming(0, { duration: 300 })
+            );
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            setTalkCooldown(result.cooldownRemaining);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+    };
+
     // Animated styles
     const backdropStyle = useAnimatedStyle(() => ({
         opacity: backdropOpacity.value,
@@ -491,9 +712,30 @@ export function AnimalDetailModal({
         transform: [{ scale: feedButtonScale.value }],
     }));
 
+    const playButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: playButtonScale.value }],
+    }));
+
+    const trainButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: trainButtonScale.value }],
+    }));
+
+    const groomButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: groomButtonScale.value }],
+    }));
+
+    const talkButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: talkButtonScale.value }],
+    }));
+
     const floatingHeartStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: floatingHeart.value }],
         opacity: floatingHeartOpacity.value,
+    }));
+
+    const floatingIconStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: floatingIcon.value }],
+        opacity: floatingIconOpacity.value,
     }));
 
     const happinessGlowAnimStyle = useAnimatedStyle(() => ({
@@ -660,6 +902,14 @@ export function AnimalDetailModal({
                                     </View>
                                 </View>
 
+                                {/* Floating icon for all interactions */}
+                                <View style={styles.floatingIconContainer}>
+                                    <Animated.Text style={[styles.floatingIcon, floatingIconStyle]}>
+                                        {floatingEmoji}
+                                    </Animated.Text>
+                                </View>
+
+                                {/* Primary interactions row */}
                                 <View style={styles.interactionButtons}>
                                     <Animated.View style={[styles.interactionButtonWrapper, petButtonStyle]}>
                                         <Pressable
@@ -706,17 +956,126 @@ export function AnimalDetailModal({
                                             )}
                                         </Pressable>
                                     </Animated.View>
+
+                                    <Animated.View style={[styles.interactionButtonWrapper, playButtonStyle]}>
+                                        <Pressable
+                                            style={[
+                                                styles.interactionButton,
+                                                playCooldown > 0 && styles.interactionButtonDisabled,
+                                            ]}
+                                            onPress={handlePlay}
+                                            disabled={playCooldown > 0}
+                                        >
+                                            <Text style={styles.interactionIcon}>{'\u{26BD}'}</Text>
+                                            <Text style={styles.interactionLabel}>
+                                                {language === 'tr' ? 'Oyna' : language === 'es' ? 'Jugar' : 'Play'}
+                                            </Text>
+                                            {playCooldown > 0 && (
+                                                <Text style={styles.cooldownText}>
+                                                    {formatCooldown(playCooldown, language)}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    </Animated.View>
                                 </View>
 
-                                <View style={styles.interactionStats}>
-                                    <Text style={styles.interactionStatText}>
-                                        {language === 'tr'
-                                            ? `${interaction.petCount} kez oksandi, ${interaction.feedCount} kez beslendi`
-                                            : language === 'es'
-                                            ? `Acariciado ${interaction.petCount}x, Alimentado ${interaction.feedCount}x`
-                                            : `Petted ${interaction.petCount}x, Fed ${interaction.feedCount}x`
-                                        }
+                                {/* Secondary interactions row */}
+                                <View style={styles.interactionButtonsSecondary}>
+                                    <Animated.View style={[styles.interactionButtonWrapper, trainButtonStyle]}>
+                                        <Pressable
+                                            style={[
+                                                styles.interactionButtonSmall,
+                                                trainCooldown > 0 && styles.interactionButtonDisabled,
+                                            ]}
+                                            onPress={handleTrain}
+                                            disabled={trainCooldown > 0}
+                                        >
+                                            <Text style={styles.interactionIconSmall}>{'\u{1F3CB}'}</Text>
+                                            <Text style={styles.interactionLabelSmall}>
+                                                {language === 'tr' ? 'Egzersiz' : language === 'es' ? 'Entrenar' : 'Train'}
+                                            </Text>
+                                            {trainCooldown > 0 && (
+                                                <Text style={styles.cooldownTextSmall}>
+                                                    {formatCooldown(trainCooldown, language)}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    </Animated.View>
+
+                                    <Animated.View style={[styles.interactionButtonWrapper, groomButtonStyle]}>
+                                        <Pressable
+                                            style={[
+                                                styles.interactionButtonSmall,
+                                                groomCooldown > 0 && styles.interactionButtonDisabled,
+                                            ]}
+                                            onPress={handleGroom}
+                                            disabled={groomCooldown > 0}
+                                        >
+                                            <Text style={styles.interactionIconSmall}>{'\u{2728}'}</Text>
+                                            <Text style={styles.interactionLabelSmall}>
+                                                {language === 'tr' ? 'Timar' : language === 'es' ? 'Acicalar' : 'Groom'}
+                                            </Text>
+                                            {groomCooldown > 0 && (
+                                                <Text style={styles.cooldownTextSmall}>
+                                                    {formatCooldown(groomCooldown, language)}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    </Animated.View>
+
+                                    <Animated.View style={[styles.interactionButtonWrapper, talkButtonStyle]}>
+                                        <Pressable
+                                            style={[
+                                                styles.interactionButtonSmall,
+                                                talkCooldown > 0 && styles.interactionButtonDisabled,
+                                            ]}
+                                            onPress={handleTalk}
+                                            disabled={talkCooldown > 0}
+                                        >
+                                            <Text style={styles.interactionIconSmall}>{'\u{1F4AC}'}</Text>
+                                            <Text style={styles.interactionLabelSmall}>
+                                                {language === 'tr' ? 'Konus' : language === 'es' ? 'Hablar' : 'Talk'}
+                                            </Text>
+                                            {talkCooldown > 0 && (
+                                                <Text style={styles.cooldownTextSmall}>
+                                                    {formatCooldown(talkCooldown, language)}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    </Animated.View>
+                                </View>
+
+                                {/* Interaction Stats */}
+                                <View style={styles.interactionStatsContainer}>
+                                    <Text style={styles.interactionStatsTitle}>
+                                        {language === 'tr' ? 'Etkilesim Istatistikleri' : language === 'es' ? 'Estadisticas de Interaccion' : 'Interaction Stats'}
                                     </Text>
+                                    <View style={styles.interactionStatsGrid}>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{1F43E}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.petCount || 0}</Text>
+                                        </View>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{1F34E}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.feedCount || 0}</Text>
+                                        </View>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{26BD}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.playCount || 0}</Text>
+                                        </View>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{1F3CB}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.trainCount || 0}</Text>
+                                        </View>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{2728}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.groomCount || 0}</Text>
+                                        </View>
+                                        <View style={styles.interactionStatItem}>
+                                            <Text style={styles.interactionStatIcon}>{'\u{1F4AC}'}</Text>
+                                            <Text style={styles.interactionStatValue}>{interaction.talkCount || 0}</Text>
+                                        </View>
+                                    </View>
                                 </View>
                             </Animated.View>
                         )}
@@ -1046,7 +1405,14 @@ const styles = StyleSheet.create({
     interactionButtons: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: theme.spacing.md,
+        gap: theme.spacing.sm,
+        flexWrap: 'wrap',
+    },
+    interactionButtonsSecondary: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.sm,
     },
     interactionButtonWrapper: {
         position: 'relative',
@@ -1057,20 +1423,40 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.md,
         borderWidth: 1,
         borderColor: theme.colors.surfaceLight,
-        minWidth: 80,
+        minWidth: 70,
+    },
+    interactionButtonSmall: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceLight,
+        minWidth: 60,
     },
     interactionButtonDisabled: {
         opacity: 0.5,
     },
     interactionIcon: {
-        fontSize: 24,
+        fontSize: 22,
+        marginBottom: 2,
+    },
+    interactionIconSmall: {
+        fontSize: 18,
         marginBottom: 2,
     },
     interactionLabel: {
         fontSize: theme.fontSize.xs,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.text,
+    },
+    interactionLabelSmall: {
+        fontSize: 10,
         fontWeight: theme.fontWeight.semibold,
         color: theme.colors.text,
     },
@@ -1079,6 +1465,11 @@ const styles = StyleSheet.create({
         color: theme.colors.textSecondary,
         marginTop: 2,
     },
+    cooldownTextSmall: {
+        fontSize: 8,
+        color: theme.colors.textSecondary,
+        marginTop: 1,
+    },
     floatingHeart: {
         position: 'absolute',
         top: 0,
@@ -1086,12 +1477,48 @@ const styles = StyleSheet.create({
         marginLeft: -8,
         fontSize: 16,
     },
-    interactionStats: {
-        marginTop: theme.spacing.sm,
+    floatingIconContainer: {
+        position: 'absolute',
+        top: -30,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 10,
     },
-    interactionStatText: {
+    floatingIcon: {
+        fontSize: 24,
+    },
+    interactionStatsContainer: {
+        marginTop: theme.spacing.md,
+        width: '100%',
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.surfaceLight,
+        borderRadius: theme.borderRadius.sm,
+    },
+    interactionStatsTitle: {
         fontSize: theme.fontSize.xs,
+        fontWeight: theme.fontWeight.bold,
         color: theme.colors.textSecondary,
         textAlign: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    interactionStatsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: theme.spacing.md,
+    },
+    interactionStatItem: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 4,
+    },
+    interactionStatIcon: {
+        fontSize: 14,
+    },
+    interactionStatValue: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
     },
 });
