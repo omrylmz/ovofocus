@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -20,12 +20,10 @@ import { useTimer } from '../src/hooks/useTimer';
 import { usePomodoroTimer, PomodoroPhase } from '../src/hooks/usePomodoroTimer';
 import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { PixelButton } from '../src/components/PixelButton';
-import { HatchModal } from '../src/components/HatchModal';
+import { LoadingIndicator } from '../src/components/LoadingIndicator';
 import { StreakCelebration } from '../src/components/StreakCelebration';
-import { AchievementModal } from '../src/components/AchievementModal';
 import { MilestoneCelebration, MilestoneData } from '../src/components/MilestoneCelebration';
 import { getMilestoneCategory } from '../src/data/achievements';
-import { OnboardingFlow } from '../src/components/OnboardingFlow';
 import { QuickReturnToast } from '../src/components/QuickReturnToast';
 import { ShieldSelector } from '../src/components/ShieldSelector';
 import { AnimatedBackground } from '../src/components/AnimatedBackground';
@@ -48,6 +46,18 @@ import {
     InteractiveEgg,
 } from '../src/components/session';
 import { GestureHint } from '../src/components/GestureHint';
+
+// Lazy load heavy modal components that are not visible on initial render
+// These components have significant bundle size due to animations and UI complexity
+const HatchModal = lazy(() =>
+    import('../src/components/HatchModal').then(module => ({ default: module.HatchModal }))
+);
+const AchievementModal = lazy(() =>
+    import('../src/components/AchievementModal').then(module => ({ default: module.AchievementModal }))
+);
+const OnboardingFlow = lazy(() =>
+    import('../src/components/OnboardingFlow').then(module => ({ default: module.OnboardingFlow }))
+);
 
 // Create animated SVG components
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -1295,13 +1305,15 @@ export default function HomeScreen() {
                 </View>
             )}
 
-            {/* Hatch Modal */}
-            <HatchModal
-                visible={showHatchModal}
-                animal={hatchedAnimal}
-                onClose={handleModalClose}
-                language={state.settings.language}
-            />
+            {/* Hatch Modal - Lazy loaded */}
+            <Suspense fallback={<LoadingIndicator overlay />}>
+                <HatchModal
+                    visible={showHatchModal}
+                    animal={hatchedAnimal}
+                    onClose={handleModalClose}
+                    language={state.settings.language}
+                />
+            </Suspense>
 
             {/* Streak Celebration */}
             <StreakCelebration
@@ -1311,13 +1323,15 @@ export default function HomeScreen() {
                 language={state.settings.language}
             />
 
-            {/* Achievement Modal (for regular achievements) */}
-            <AchievementModal
-                visible={!!state.pendingAchievement}
-                achievement={state.pendingAchievement}
-                onClose={dismissAchievement}
-                language={state.settings.language}
-            />
+            {/* Achievement Modal (for regular achievements) - Lazy loaded */}
+            <Suspense fallback={<LoadingIndicator overlay />}>
+                <AchievementModal
+                    visible={!!state.pendingAchievement}
+                    achievement={state.pendingAchievement}
+                    onClose={dismissAchievement}
+                    language={state.settings.language}
+                />
+            </Suspense>
 
             {/* Milestone Celebration (for special milestones with enhanced celebrations) */}
             <MilestoneCelebration
@@ -1327,12 +1341,14 @@ export default function HomeScreen() {
                 language={state.settings.language}
             />
 
-            {/* Onboarding Flow */}
-            <OnboardingFlow
-                visible={!state.settings.hasCompletedOnboarding && !state.isLoading}
-                onComplete={setOnboardingComplete}
-                language={state.settings.language}
-            />
+            {/* Onboarding Flow - Lazy loaded */}
+            <Suspense fallback={<LoadingIndicator overlay />}>
+                <OnboardingFlow
+                    visible={!state.settings.hasCompletedOnboarding && !state.isLoading}
+                    onComplete={setOnboardingComplete}
+                    language={state.settings.language}
+                />
+            </Suspense>
 
             {/* Animated Gesture Hints Overlay */}
             <GestureHint
