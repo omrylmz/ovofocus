@@ -18,7 +18,7 @@ import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
-import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal } from '../src/utils/storage';
+import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal, updateLastAnimalNotes } from '../src/utils/storage';
 import { calculateCollectionBonuses, calculateEffectiveDuration } from '../src/utils/levelBonuses';
 import { DailyRewardModal } from '../src/components/DailyRewardModal';
 import { checkDailyReward, claimDailyReward, RewardType } from '../src/utils/dailyRewards';
@@ -658,7 +658,12 @@ export default function HomeScreen() {
         resetSession();
     };
 
-    const handleModalClose = () => {
+    const handleModalClose = async (notes?: string) => {
+        // Save session notes if provided
+        if (notes && notes.trim()) {
+            await updateLastAnimalNotes(notes);
+        }
+
         setShowHatchModal(false);
         setHatchedAnimal(null);
 
