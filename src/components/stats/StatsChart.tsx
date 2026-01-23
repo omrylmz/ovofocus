@@ -14,7 +14,7 @@ import Animated, {
 import { theme } from '../../styles/theme';
 import { WeeklyData, CompletionRateData } from '../../utils/statsCalculations';
 
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 
 // ============================================================================
 // Bar Chart - Shows sessions per day for the last 7 days

@@ -67,7 +67,7 @@ function getDayNameTR(date: Date, short = false): string {
 }
 
 // Get localized day name
-export function getLocalizedDayName(date: Date, language: 'en' | 'tr', short = false): string {
+export function getLocalizedDayName(date: Date, language: 'en' | 'tr' | 'es', short = false): string {
     return language === 'tr' ? getDayNameTR(date, short) : getDayName(date, short);
 }
 
@@ -96,7 +96,7 @@ function formatDate(date: Date): string {
 // Calculate weekly session data (last 7 days)
 export function calculateWeeklyData(
     collection: CollectedAnimal[],
-    language: 'en' | 'tr' = 'en',
+    language: 'en' | 'tr' | 'es' = 'en',
     avgDuration: number = 25
 ): WeeklyData[] {
     const today = getStartOfDay(new Date());
@@ -129,7 +129,7 @@ export function calculateWeeklyData(
 // Calculate monthly trend (last 4 weeks)
 export function calculateMonthlyTrend(
     collection: CollectedAnimal[],
-    language: 'en' | 'tr' = 'en',
+    language: 'en' | 'tr' | 'es' = 'en',
     avgDuration: number = 25
 ): MonthlyTrend[] {
     const today = new Date();
@@ -176,7 +176,7 @@ export function calculateCompletionRate(stats: Stats): CompletionRateData {
 // Calculate most productive day of week
 export function calculateMostProductiveDay(
     collection: CollectedAnimal[],
-    language: 'en' | 'tr' = 'en'
+    language: 'en' | 'tr' | 'es' = 'en'
 ): DayOfWeekData | null {
     if (collection.length === 0) return null;
 
@@ -217,7 +217,7 @@ export function calculateMostProductiveDay(
 // Calculate most productive time of day
 export function calculateMostProductiveTime(
     collection: CollectedAnimal[],
-    language: 'en' | 'tr' = 'en'
+    language: 'en' | 'tr' | 'es' = 'en'
 ): TimeOfDayData | null {
     if (collection.length === 0) return null;
 
@@ -302,7 +302,7 @@ export function calculateWeekStats(
 export function calculateStatsSummary(
     stats: Stats,
     collection: CollectedAnimal[],
-    language: 'en' | 'tr' = 'en'
+    language: 'en' | 'tr' | 'es' = 'en'
 ): StatsSummary {
     // Calculate average session duration from actual stats, fallback to 25 minutes
     const averageSessionDuration = stats.completedSessions > 0
@@ -333,7 +333,7 @@ export function calculateStatsSummary(
 }
 
 // Format minutes as hours and minutes string
-export function formatDuration(minutes: number, language: 'en' | 'tr' = 'en'): string {
+export function formatDuration(minutes: number, language: 'en' | 'tr' | 'es' = 'en'): string {
     if (minutes < 60) {
         return language === 'tr' ? `${minutes} dk` : `${minutes}m`;
     }

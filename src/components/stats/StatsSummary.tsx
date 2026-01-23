@@ -14,7 +14,7 @@ import { theme } from '../../styles/theme';
 import { StatsSummary as StatsSummaryType, formatDuration, getTimePeriodIcon, getDayIcon } from '../../utils/statsCalculations';
 import { t } from '../../i18n/translations';
 
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 
 // ============================================================================
 // Stat Card Component - Individual metric display
@@ -109,9 +109,10 @@ export function FocusTimeSection({ todayMinutes, weekMinutes, allTimeMinutes, la
     const labels = {
         en: { today: 'Today', thisWeek: 'This Week', allTime: 'All Time' },
         tr: { today: 'Bugun', thisWeek: 'Bu Hafta', allTime: 'Toplam' },
+        es: { today: 'Hoy', thisWeek: 'Esta Semana', allTime: 'Total' },
     };
 
-    const sectionTitle = language === 'tr' ? 'Odaklanma Suresi' : 'Focus Time';
+    const sectionTitle = language === 'tr' ? 'Odaklanma Suresi' : language === 'es' ? 'Tiempo de Enfoque' : 'Focus Time';
     const accessibilityLabel = language === 'tr'
         ? `${sectionTitle}. Bugun: ${formatDuration(todayMinutes, language)}. Bu hafta: ${formatDuration(weekMinutes, language)}. Toplam: ${formatDuration(allTimeMinutes, language)}`
         : `${sectionTitle}. Today: ${formatDuration(todayMinutes, language)}. This week: ${formatDuration(weekMinutes, language)}. All time: ${formatDuration(allTimeMinutes, language)}`;
@@ -172,9 +173,10 @@ export function SessionCountsSection({
     const labels = {
         en: { today: 'Today', thisWeek: 'This Week', total: 'Total', avgDuration: 'Avg Duration' },
         tr: { today: 'Bugun', thisWeek: 'Bu Hafta', total: 'Toplam', avgDuration: 'Ort Sure' },
+        es: { today: 'Hoy', thisWeek: 'Esta Semana', total: 'Total', avgDuration: 'Duración Prom' },
     };
 
-    const sectionTitle = language === 'tr' ? 'Seans Sayilari' : 'Session Counts';
+    const sectionTitle = language === 'tr' ? 'Seans Sayilari' : language === 'es' ? 'Conteo de Sesiones' : 'Session Counts';
     const accessibilityLabel = language === 'tr'
         ? `${sectionTitle}. Bugun: ${todaySessions} seans. Bu hafta: ${weekSessions} seans. Toplam: ${allTimeSessions} seans. Ortalama sure: ${formatDuration(averageDuration, language)}`
         : `${sectionTitle}. Today: ${todaySessions} sessions. This week: ${weekSessions} sessions. Total: ${allTimeSessions} sessions. Average duration: ${formatDuration(averageDuration, language)}`;
@@ -236,12 +238,13 @@ export function StreakSection({ currentStreak, bestStreak, language }: StreakSec
     const labels = {
         en: { current: 'Current Streak', best: 'Best Streak', days: 'days' },
         tr: { current: 'Mevcut Seri', best: 'En Iyi Seri', days: 'gun' },
+        es: { current: 'Racha Actual', best: 'Mejor Racha', days: 'días' },
     };
 
     const isAtBest = currentStreak > 0 && currentStreak >= bestStreak;
     const bestBadge = t('bestBadge', language);
 
-    const sectionTitle = language === 'tr' ? 'Seri' : 'Streak';
+    const sectionTitle = language === 'tr' ? 'Seri' : language === 'es' ? 'Racha' : 'Streak';
     const accessibilityLabel = language === 'tr'
         ? `${sectionTitle}. Mevcut seri: ${currentStreak} gun${isAtBest ? ', en iyi seri' : ''}. En iyi seri: ${bestStreak} gun`
         : `${sectionTitle}. Current streak: ${currentStreak} days${isAtBest ? ', personal best' : ''}. Best streak: ${bestStreak} days`;
@@ -295,13 +298,14 @@ export function ProductivityInsights({
     const labels = {
         en: { bestDay: 'Best Day', bestTime: 'Best Time', sessions: 'sessions', noData: 'No data yet' },
         tr: { bestDay: 'En Iyi Gun', bestTime: 'En Iyi Zaman', sessions: 'seans', noData: 'Henuz veri yok' },
+        es: { bestDay: 'Mejor Día', bestTime: 'Mejor Hora', sessions: 'sesiones', noData: 'Sin datos aún' },
     };
 
     if (!mostProductiveDay && !mostProductiveTime) {
         return null;
     }
 
-    const sectionTitle = language === 'tr' ? 'Verimlilik Bilgileri' : 'Productivity Insights';
+    const sectionTitle = language === 'tr' ? 'Verimlilik Bilgileri' : language === 'es' ? 'Estadísticas de Productividad' : 'Productivity Insights';
 
     // Build accessibility label dynamically based on available data
     let accessibilityParts: string[] = [sectionTitle];

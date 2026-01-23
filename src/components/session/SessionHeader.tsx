@@ -4,7 +4,7 @@ import { theme } from '../../styles/theme';
 import { StreakBadge } from '../StreakBadge';
 import { DailyProgressRing } from '../DailyProgressRing';
 
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 
 interface SessionHeaderProps {
     currentStreak: number;

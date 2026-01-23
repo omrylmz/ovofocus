@@ -5,7 +5,7 @@ import { PixelButton } from '../PixelButton';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
 
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 
 interface SessionControlsProps {
     sessionState: SessionState;

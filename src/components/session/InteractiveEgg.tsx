@@ -15,7 +15,7 @@ import { Egg } from '../Egg';
 import { audioManager } from '../../services/audioManager';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 type WarningLevel = 0 | 1 | 2 | 3;
 
 interface InteractiveEggProps {

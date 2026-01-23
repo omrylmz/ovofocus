@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { theme } from '../../styles/theme';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'es';
 
 interface PowerUpControlsProps {
     sessionState: SessionState;
