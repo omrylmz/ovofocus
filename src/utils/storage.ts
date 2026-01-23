@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animal } from '../data/animals';
+import { UnlockedAchievement } from '../data/achievements';
 import { Language, getDeviceLanguage } from '../i18n/translations';
 import { ReducedMotionPreference } from '../hooks/useReducedMotion';
 import { ThemeMode } from '../styles/theme';
@@ -14,6 +15,7 @@ export const STORAGE_KEYS = {
     ANIMAL_INTERACTIONS: '@ovofocus/animal_interactions',
     STREAK_FREEZE: '@ovofocus/streak_freeze',
     ACTIVE_SESSION: '@ovofocus/active_session',
+    ACHIEVEMENTS: '@ovofocus/achievements',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -760,6 +762,42 @@ export async function restoreActiveSession(): Promise<SessionRestoreResult> {
     }
 }
 
+// Achievements
+export async function getUnlockedAchievements(): Promise<UnlockedAchievement[]> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.ACHIEVEMENTS);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error('[Storage] Failed to read achievements:', error);
+        return [];
+    }
+}
+
+export async function unlockAchievement(achievementId: string): Promise<UnlockedAchievement[]> {
+    try {
+        const achievements = await getUnlockedAchievements();
+        // Check if already unlocked
+        if (achievements.some(a => a.id === achievementId)) {
+            return achievements;
+        }
+        const newAchievement: UnlockedAchievement = {
+            id: achievementId,
+            unlockedAt: new Date().toISOString(),
+        };
+        achievements.push(newAchievement);
+        await AsyncStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements));
+        return achievements;
+    } catch (error) {
+        console.error('[Storage] Failed to unlock achievement:', error);
+        return await getUnlockedAchievements();
+    }
+}
+
+export async function isAchievementUnlocked(achievementId: string): Promise<boolean> {
+    const achievements = await getUnlockedAchievements();
+    return achievements.some(a => a.id === achievementId);
+}
+
 // Debug
 export async function clearAllData(): Promise<void> {
     try {
@@ -773,6 +811,7 @@ export async function clearAllData(): Promise<void> {
             STORAGE_KEYS.ANIMAL_INTERACTIONS,
             STORAGE_KEYS.STREAK_FREEZE,
             STORAGE_KEYS.ACTIVE_SESSION,
+            STORAGE_KEYS.ACHIEVEMENTS,
         ]);
     } catch (error) {
         console.error('[Storage] Failed to clear all data:', error);

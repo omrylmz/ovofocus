@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useRef } from 'react';
-import { Animal, getRandomAnimal } from '../data/animals';
+import { Animal, getRandomAnimal, animals } from '../data/animals';
+import {
+    Achievement,
+    UnlockedAchievement,
+    checkSessionMilestone,
+    checkStreakMilestone,
+    checkFirstRarityAchievement,
+    checkCollectionMilestone,
+} from '../data/achievements';
 import { audioManager } from '../services/audioManager';
 import {
     CollectedAnimal,
@@ -30,6 +38,8 @@ import {
     saveActiveSession,
     clearActiveSession,
     restoreActiveSession,
+    getUnlockedAchievements,
+    unlockAchievement,
 } from '../utils/storage';
 import { checkAndAwardFreeze } from '../utils/streakFreeze';
 import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
@@ -54,11 +64,14 @@ interface GameState {
     accumulatedPauseTime: number;         // Total time spent paused in milliseconds
     // Restored session data (when app restores an interrupted session)
     restoredSession: { session: PersistedSession; remainingTime: number } | null;
+    // Achievement state
+    unlockedAchievements: UnlockedAchievement[];
+    pendingAchievement: Achievement | null;
 }
 
 type GameAction =
     | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress } }
+    | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress; unlockedAchievements: UnlockedAchievement[] } }
     | { type: 'START_SESSION'; payload: { startTime: string; duration: number } }
     | { type: 'PAUSE_SESSION'; payload: { pausedAt: string } }
     | { type: 'EMERGENCY_PAUSE'; payload: { pausedAt: string } }
@@ -75,7 +88,9 @@ type GameAction =
     | { type: 'SET_GESTURE_HINTS_SEEN' }
     | { type: 'SET_ONBOARDING_COMPLETE' }
     | { type: 'RESTORE_SESSION'; payload: { session: PersistedSession; remainingTime: number } }
-    | { type: 'CLEAR_RESTORED_SESSION' };
+    | { type: 'CLEAR_RESTORED_SESSION' }
+    | { type: 'SET_PENDING_ACHIEVEMENT'; payload: Achievement | null }
+    | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement };
 
 export interface CompleteSessionResult {
     animal: Animal;
@@ -105,6 +120,8 @@ interface GameContextType {
     getHappinessLevel: (happiness: number) => 'sad' | 'neutral' | 'happy' | 'ecstatic';
     // Session restore functions
     clearRestoredSession: () => void;
+    // Achievement functions
+    dismissAchievement: () => void;
 }
 
 // Initial state
@@ -163,6 +180,9 @@ const initialState: GameState = {
     sessionPausedAt: null,
     accumulatedPauseTime: 0,
     restoredSession: null,
+    // Achievement state
+    unlockedAchievements: [],
+    pendingAchievement: null,
 };
 
 // Reducer
@@ -179,6 +199,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 settings: action.payload.settings,
                 favorites: action.payload.favorites,
                 dailyProgress: action.payload.dailyProgress,
+                unlockedAchievements: action.payload.unlockedAchievements,
                 isLoading: false,
             };
 
@@ -317,6 +338,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 restoredSession: null,
             };
 
+        case 'SET_PENDING_ACHIEVEMENT':
+            return {
+                ...state,
+                pendingAchievement: action.payload,
+            };
+
+        case 'ADD_UNLOCKED_ACHIEVEMENT':
+            return {
+                ...state,
+                unlockedAchievements: [...state.unlockedAchievements, action.payload],
+            };
+
         default:
             return state;
     }
@@ -335,14 +368,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function loadData() {
             try {
-                const [collection, stats, settings, favorites, dailyProgress] = await Promise.all([
+                const [collection, stats, settings, favorites, dailyProgress, unlockedAchievements] = await Promise.all([
                     getCollection(),
                     getStats(),
                     getSettings(),
                     getFavorites(),
                     getDailyProgress(),
+                    getUnlockedAchievements(),
                 ]);
-                dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings, favorites, dailyProgress } });
+                dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings, favorites, dailyProgress, unlockedAchievements } });
 
                 // Sync audio manager with loaded settings
                 audioManager.setEnabled(settings.soundEnabled);
@@ -456,6 +490,67 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
     };
 
+    // Helper function to check and trigger achievements
+    const checkAndTriggerAchievements = async (
+        stats: Stats,
+        collection: CollectedAnimal[],
+        newAnimal: Animal,
+        currentUnlocked: UnlockedAchievement[]
+    ): Promise<void> => {
+        const unlockedIds = currentUnlocked.map(a => a.id);
+
+        // Check session milestone
+        let achievement = checkSessionMilestone(stats.completedSessions, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return; // Only show one achievement at a time
+        }
+
+        // Check streak milestone
+        achievement = checkStreakMilestone(stats.currentStreak, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+
+        // Check first rarity achievement
+        achievement = checkFirstRarityAchievement(newAnimal.rarity, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+
+        // Check collection milestones
+        const uniqueAnimalIds = new Set(collection.map(a => a.id));
+        const totalAnimals = animals.length;
+        achievement = checkCollectionMilestone(uniqueAnimalIds.size, totalAnimals, unlockedIds);
+        if (achievement) {
+            await triggerAchievement(achievement);
+            return;
+        }
+    };
+
+    // Trigger an achievement celebration
+    const triggerAchievement = async (achievement: Achievement): Promise<void> => {
+        // Persist the unlock
+        await unlockAchievement(achievement.id);
+
+        // Update local state
+        const newUnlockedAchievement: UnlockedAchievement = {
+            id: achievement.id,
+            unlockedAt: new Date().toISOString(),
+        };
+        dispatch({ type: 'ADD_UNLOCKED_ACHIEVEMENT', payload: newUnlockedAchievement });
+
+        // Show the achievement modal
+        dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: achievement });
+    };
+
+    // Dismiss the currently displayed achievement
+    const dismissAchievement = (): void => {
+        dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: null });
+    };
+
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
         const animal = getRandomAnimal();
         const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -485,6 +580,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
             } catch (freezeError) {
                 console.warn('[completeSession] Failed to check/award streak freeze:', freezeError);
                 // Continue - streak freeze is a bonus feature, shouldn't fail the session
+            }
+
+            // Check for achievements (non-critical)
+            try {
+                await checkAndTriggerAchievements(
+                    updatedStats,
+                    updatedCollection,
+                    animal,
+                    state.unlockedAchievements
+                );
+            } catch (achievementError) {
+                console.warn('[completeSession] Failed to check achievements:', achievementError);
             }
 
             return { animal, updatedStats };
@@ -603,6 +710,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 getHappinessLevel,
                 // Session restore functions
                 clearRestoredSession,
+                // Achievement functions
+                dismissAchievement,
             }}
         >
             {children}

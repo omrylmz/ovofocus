@@ -11,6 +11,7 @@ import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { PixelButton } from '../src/components/PixelButton';
 import { HatchModal } from '../src/components/HatchModal';
 import { StreakCelebration } from '../src/components/StreakCelebration';
+import { AchievementModal } from '../src/components/AchievementModal';
 import { OnboardingFlow } from '../src/components/OnboardingFlow';
 import { QuickReturnToast } from '../src/components/QuickReturnToast';
 import { ShieldSelector } from '../src/components/ShieldSelector';
@@ -176,7 +177,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, i18n } = useGame();
+    const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, setGestureHintsSeen, setOnboardingComplete, dismissAchievement, i18n } = useGame();
     const { theme } = useTheme();
 
     // Create dynamic styles based on current theme
@@ -860,6 +861,14 @@ export default function HomeScreen() {
                 visible={showStreakCelebration}
                 streakCount={celebrationStreak}
                 onComplete={() => setShowStreakCelebration(false)}
+                language={state.settings.language}
+            />
+
+            {/* Achievement Modal */}
+            <AchievementModal
+                visible={!!state.pendingAchievement}
+                achievement={state.pendingAchievement}
+                onClose={dismissAchievement}
                 language={state.settings.language}
             />
 

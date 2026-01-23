@@ -14,6 +14,7 @@ import {
   DailyProgress,
   PersistedSession,
 } from '../../utils/storage';
+import { Achievement, UnlockedAchievement } from '../../data/achievements';
 import { gameReducer } from '../GameContext';
 
 // ============================================================================
@@ -37,6 +38,8 @@ interface GameState {
   sessionPausedAt: string | null;
   accumulatedPauseTime: number;
   restoredSession: { session: PersistedSession; remainingTime: number } | null;
+  unlockedAchievements: UnlockedAchievement[];
+  pendingAchievement: Achievement | null;
 }
 
 type GameAction =
@@ -49,6 +52,7 @@ type GameAction =
         settings: Settings;
         favorites: string[];
         dailyProgress: DailyProgress;
+        unlockedAchievements: UnlockedAchievement[];
       };
     }
   | { type: 'START_SESSION'; payload: { startTime: string; duration: number } }
@@ -67,7 +71,9 @@ type GameAction =
   | { type: 'SET_GESTURE_HINTS_SEEN' }
   | { type: 'SET_ONBOARDING_COMPLETE' }
   | { type: 'RESTORE_SESSION'; payload: { session: PersistedSession; remainingTime: number } }
-  | { type: 'CLEAR_RESTORED_SESSION' };
+  | { type: 'CLEAR_RESTORED_SESSION' }
+  | { type: 'SET_PENDING_ACHIEVEMENT'; payload: Achievement | null }
+  | { type: 'ADD_UNLOCKED_ACHIEVEMENT'; payload: UnlockedAchievement };
 
 // ============================================================================
 // Factory Functions for Test Data
@@ -139,6 +145,8 @@ function createInitialState(overrides?: Partial<GameState>): GameState {
     sessionPausedAt: null,
     accumulatedPauseTime: 0,
     restoredSession: null,
+    unlockedAchievements: [],
+    pendingAchievement: null,
     ...overrides,
   };
 }
@@ -250,6 +258,7 @@ describe('GameContext Reducer', () => {
           settings: mockSettings,
           favorites: mockFavorites,
           dailyProgress: mockDailyProgress,
+          unlockedAchievements: [],
         },
       };
 
@@ -273,6 +282,7 @@ describe('GameContext Reducer', () => {
           settings: createDefaultSettings(),
           favorites: [],
           dailyProgress: createDefaultDailyProgress(),
+          unlockedAchievements: [],
         },
       };
 
@@ -295,6 +305,7 @@ describe('GameContext Reducer', () => {
           settings: createDefaultSettings(),
           favorites: [],
           dailyProgress: createDefaultDailyProgress(),
+          unlockedAchievements: [],
         },
       };
 
