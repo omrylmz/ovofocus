@@ -59,6 +59,7 @@ export function SessionControls({
                     variant="primary"
                     size="large"
                     icon="🥚"
+                    prominent
                     accessibilityHint={a11yHints.start}
                 />
             )}
@@ -109,6 +110,7 @@ export function SessionControls({
                             variant="primary"
                             size="large"
                             icon="▶️"
+                            prominent
                             accessibilityHint={a11yHints.resume}
                         />
                     </View>

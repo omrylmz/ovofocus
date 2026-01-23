@@ -35,6 +35,8 @@ interface PixelButtonProps {
     accessibilityHint?: string;
     accessibilityRole?: AccessibilityRole;
     accessibilityState?: AccessibilityState;
+    /** When true, button has more prominent press feedback (deeper scale, stronger haptic) */
+    prominent?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -54,45 +56,70 @@ export function PixelButton({
     accessibilityHint,
     accessibilityRole,
     accessibilityState,
+    prominent = false,
 }: PixelButtonProps) {
     const scale = useSharedValue(1);
     const translateY = useSharedValue(0);
     const glowOpacity = useSharedValue(0);
+    const pressOpacity = useSharedValue(1);
+
+    // Spring config for snappy feel
+    const springConfig = { damping: 15, stiffness: 400 };
+    const releaseSpringConfig = { damping: 12, stiffness: 300 };
+
+    // Prominent buttons have deeper scale and translateY for more impactful feedback
+    const pressScale = prominent ? 0.92 : 0.95;
+    const pressTranslateY = prominent ? 3 : 2;
+    const pressOpacityValue = prominent ? 0.75 : 0.85;
 
     const handlePressIn = useCallback(() => {
-        scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
-        translateY.value = withSpring(2, { damping: 15, stiffness: 400 });
-    }, [scale, translateY]);
+        // Skip animations for disabled buttons
+        if (disabled) return;
+
+        scale.value = withSpring(pressScale, springConfig);
+        translateY.value = withSpring(pressTranslateY, springConfig);
+        pressOpacity.value = withTiming(pressOpacityValue, { duration: 50 });
+    }, [scale, translateY, pressOpacity, disabled, pressScale, pressTranslateY, pressOpacityValue]);
 
     const handlePressOut = useCallback(() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
-        translateY.value = withSpring(0, { damping: 12, stiffness: 300 });
-    }, [scale, translateY]);
+        // Skip animations for disabled buttons
+        if (disabled) return;
+
+        scale.value = withSpring(1, releaseSpringConfig);
+        translateY.value = withSpring(0, releaseSpringConfig);
+        pressOpacity.value = withTiming(1, { duration: 100 });
+    }, [scale, translateY, pressOpacity, disabled]);
 
     const handlePress = useCallback(() => {
-        if (hapticEnabled && !disabled) {
-            Haptics.impactAsync(hapticStyle);
+        if (disabled) return;
+
+        if (hapticEnabled) {
+            // Prominent buttons use medium haptic for stronger feedback
+            const effectiveHapticStyle = prominent
+                ? Haptics.ImpactFeedbackStyle.Medium
+                : hapticStyle;
+            Haptics.impactAsync(effectiveHapticStyle);
         }
 
-        // Play button sound only when not disabled
-        if (!disabled) {
-            audioManager.playSound('button_press');
-        }
+        // Play button sound
+        audioManager.playSound('button_press');
 
-        // Burst effect
+        // Burst effect - more prominent for prominent buttons
+        const glowIntensity = prominent ? 0.8 : 0.6;
         glowOpacity.value = withSequence(
-            withTiming(0.6, { duration: 100 }),
+            withTiming(glowIntensity, { duration: 100 }),
             withTiming(0, { duration: 200 })
         );
 
         onPress();
-    }, [hapticEnabled, hapticStyle, disabled, onPress, glowOpacity]);
+    }, [hapticEnabled, hapticStyle, disabled, onPress, glowOpacity, prominent]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: scale.value },
             { translateY: translateY.value },
         ],
+        opacity: pressOpacity.value,
     }));
 
     const glowStyle = useAnimatedStyle(() => ({
