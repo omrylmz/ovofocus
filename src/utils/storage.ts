@@ -43,6 +43,8 @@ export interface Settings {
     language: Language;
     debugMode: boolean; // for testing with shorter duration
     hasSeenGestureHints: boolean;
+    lastGestureHintSession: number; // Session number when hints were last shown
+    gestureHintIntervalSessions: number; // Show hints every N sessions (0 = only first time)
     maxPausesPerSession: number;
     hasCompletedOnboarding: boolean;
     dailyGoal: number; // number of sessions per day
@@ -130,6 +132,8 @@ const defaultSettings: Settings = {
     language: getDeviceLanguage(),
     debugMode: false,
     hasSeenGestureHints: false,
+    lastGestureHintSession: 0,
+    gestureHintIntervalSessions: 5, // Show hints every 5 sessions by default
     maxPausesPerSession: 3,
     hasCompletedOnboarding: false,
     dailyGoal: 3,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -8,7 +8,13 @@ import Animated, {
     withTiming,
     withSequence,
     withSpring,
+    withRepeat,
+    withDelay,
     runOnJS,
+    Easing,
+    FadeIn,
+    FadeOut,
+    ZoomIn,
 } from 'react-native-reanimated';
 import { theme } from '../../styles/theme';
 import { Egg } from '../Egg';
@@ -26,10 +32,134 @@ interface InteractiveEggProps {
     language: Language;
     hapticsEnabled: boolean;
     hasSeenGestureHints: boolean;
-    eggStyleId?: string; // ID of the selected egg style
+    eggStyleId?: string;
     onStart: () => void;
     onShowGestureHints: () => void;
 }
+
+// Enhanced encouragement messages with more variety and fun
+const ENCOURAGEMENT_MESSAGES = {
+    en: {
+        tap: [
+            'You got this! 💪',
+            'Keep going! ✨',
+            'Awesome! 🌟',
+            'Stay focused! 🎯',
+            'Amazing! 💫',
+            'Rock star! 🎸',
+            'Brilliant! 🧠',
+            'Champion! 🏆',
+            'You\'re on fire! 🔥',
+            'Unstoppable! 🚀',
+        ],
+        doubleTap: [
+            'Time check!',
+            'Countdown!',
+            'Progress report!',
+            'Status update!',
+        ],
+        longPress: {
+            early: [
+                'Your egg is warming up! 🥚',
+                'New life is forming... 🌱',
+                'The journey has begun! 🚀',
+                'Something magical is happening... ✨',
+            ],
+            mid: [
+                'Your egg is growing! 🥚💫',
+                'Something is stirring inside...',
+                'Keep going, it\'s working! 🌟',
+                'The egg feels warmer! 🔥',
+            ],
+            late: [
+                'Almost ready to hatch! 🐣',
+                'So close! Keep it up! ✨',
+                'The egg is cracking! 🥚💥',
+                'Magic is about to happen! 🌈',
+            ],
+        },
+    },
+    tr: {
+        tap: [
+            'Yapabilirsin! 💪',
+            'Devam et! ✨',
+            'Harika! 🌟',
+            'Odaklan! 🎯',
+            'Muhteşem! 💫',
+            'Yıldızsın! 🎸',
+            'Parlak! 🧠',
+            'Şampiyon! 🏆',
+            'Ateşlisin! 🔥',
+            'Durdurulamazsın! 🚀',
+        ],
+        doubleTap: [
+            'Süre kontrolü!',
+            'Geri sayım!',
+            'İlerleme raporu!',
+            'Durum güncellemesi!',
+        ],
+        longPress: {
+            early: [
+                'Yumurtan ısınıyor! 🥚',
+                'Yeni bir hayat oluşuyor... 🌱',
+                'Yolculuk başladı! 🚀',
+                'Büyülü bir şey oluyor... ✨',
+            ],
+            mid: [
+                'Yumurtan büyüyor! 🥚💫',
+                'İçeride bir şey kıpırdıyor...',
+                'Devam et, işe yarıyor! 🌟',
+                'Yumurta ısınıyor! 🔥',
+            ],
+            late: [
+                'Neredeyse çatlayacak! 🐣',
+                'Çok yakın! Devam et! ✨',
+                'Yumurta çatlıyor! 🥚💥',
+                'Sihir gerçekleşmek üzere! 🌈',
+            ],
+        },
+    },
+    es: {
+        tap: [
+            '¡Tú puedes! 💪',
+            '¡Sigue así! ✨',
+            '¡Increíble! 🌟',
+            '¡Enfócate! 🎯',
+            '¡Asombroso! 💫',
+            '¡Eres una estrella! 🎸',
+            '¡Brillante! 🧠',
+            '¡Campeón! 🏆',
+            '¡Estás en fuego! 🔥',
+            '¡Imparable! 🚀',
+        ],
+        doubleTap: [
+            '¡Revisión de tiempo!',
+            '¡Cuenta regresiva!',
+            '¡Reporte de progreso!',
+            '¡Actualización de estado!',
+        ],
+        longPress: {
+            early: [
+                '¡Tu huevo se está calentando! 🥚',
+                'Una nueva vida se está formando... 🌱',
+                '¡El viaje ha comenzado! 🚀',
+                'Algo mágico está pasando... ✨',
+            ],
+            mid: [
+                '¡Tu huevo está creciendo! 🥚💫',
+                'Algo se está moviendo adentro...',
+                '¡Sigue, está funcionando! 🌟',
+                '¡El huevo se siente más cálido! 🔥',
+            ],
+            late: [
+                '¡Casi listo para eclosionar! 🐣',
+                '¡Tan cerca! ¡Sigue así! ✨',
+                '¡El huevo se está rompiendo! 🥚💥',
+                '¡La magia está por suceder! 🌈',
+            ],
+        },
+    },
+};
 
 export function InteractiveEgg({
     sessionState,
@@ -44,21 +174,103 @@ export function InteractiveEgg({
     onShowGestureHints,
 }: InteractiveEggProps) {
     const [encouragementText, setEncouragementText] = useState<string | null>(null);
+    const [feedbackType, setFeedbackType] = useState<'tap' | 'doubleTap' | 'longPress' | null>(null);
+    const lastMessageIndex = useRef<number>(-1);
 
     // Egg interaction animations
     const eggScale = useSharedValue(1);
     const eggRotation = useSharedValue(0);
     const sparkleOpacity = useSharedValue(0);
 
-    // Egg interaction handlers
+    // New visual feedback animations
+    const glowOpacity = useSharedValue(0);
+    const glowScale = useSharedValue(1);
+    const rippleOpacity = useSharedValue(0);
+    const rippleScale = useSharedValue(1);
+    const pulseRingOpacity = useSharedValue(0);
+    const pulseRingScale = useSharedValue(1);
+
+    // Get random message avoiding repetition
+    const getRandomMessage = useCallback((messages: string[]): string => {
+        if (messages.length === 1) return messages[0];
+
+        let newIndex;
+        do {
+            newIndex = Math.floor(Math.random() * messages.length);
+        } while (newIndex === lastMessageIndex.current && messages.length > 1);
+
+        lastMessageIndex.current = newIndex;
+        return messages[newIndex];
+    }, []);
+
+    // Visual feedback for tap gesture
+    const triggerTapFeedback = useCallback(() => {
+        'worklet';
+        // Ripple effect
+        rippleOpacity.value = 0.6;
+        rippleScale.value = 1;
+        rippleOpacity.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.ease) });
+        rippleScale.value = withTiming(1.5, { duration: 400, easing: Easing.out(Easing.ease) });
+
+        // Subtle glow
+        glowOpacity.value = withSequence(
+            withTiming(0.3, { duration: 100 }),
+            withTiming(0, { duration: 300 })
+        );
+    }, []);
+
+    // Visual feedback for double tap gesture
+    const triggerDoubleTapFeedback = useCallback(() => {
+        'worklet';
+        // Double ripple effect
+        rippleOpacity.value = 0.8;
+        rippleScale.value = 1;
+        rippleOpacity.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) });
+        rippleScale.value = withTiming(1.8, { duration: 500, easing: Easing.out(Easing.ease) });
+
+        // Stronger glow
+        glowOpacity.value = withSequence(
+            withTiming(0.5, { duration: 100 }),
+            withTiming(0, { duration: 400 })
+        );
+        glowScale.value = withSequence(
+            withSpring(1.2, { damping: 10 }),
+            withSpring(1, { damping: 15 })
+        );
+    }, []);
+
+    // Visual feedback for long press gesture
+    const triggerLongPressFeedback = useCallback(() => {
+        'worklet';
+        // Pulsing ring effect
+        pulseRingOpacity.value = 0.7;
+        pulseRingScale.value = 1;
+        pulseRingOpacity.value = withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) });
+        pulseRingScale.value = withTiming(2, { duration: 800, easing: Easing.out(Easing.ease) });
+
+        // Strong sustained glow
+        glowOpacity.value = withSequence(
+            withTiming(0.6, { duration: 200 }),
+            withTiming(0.3, { duration: 300 }),
+            withTiming(0, { duration: 300 })
+        );
+        glowScale.value = withSequence(
+            withSpring(1.3, { damping: 8 }),
+            withSpring(1, { damping: 12 })
+        );
+    }, []);
+
+    // Egg interaction handlers with enhanced messages
     const showEncouragement = useCallback(() => {
-        const messages = language === 'tr'
-            ? ['Harika! 💪', 'Devam et! ✨', 'Başarıyorsun! 🌟', 'Odaklan! 🎯', 'Süpersin! 💫']
-            : ['Great! 💪', 'Keep going! ✨', "You're doing it! 🌟", 'Stay focused! 🎯', 'Amazing! 💫'];
-        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        const messages = ENCOURAGEMENT_MESSAGES[language].tap;
+        const randomMessage = getRandomMessage(messages);
         setEncouragementText(randomMessage);
-        setTimeout(() => setEncouragementText(null), 1500);
-    }, [language]);
+        setFeedbackType('tap');
+        setTimeout(() => {
+            setEncouragementText(null);
+            setFeedbackType(null);
+        }, 1500);
+    }, [language, getRandomMessage]);
 
     const handleEggTap = useCallback(() => {
         if (sessionState === 'active') {
@@ -76,17 +288,29 @@ export function InteractiveEgg({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
             audioManager.playSound('egg_double_tap');
-            // Show remaining time in a nice format
+
+            // Show remaining time with fun prefix
             const remaining = Math.ceil((1 - progress) * duration);
             const mins = Math.floor(remaining / 60);
             const secs = remaining % 60;
+
+            const prefixes = ENCOURAGEMENT_MESSAGES[language].doubleTap;
+            const prefix = getRandomMessage(prefixes);
+
             const timeText = language === 'tr'
-                ? `${mins}dk ${secs}sn kaldı!`
-                : `${mins}m ${secs}s left!`;
+                ? `${prefix} ${mins}dk ${secs}sn kaldı!`
+                : language === 'es'
+                ? `${prefix} ¡${mins}m ${secs}s restantes!`
+                : `${prefix} ${mins}m ${secs}s left!`;
+
             setEncouragementText(timeText);
-            setTimeout(() => setEncouragementText(null), 2000);
+            setFeedbackType('doubleTap');
+            setTimeout(() => {
+                setEncouragementText(null);
+                setFeedbackType(null);
+            }, 2000);
         }
-    }, [sessionState, hapticsEnabled, progress, duration, language]);
+    }, [sessionState, hapticsEnabled, progress, duration, language, getRandomMessage]);
 
     const handleEggLongPress = useCallback(() => {
         if (sessionState === 'idle') {
@@ -101,29 +325,45 @@ export function InteractiveEgg({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             }
             audioManager.playSound('egg_long_press');
-            const motivationalMessages = language === 'tr'
-                ? ['Yumurtan büyüyor! 🥚✨', 'İçeride bir şey kıpırdıyor...', 'Neredeyse çatlayacak! 🐣']
-                : ['Your egg is growing! 🥚✨', 'Something is stirring inside...', 'Almost ready to hatch! 🐣'];
-            const msgIndex = Math.min(Math.floor(progress * motivationalMessages.length), motivationalMessages.length - 1);
-            const msg = motivationalMessages[msgIndex];
-            setEncouragementText(msg);
-            setTimeout(() => setEncouragementText(null), 2500);
-        }
-    }, [sessionState, hapticsEnabled, progress, language, onStart, hasSeenGestureHints, onShowGestureHints]);
 
-    // Gesture configuration
+            // Get progress-appropriate message
+            const longPressMessages = ENCOURAGEMENT_MESSAGES[language].longPress;
+            let messagePool;
+            if (progress < 0.33) {
+                messagePool = longPressMessages.early;
+            } else if (progress < 0.66) {
+                messagePool = longPressMessages.mid;
+            } else {
+                messagePool = longPressMessages.late;
+            }
+
+            const msg = getRandomMessage(messagePool);
+            setEncouragementText(msg);
+            setFeedbackType('longPress');
+            setTimeout(() => {
+                setEncouragementText(null);
+                setFeedbackType(null);
+            }, 2500);
+        }
+    }, [sessionState, hapticsEnabled, progress, language, onStart, hasSeenGestureHints, onShowGestureHints, getRandomMessage]);
+
+    // Gesture configuration with improved long press handling
+    // Using shouldCancelWhenOutside and maxPointers to avoid scroll conflicts
     const tapGesture = Gesture.Tap()
+        .maxDuration(250)
         .onEnd(() => {
             'worklet';
             eggScale.value = withSequence(
                 withSpring(1.05, { damping: 10 }),
                 withSpring(1, { damping: 12 })
             );
+            triggerTapFeedback();
             runOnJS(handleEggTap)();
         });
 
     const doubleTapGesture = Gesture.Tap()
         .numberOfTaps(2)
+        .maxDuration(300)
         .onEnd(() => {
             'worklet';
             eggScale.value = withSequence(
@@ -134,27 +374,47 @@ export function InteractiveEgg({
                 withTiming(1, { duration: 200 }),
                 withTiming(0, { duration: 500 })
             );
+            triggerDoubleTapFeedback();
             runOnJS(handleEggDoubleTap)();
         });
 
+    // Improved long press with better scroll conflict handling
     const longPressGesture = Gesture.LongPress()
         .minDuration(500)
+        .maxDistance(50) // Allow slight movement during press without canceling
+        .shouldCancelWhenOutside(true) // Cancel if finger moves outside
         .onStart(() => {
             'worklet';
             eggScale.value = withSpring(0.95, { damping: 15 });
+            // Start building glow during press
+            glowOpacity.value = withTiming(0.4, { duration: 400 });
         })
-        .onEnd(() => {
+        .onEnd((event, success) => {
             'worklet';
-            eggScale.value = withSequence(
-                withSpring(1.15, { damping: 6 }),
-                withSpring(1, { damping: 10 })
-            );
-            eggRotation.value = withSequence(
-                withTiming(-5, { duration: 50 }),
-                withTiming(5, { duration: 50 }),
-                withTiming(0, { duration: 50 })
-            );
-            runOnJS(handleEggLongPress)();
+            if (success) {
+                eggScale.value = withSequence(
+                    withSpring(1.15, { damping: 6 }),
+                    withSpring(1, { damping: 10 })
+                );
+                eggRotation.value = withSequence(
+                    withTiming(-5, { duration: 50 }),
+                    withTiming(5, { duration: 50 }),
+                    withTiming(0, { duration: 50 })
+                );
+                triggerLongPressFeedback();
+                runOnJS(handleEggLongPress)();
+            } else {
+                // Cancelled - reset scale smoothly
+                eggScale.value = withSpring(1, { damping: 12 });
+                glowOpacity.value = withTiming(0, { duration: 200 });
+            }
+        })
+        .onFinalize(() => {
+            'worklet';
+            // Ensure glow fades if gesture was cancelled
+            if (glowOpacity.value > 0) {
+                glowOpacity.value = withTiming(0, { duration: 200 });
+            }
         });
 
     // Combine gestures (double tap takes priority over single tap)
@@ -171,21 +431,53 @@ export function InteractiveEgg({
         opacity: sparkleOpacity.value,
     }));
 
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: glowOpacity.value,
+        transform: [{ scale: glowScale.value }],
+    }));
+
+    const rippleStyle = useAnimatedStyle(() => ({
+        opacity: rippleOpacity.value,
+        transform: [{ scale: rippleScale.value }],
+    }));
+
+    const pulseRingStyle = useAnimatedStyle(() => ({
+        opacity: pulseRingOpacity.value,
+        transform: [{ scale: pulseRingScale.value }],
+    }));
+
+    // Get feedback container color based on type
+    const getFeedbackColor = () => {
+        switch (feedbackType) {
+            case 'tap':
+                return theme.colors.accent;
+            case 'doubleTap':
+                return theme.colors.secondary;
+            case 'longPress':
+                return theme.colors.primary;
+            default:
+                return theme.colors.accent;
+        }
+    };
+
     // Accessibility labels and hints based on session state
-    // TODO: Consider adding an interpolation helper to i18n system to replace manual translations
-    // with proper translation keys (e.g., i18n('eggProgressLabel', { percent: progressPercent }))
     const getAccessibilityLabel = () => {
-        const eggLabel = language === 'tr' ? 'Odaklanma yumurtası' : 'Focus egg';
+        const eggLabel = language === 'tr' ? 'Odaklanma yumurtası' :
+                        language === 'es' ? 'Huevo de enfoque' : 'Focus egg';
         if (sessionState === 'completed') {
-            return language === 'tr' ? 'Çatlayan yumurta' : 'Hatching egg';
+            return language === 'tr' ? 'Çatlayan yumurta' :
+                   language === 'es' ? 'Huevo eclosionando' : 'Hatching egg';
         }
         if (sessionState === 'failed') {
-            return language === 'tr' ? 'Kırık yumurta' : 'Broken egg';
+            return language === 'tr' ? 'Kırık yumurta' :
+                   language === 'es' ? 'Huevo roto' : 'Broken egg';
         }
         if (sessionState === 'active') {
             const progressPercent = Math.round(progress * 100);
             return language === 'tr'
                 ? `${eggLabel}, yüzde ${progressPercent} tamamlandı`
+                : language === 'es'
+                ? `${eggLabel}, ${progressPercent} por ciento completado`
                 : `${eggLabel}, ${progressPercent} percent complete`;
         }
         return eggLabel;
@@ -195,11 +487,15 @@ export function InteractiveEgg({
         if (sessionState === 'idle') {
             return language === 'tr'
                 ? 'Odaklanma seansı başlatmak için dokunun veya hızlı başlat için uzun basın'
+                : language === 'es'
+                ? 'Toca para iniciar sesión de enfoque, o mantén presionado para inicio rápido'
                 : 'Tap to start focus session, or long press for quick start';
         }
         if (sessionState === 'active') {
             return language === 'tr'
                 ? 'Cesaretlendirme için tek dokunun, kalan süre için çift dokunun, motivasyon için uzun basın'
+                : language === 'es'
+                ? 'Toca una vez para ánimo, dos veces para tiempo restante, mantén presionado para motivación'
                 : 'Single tap for encouragement, double tap for time remaining, long press for motivation';
         }
         return undefined;
@@ -219,6 +515,27 @@ export function InteractiveEgg({
                         disabled: sessionState === 'completed' || sessionState === 'failed',
                     }}
                 >
+                    {/* Gesture feedback glow (behind egg) */}
+                    <Animated.View
+                        style={[styles.feedbackGlow, glowStyle]}
+                        importantForAccessibility="no"
+                        pointerEvents="none"
+                    />
+
+                    {/* Ripple effect (behind egg) */}
+                    <Animated.View
+                        style={[styles.rippleEffect, rippleStyle]}
+                        importantForAccessibility="no"
+                        pointerEvents="none"
+                    />
+
+                    {/* Pulse ring effect for long press */}
+                    <Animated.View
+                        style={[styles.pulseRing, pulseRingStyle]}
+                        importantForAccessibility="no"
+                        pointerEvents="none"
+                    />
+
                     {/* Sparkle overlay for double tap */}
                     <Animated.View style={[styles.sparkleOverlay, sparkleStyle]} importantForAccessibility="no">
                         <Text style={styles.sparkleText}>✨ 💫 ⭐ 💫 ✨</Text>
@@ -234,18 +551,25 @@ export function InteractiveEgg({
                 </Animated.View>
             </GestureDetector>
 
-            {/* Encouragement text - flows naturally below egg */}
+            {/* Encouragement text with enhanced styling */}
             {encouragementText && (
-                <View style={styles.encouragementContainer}>
+                <Animated.View
+                    entering={ZoomIn.duration(200).springify()}
+                    exiting={FadeOut.duration(150)}
+                    style={[
+                        styles.encouragementContainer,
+                        { borderColor: getFeedbackColor() }
+                    ]}
+                >
                     <Text
-                        style={styles.encouragementText}
+                        style={[styles.encouragementText, { color: getFeedbackColor() }]}
                         accessible={true}
                         accessibilityRole="alert"
                         accessibilityLiveRegion="polite"
                     >
                         {encouragementText}
                     </Text>
-                </View>
+                </Animated.View>
             )}
         </View>
     );
@@ -263,6 +587,31 @@ const styles = StyleSheet.create({
         minWidth: 200,
         minHeight: 280,
     },
+    feedbackGlow: {
+        position: 'absolute',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: theme.colors.accent,
+    },
+    rippleEffect: {
+        position: 'absolute',
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        borderWidth: 3,
+        borderColor: theme.colors.accent,
+        backgroundColor: 'transparent',
+    },
+    pulseRing: {
+        position: 'absolute',
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        borderWidth: 4,
+        borderColor: theme.colors.primary,
+        backgroundColor: 'transparent',
+    },
     sparkleOverlay: {
         position: 'absolute',
         top: -30,
@@ -277,6 +626,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.sm,
         borderRadius: theme.borderRadius.round,
+        borderWidth: 2,
         zIndex: theme.zIndex.floating,
         ...theme.shadows.medium,
     },
