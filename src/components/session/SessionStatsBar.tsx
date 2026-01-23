@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, Modal, ScrollView } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -8,13 +8,19 @@ import Animated, {
     withTiming,
     withSpring,
     Easing,
+    interpolate,
 } from 'react-native-reanimated';
-// Note: Some Reanimated imports may appear unused but are needed for animation types
+import * as Haptics from 'expo-haptics';
 import { theme } from '../../styles/theme';
 
 interface DailyProgress {
     completedSessions: number;
     goalAchieved: boolean;
+}
+
+interface TrendData {
+    direction: 'up' | 'down' | 'same';
+    value?: number;
 }
 
 interface SessionStatsBarProps {
@@ -24,193 +30,555 @@ interface SessionStatsBarProps {
     dailyGoal: number;
     currentStreak?: number;
     bestStreak?: number;
+    totalFocusMinutes?: number;
     labels: {
         session: string;
         animals: string;
         dailyGoalProgress: string;
         streak?: string;
+        todayFocusTime?: string;
+        viewDetails?: string;
+        close?: string;
+        totalSessions?: string;
+        totalFocusTime?: string;
+        averagePerDay?: string;
+        bestStreakLabel?: string;
+        dailyGoalLabel?: string;
     };
+    hapticsEnabled?: boolean;
 }
 
-// Streak display component with fire animation and BEST badge
-function StreakDisplay({
-    currentStreak,
-    bestStreak,
-    label,
-}: {
-    currentStreak: number;
-    bestStreak: number;
+// Compact Stat Pill component
+interface StatPillProps {
+    icon: string;
+    value: string | number;
     label?: string;
-}) {
-    const flameScale = useSharedValue(1);
-    const flameSway = useSharedValue(0);
-    const isBest = currentStreak > 0 && currentStreak >= bestStreak;
+    color?: string;
+    trend?: TrendData;
+    showBest?: boolean;
+    isBest?: boolean;
+    onPress?: () => void;
+    accessibilityLabel: string;
+    accessibilityHint?: string;
+    hapticsEnabled?: boolean;
+}
 
+function StatPill({
+    icon,
+    value,
+    label,
+    color = theme.colors.text,
+    trend,
+    showBest = false,
+    isBest = false,
+    onPress,
+    accessibilityLabel,
+    accessibilityHint,
+    hapticsEnabled = true,
+}: StatPillProps) {
+    const scale = useSharedValue(1);
+    const prevIsBest = useRef(isBest);
+
+    // Best badge animation values
+    const bestScale = useSharedValue(0);
+    const bestRotate = useSharedValue(0);
+    const bestGlow = useSharedValue(0);
+
+    // Trigger celebration animation when isBest becomes true
     useEffect(() => {
-        if (currentStreak > 0) {
-            // Flame breathing effect
-            const intensity = Math.min(currentStreak / 14, 1);
-            const breatheSpeed = 1000 - intensity * 300;
+        if (isBest && !prevIsBest.current && showBest) {
+            // Entrance animation for BEST badge
+            bestScale.value = withSequence(
+                withSpring(1.3, { damping: 6, stiffness: 200 }),
+                withSpring(1, { damping: 10, stiffness: 300 })
+            );
 
-            flameScale.value = withRepeat(
+            // Subtle rotation wiggle
+            bestRotate.value = withSequence(
+                withTiming(-10, { duration: 100 }),
+                withTiming(10, { duration: 100 }),
+                withTiming(-5, { duration: 100 }),
+                withTiming(5, { duration: 100 }),
+                withTiming(0, { duration: 100 })
+            );
+
+            // Glow pulse
+            bestGlow.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withRepeat(
+                    withSequence(
+                        withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    3,
+                    true
+                ),
+                withTiming(0.6, { duration: 400 })
+            );
+
+            // Trigger haptic feedback
+            if (hapticsEnabled) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        } else if (isBest && showBest) {
+            // Keep badge visible with subtle continuous glow
+            bestScale.value = withTiming(1, { duration: 200 });
+            bestGlow.value = withRepeat(
                 withSequence(
-                    withTiming(1 + intensity * 0.1, { duration: breatheSpeed, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(1, { duration: breatheSpeed, easing: Easing.inOut(Easing.ease) })
+                    withTiming(0.4, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(0.7, { duration: 1500, easing: Easing.inOut(Easing.ease) })
                 ),
                 -1,
                 true
             );
+        } else {
+            bestScale.value = withTiming(0, { duration: 150 });
+            bestGlow.value = withTiming(0, { duration: 150 });
+        }
+        prevIsBest.current = isBest;
+    }, [isBest, showBest, hapticsEnabled]);
 
-            flameSway.value = withRepeat(
-                withSequence(
-                    withTiming(2, { duration: 600 }),
-                    withTiming(-2, { duration: 600 })
-                ),
-                -1,
-                true
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+    }, []);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    }, []);
+
+    const handlePress = useCallback(() => {
+        if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onPress?.();
+    }, [onPress, hapticsEnabled]);
+
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const bestBadgeStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: bestScale.value },
+            { rotate: `${bestRotate.value}deg` },
+        ] as const,
+        opacity: bestScale.value,
+    }));
+
+    const bestGlowStyle = useAnimatedStyle(() => ({
+        opacity: bestGlow.value,
+        transform: [{ scale: interpolate(bestGlow.value, [0, 1], [1, 1.3]) }],
+    }));
+
+    // Get trend arrow and color
+    const getTrendDisplay = () => {
+        if (!trend) return null;
+
+        const trendConfig = {
+            up: { arrow: '\u2191', color: theme.colors.success },
+            down: { arrow: '\u2193', color: theme.colors.error },
+            same: { arrow: '\u2192', color: theme.colors.textSecondary },
+        };
+
+        return trendConfig[trend.direction];
+    };
+
+    const trendDisplay = getTrendDisplay();
+
+    const content = (
+        <Animated.View
+            style={[styles.pillContainer, animatedContainerStyle]}
+            accessible={true}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint={accessibilityHint}
+            accessibilityRole={onPress ? 'button' : 'text'}
+        >
+            {/* BEST badge glow effect */}
+            {showBest && isBest && (
+                <Animated.View style={[styles.bestGlow, bestGlowStyle]} />
+            )}
+
+            <View style={styles.pillContent}>
+                <Text style={styles.pillIcon}>{icon}</Text>
+                <View style={styles.pillTextContainer}>
+                    <View style={styles.pillValueRow}>
+                        <Text style={[styles.pillValue, { color }]}>{value}</Text>
+                        {trendDisplay && (
+                            <Text style={[styles.trendArrow, { color: trendDisplay.color }]}>
+                                {trendDisplay.arrow}
+                            </Text>
+                        )}
+                    </View>
+                    {label && <Text style={styles.pillLabel}>{label}</Text>}
+                </View>
+            </View>
+
+            {/* BEST badge */}
+            {showBest && isBest && (
+                <Animated.View style={[styles.bestBadge, bestBadgeStyle]}>
+                    <Text style={styles.bestBadgeText}>BEST</Text>
+                </Animated.View>
+            )}
+        </Animated.View>
+    );
+
+    if (onPress) {
+        return (
+            <Pressable
+                onPress={handlePress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+            >
+                {content}
+            </Pressable>
+        );
+    }
+
+    return content;
+}
+
+// Today's Focus Time Pill with prominent display
+interface FocusTimePillProps {
+    totalMinutes: number;
+    label: string;
+    onPress?: () => void;
+    hapticsEnabled?: boolean;
+}
+
+function FocusTimePill({ totalMinutes, label, onPress, hapticsEnabled = true }: FocusTimePillProps) {
+    const scale = useSharedValue(1);
+    const glowOpacity = useSharedValue(0);
+    const prevMinutes = useRef(totalMinutes);
+
+    // Pulse animation when minutes increase
+    useEffect(() => {
+        if (totalMinutes > prevMinutes.current) {
+            scale.value = withSequence(
+                withSpring(1.1, { damping: 8, stiffness: 300 }),
+                withSpring(1, { damping: 12, stiffness: 200 })
+            );
+            glowOpacity.value = withSequence(
+                withTiming(0.8, { duration: 100 }),
+                withTiming(0, { duration: 400 })
             );
         }
-    }, [currentStreak]);
+        prevMinutes.current = totalMinutes;
+    }, [totalMinutes]);
 
-    const flameStyle = useAnimatedStyle(() => {
-        return {
-            transform: [
-                { scale: flameScale.value },
-                { rotate: `${flameSway.value}deg` },
-            ] as const,
-        };
-    });
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+    }, []);
 
-    // Get flame color based on streak length
-    const getFlameColor = () => {
-        if (currentStreak >= 30) return theme.colors.legendary;
-        if (currentStreak >= 14) return theme.colors.epic;
-        if (currentStreak >= 7) return '#FF6B6B';
-        if (currentStreak >= 3) return theme.colors.warning;
-        return theme.colors.textSecondary;
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    }, []);
+
+    const handlePress = useCallback(() => {
+        if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onPress?.();
+    }, [onPress, hapticsEnabled]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: glowOpacity.value,
+    }));
+
+    // Format time display
+    const formatTime = (minutes: number) => {
+        if (minutes < 60) {
+            return `${minutes}m`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     };
 
     return (
-        <View style={styles.streakContainer}>
-            <View style={styles.streakContent}>
-                <Animated.Text style={[styles.streakFlame, flameStyle]}>
-                    {currentStreak > 0 ? '🔥' : '🔥'}
-                </Animated.Text>
-                <View style={styles.streakTextContainer}>
-                    <Text style={[
-                        styles.streakValue,
-                        { color: currentStreak > 0 ? getFlameColor() : theme.colors.textSecondary },
-                    ]}>
-                        {currentStreak}
-                    </Text>
-                    <Text style={styles.streakLabel}>
-                        {label || 'day streak'}
-                    </Text>
+        <Pressable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            accessible={true}
+            accessibilityLabel={`${label}: ${formatTime(totalMinutes)}`}
+            accessibilityHint="Tap to view detailed stats"
+            accessibilityRole="button"
+        >
+            <Animated.View style={[styles.focusTimePill, animatedStyle]}>
+                <Animated.View style={[styles.focusTimeGlow, glowStyle]} />
+                <Text style={styles.focusTimeIcon}>&#9201;</Text>
+                <View style={styles.focusTimeTextContainer}>
+                    <Text style={styles.focusTimeValue}>{formatTime(totalMinutes)}</Text>
+                    <Text style={styles.focusTimeLabel}>{label}</Text>
                 </View>
-            </View>
-            {isBest && currentStreak > 1 && (
-                <View style={styles.bestBadgeInline}>
-                    <Text style={styles.bestBadgeInlineText}>BEST</Text>
-                </View>
-            )}
-        </View>
+            </Animated.View>
+        </Pressable>
     );
 }
 
-// Compact daily progress ring with segments
-function CompactDailyProgress({
-    completedSessions,
-    dailyGoal,
-    goalAchieved,
-    label,
-}: {
+// Daily Progress Indicator with segments
+interface DailyProgressIndicatorProps {
     completedSessions: number;
     dailyGoal: number;
     goalAchieved: boolean;
-    label: string;
-}) {
+    onPress?: () => void;
+    hapticsEnabled?: boolean;
+}
+
+function DailyProgressIndicator({
+    completedSessions,
+    dailyGoal,
+    goalAchieved,
+    onPress,
+    hapticsEnabled = true,
+}: DailyProgressIndicatorProps) {
+    const scale = useSharedValue(1);
     const celebrateScale = useSharedValue(1);
 
     useEffect(() => {
         if (goalAchieved) {
             celebrateScale.value = withSequence(
-                withSpring(1.05, { damping: 8 }),
-                withSpring(1, { damping: 10 })
+                withSpring(1.1, { damping: 6, stiffness: 200 }),
+                withSpring(1, { damping: 10, stiffness: 300 })
             );
         }
     }, [goalAchieved]);
 
-    const containerStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: celebrateScale.value }],
-    }));
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+    }, []);
 
-    return (
-        <Animated.View style={[styles.dailyProgressCompact, containerStyle]}>
-            <View style={styles.dailyProgressHeader}>
-                <Text style={styles.dailyProgressIcon}>
-                    {goalAchieved ? '✨' : '🎯'}
-                </Text>
-                <Text style={styles.dailyProgressLabel}>{label}</Text>
-            </View>
-            <View style={styles.dailyProgressSegments}>
-                {Array.from({ length: dailyGoal }, (_, i) => (
-                    <View
-                        key={i}
-                        style={[
-                            styles.progressSegment,
-                            {
-                                backgroundColor: i < completedSessions
-                                    ? (goalAchieved ? theme.colors.success : theme.colors.accent)
-                                    : theme.colors.surfaceLight,
-                            },
-                        ]}
-                    />
-                ))}
-            </View>
-            <Text style={[
-                styles.dailyProgressValue,
-                goalAchieved && styles.dailyProgressValueComplete,
-            ]}>
-                {completedSessions}/{dailyGoal}
-            </Text>
-        </Animated.View>
-    );
-}
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    }, []);
 
-// Today's sessions counter
-function TodaySessionsCount({
-    count,
-    label,
-}: {
-    count: number;
-    label: string;
-}) {
-    const pulseScale = useSharedValue(1);
-    const prevCount = useRef(count);
-
-    useEffect(() => {
-        if (prevCount.current !== count && count > 0) {
-            pulseScale.value = withSequence(
-                withSpring(1.1, { damping: 10 }),
-                withSpring(1, { damping: 15 })
-            );
-            prevCount.current = count;
+    const handlePress = useCallback(() => {
+        if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-    }, [count]);
+        onPress?.();
+    }, [onPress, hapticsEnabled]);
 
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: pulseScale.value }],
+        transform: [
+            { scale: scale.value * celebrateScale.value },
+        ],
     }));
 
     return (
-        <Animated.View style={[styles.todayCounter, animatedStyle]}>
-            <Text style={styles.todayIcon}>⏱️</Text>
-            <Text style={styles.todayValue}>{count}</Text>
-            <Text style={styles.todayLabel}>{label}</Text>
-        </Animated.View>
+        <Pressable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            accessible={true}
+            accessibilityLabel={`Daily progress: ${completedSessions} of ${dailyGoal} sessions${goalAchieved ? ', goal achieved' : ''}`}
+            accessibilityHint="Tap to view detailed stats"
+            accessibilityRole="button"
+        >
+            <Animated.View style={[styles.dailyProgressPill, animatedStyle]}>
+                <Text style={styles.dailyProgressIcon}>
+                    {goalAchieved ? '\u2728' : '\ud83c\udfaf'}
+                </Text>
+                <View style={styles.dailyProgressSegments}>
+                    {Array.from({ length: dailyGoal }, (_, i) => (
+                        <View
+                            key={i}
+                            style={[
+                                styles.progressSegment,
+                                {
+                                    backgroundColor: i < completedSessions
+                                        ? (goalAchieved ? theme.colors.success : theme.colors.accent)
+                                        : theme.colors.surfaceLight,
+                                },
+                            ]}
+                        />
+                    ))}
+                </View>
+                <Text style={[
+                    styles.dailyProgressValue,
+                    goalAchieved && styles.dailyProgressValueComplete,
+                ]}>
+                    {completedSessions}/{dailyGoal}
+                </Text>
+            </Animated.View>
+        </Pressable>
     );
 }
 
+// Expandable Stats Modal
+interface StatsModalProps {
+    visible: boolean;
+    onClose: () => void;
+    stats: {
+        completedSessions: number;
+        currentStreak: number;
+        bestStreak: number;
+        totalFocusMinutes: number;
+        collectionCount: number;
+        dailyProgress: DailyProgress;
+        dailyGoal: number;
+    };
+    labels: SessionStatsBarProps['labels'];
+    hapticsEnabled?: boolean;
+}
+
+function StatsModal({ visible, onClose, stats, labels, hapticsEnabled = true }: StatsModalProps) {
+    const backdropOpacity = useSharedValue(0);
+    const modalScale = useSharedValue(0.9);
+    const modalOpacity = useSharedValue(0);
+
+    useEffect(() => {
+        if (visible) {
+            backdropOpacity.value = withTiming(1, { duration: 200 });
+            modalScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+            modalOpacity.value = withTiming(1, { duration: 200 });
+        } else {
+            backdropOpacity.value = withTiming(0, { duration: 150 });
+            modalScale.value = withTiming(0.9, { duration: 150 });
+            modalOpacity.value = withTiming(0, { duration: 150 });
+        }
+    }, [visible]);
+
+    const backdropStyle = useAnimatedStyle(() => ({
+        opacity: backdropOpacity.value,
+    }));
+
+    const modalStyle = useAnimatedStyle(() => ({
+        opacity: modalOpacity.value,
+        transform: [{ scale: modalScale.value }],
+    }));
+
+    const handleClose = useCallback(() => {
+        if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onClose();
+    }, [onClose, hapticsEnabled]);
+
+    // Format minutes to readable time
+    const formatTotalTime = (minutes: number) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours < 24) {
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours} hours`;
+        }
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days} days`;
+    };
+
+    // Calculate average sessions per day (based on streak)
+    const avgPerDay = stats.currentStreak > 0
+        ? (stats.completedSessions / Math.max(stats.currentStreak, 1)).toFixed(1)
+        : '0';
+
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="none"
+            onRequestClose={handleClose}
+        >
+            <Pressable style={styles.modalOverlay} onPress={handleClose}>
+                <Animated.View style={[styles.modalBackdrop, backdropStyle]} />
+                <Animated.View style={[styles.modalContent, modalStyle]}>
+                    <Pressable onPress={(e) => e.stopPropagation()}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{labels.viewDetails || 'Statistics'}</Text>
+                            <Pressable
+                                onPress={handleClose}
+                                style={styles.modalCloseButton}
+                                accessible={true}
+                                accessibilityLabel={labels.close || 'Close'}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.modalCloseText}>\u2715</Text>
+                            </Pressable>
+                        </View>
+
+                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                            {/* Today's Stats Section */}
+                            <View style={styles.statsSection}>
+                                <Text style={styles.statsSectionTitle}>{labels.dailyGoalProgress || 'Today'}</Text>
+                                <View style={styles.statsGrid}>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>&#9201;</Text>
+                                        <Text style={styles.statCardValue}>{formatTotalTime(stats.totalFocusMinutes)}</Text>
+                                        <Text style={styles.statCardLabel}>{labels.totalFocusTime || 'Focus Time'}</Text>
+                                    </View>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>\u2705</Text>
+                                        <Text style={styles.statCardValue}>{stats.dailyProgress.completedSessions}</Text>
+                                        <Text style={styles.statCardLabel}>{labels.totalSessions || 'Sessions'}</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Streak Section */}
+                            <View style={styles.statsSection}>
+                                <Text style={styles.statsSectionTitle}>{labels.streak || 'Streak'}</Text>
+                                <View style={styles.statsGrid}>
+                                    <View style={[styles.statCard, stats.currentStreak === stats.bestStreak && stats.currentStreak > 0 && styles.statCardHighlight]}>
+                                        <Text style={styles.statCardIcon}>\ud83d\udd25</Text>
+                                        <Text style={[styles.statCardValue, { color: theme.colors.warning }]}>
+                                            {stats.currentStreak}
+                                        </Text>
+                                        <Text style={styles.statCardLabel}>{labels.streak || 'Current'}</Text>
+                                        {stats.currentStreak === stats.bestStreak && stats.currentStreak > 0 && (
+                                            <View style={styles.statCardBestBadge}>
+                                                <Text style={styles.statCardBestText}>BEST</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>\ud83c\udfc6</Text>
+                                        <Text style={[styles.statCardValue, { color: theme.colors.legendary }]}>
+                                            {stats.bestStreak}
+                                        </Text>
+                                        <Text style={styles.statCardLabel}>{labels.bestStreakLabel || 'Best'}</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Overall Stats Section */}
+                            <View style={styles.statsSection}>
+                                <Text style={styles.statsSectionTitle}>{labels.totalSessions || 'Overall'}</Text>
+                                <View style={styles.statsGrid}>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>\ud83d\udcca</Text>
+                                        <Text style={styles.statCardValue}>{stats.completedSessions}</Text>
+                                        <Text style={styles.statCardLabel}>{labels.session || 'Sessions'}</Text>
+                                    </View>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>\ud83e\udd9a</Text>
+                                        <Text style={styles.statCardValue}>{stats.collectionCount}</Text>
+                                        <Text style={styles.statCardLabel}>{labels.animals || 'Animals'}</Text>
+                                    </View>
+                                </View>
+                                <View style={[styles.statsGrid, { marginTop: theme.spacing.sm }]}>
+                                    <View style={styles.statCard}>
+                                        <Text style={styles.statCardIcon}>&#9991;</Text>
+                                        <Text style={styles.statCardValue}>{avgPerDay}</Text>
+                                        <Text style={styles.statCardLabel}>{labels.averagePerDay || 'Avg/Day'}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </ScrollView>
+                    </Pressable>
+                </Animated.View>
+            </Pressable>
+        </Modal>
+    );
+}
+
+// Main SessionStatsBar component
 export function SessionStatsBar({
     completedSessions,
     collectionCount,
@@ -218,39 +586,102 @@ export function SessionStatsBar({
     dailyGoal,
     currentStreak = 0,
     bestStreak = 0,
+    totalFocusMinutes = 0,
     labels,
+    hapticsEnabled = true,
 }: SessionStatsBarProps) {
+    const [showModal, setShowModal] = useState(false);
+
+    // Use totalFocusMinutes prop if provided (from actual tracked data)
+    // This is more accurate than estimating from session count
+    const displayFocusMinutes = totalFocusMinutes ?? 0;
+
+    const isBestStreak = currentStreak > 0 && currentStreak >= bestStreak;
+
+    // Get flame color based on streak length
+    const getStreakColor = () => {
+        if (currentStreak >= 30) return theme.colors.legendary;
+        if (currentStreak >= 14) return theme.colors.epic;
+        if (currentStreak >= 7) return theme.colors.primary;
+        if (currentStreak >= 3) return theme.colors.warning;
+        return theme.colors.textSecondary;
+    };
+
+    const handleOpenModal = useCallback(() => {
+        setShowModal(true);
+    }, []);
+
+    const handleCloseModal = useCallback(() => {
+        setShowModal(false);
+    }, []);
+
+    // Memoize stats object to prevent unnecessary re-renders of StatsModal
+    const statsData = useMemo(() => ({
+        completedSessions,
+        currentStreak,
+        bestStreak,
+        totalFocusMinutes: displayFocusMinutes,
+        collectionCount,
+        dailyProgress,
+        dailyGoal,
+    }), [completedSessions, currentStreak, bestStreak, displayFocusMinutes, collectionCount, dailyProgress, dailyGoal]);
+
     return (
         <View style={styles.container}>
-            {/* Stats row with streak, today's sessions, and daily progress */}
-            <View style={styles.statsRow}>
-                {/* Streak display */}
-                <StreakDisplay
-                    currentStreak={currentStreak}
-                    bestStreak={bestStreak}
-                    label={labels.streak}
-                />
+            <Pressable
+                onPress={handleOpenModal}
+                accessible={true}
+                accessibilityLabel="Session statistics"
+                accessibilityHint="Tap to view detailed statistics"
+                accessibilityRole="button"
+            >
+                <View style={styles.statsRow}>
+                    {/* Streak Pill */}
+                    <StatPill
+                        icon={currentStreak > 0 ? '\ud83d\udd25' : '\ud83d\udd25'}
+                        value={currentStreak}
+                        label={labels.streak}
+                        color={getStreakColor()}
+                        showBest={true}
+                        isBest={isBestStreak}
+                        accessibilityLabel={`Streak: ${currentStreak} days${isBestStreak ? ', this is your best streak' : ''}`}
+                        accessibilityHint="Tap for details"
+                        hapticsEnabled={hapticsEnabled}
+                    />
 
-                {/* Divider */}
-                <View style={styles.divider} />
+                    {/* Divider */}
+                    <View style={styles.divider} />
 
-                {/* Today's sessions count */}
-                <TodaySessionsCount
-                    count={dailyProgress.completedSessions}
-                    label={labels.dailyGoalProgress}
-                />
+                    {/* Today's Focus Time */}
+                    <FocusTimePill
+                        totalMinutes={displayFocusMinutes}
+                        label={labels.todayFocusTime || labels.dailyGoalProgress || 'Today'}
+                        onPress={handleOpenModal}
+                        hapticsEnabled={hapticsEnabled}
+                    />
 
-                {/* Divider */}
-                <View style={styles.divider} />
+                    {/* Divider */}
+                    <View style={styles.divider} />
 
-                {/* Daily goal progress */}
-                <CompactDailyProgress
-                    completedSessions={dailyProgress.completedSessions}
-                    dailyGoal={dailyGoal}
-                    goalAchieved={dailyProgress.goalAchieved}
-                    label=""
-                />
-            </View>
+                    {/* Daily Goal Progress */}
+                    <DailyProgressIndicator
+                        completedSessions={dailyProgress.completedSessions}
+                        dailyGoal={dailyGoal}
+                        goalAchieved={dailyProgress.goalAchieved}
+                        onPress={handleOpenModal}
+                        hapticsEnabled={hapticsEnabled}
+                    />
+                </View>
+            </Pressable>
+
+            {/* Stats Modal */}
+            <StatsModal
+                visible={showModal}
+                onClose={handleCloseModal}
+                stats={statsData}
+                labels={labels}
+                hapticsEnabled={hapticsEnabled}
+            />
         </View>
     );
 }
@@ -267,7 +698,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
-        paddingVertical: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
         paddingHorizontal: theme.spacing.md,
         borderWidth: 1,
         borderColor: theme.colors.surfaceLight,
@@ -278,36 +709,49 @@ const styles = StyleSheet.create({
         height: 32,
         backgroundColor: theme.colors.surfaceLight,
     },
-    // Streak styles
-    streakContainer: {
+
+    // Stat Pill styles
+    pillContainer: {
         flex: 1,
         alignItems: 'center',
         position: 'relative',
+        paddingVertical: theme.spacing.xs,
     },
-    streakContent: {
+    pillContent: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.spacing.xs,
     },
-    streakFlame: {
-        fontSize: 24,
+    pillIcon: {
+        fontSize: 20,
     },
-    streakTextContainer: {
+    pillTextContainer: {
         alignItems: 'flex-start',
     },
-    streakValue: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-        lineHeight: theme.fontSize.xl * 1.1,
+    pillValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
-    streakLabel: {
+    pillValue: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        lineHeight: theme.fontSize.lg * 1.1,
+    },
+    pillLabel: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: -2,
     },
-    bestBadgeInline: {
+    trendArrow: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.bold,
+    },
+
+    // Best badge styles
+    bestBadge: {
         position: 'absolute',
-        top: -6,
+        top: -4,
         right: 4,
         backgroundColor: theme.colors.legendary,
         paddingHorizontal: theme.spacing.xs,
@@ -315,49 +759,69 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
         ...theme.shadows.small,
     },
-    bestBadgeInlineText: {
+    bestBadgeText: {
         fontSize: 8,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
         letterSpacing: 0.5,
     },
-    // Today sessions styles
-    todayCounter: {
+    bestGlow: {
+        position: 'absolute',
+        top: -8,
+        right: 0,
+        left: 0,
+        bottom: -8,
+        backgroundColor: theme.colors.legendary,
+        borderRadius: theme.borderRadius.lg,
+        opacity: 0.2,
+    },
+
+    // Focus Time Pill styles
+    focusTimePill: {
         flex: 1,
-        alignItems: 'center',
-        gap: 2,
-    },
-    todayIcon: {
-        fontSize: 16,
-    },
-    todayValue: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        lineHeight: theme.fontSize.lg * 1.1,
-    },
-    todayLabel: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-    },
-    // Daily progress compact styles
-    dailyProgressCompact: {
-        flex: 1,
-        alignItems: 'center',
-        gap: theme.spacing.xs,
-    },
-    dailyProgressHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        justifyContent: 'center',
+        gap: theme.spacing.xs,
+        position: 'relative',
+    },
+    focusTimeGlow: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        left: -4,
+        bottom: -4,
+        backgroundColor: theme.colors.accent,
+        borderRadius: theme.borderRadius.md,
+        opacity: 0,
+    },
+    focusTimeIcon: {
+        fontSize: 18,
+    },
+    focusTimeTextContainer: {
+        alignItems: 'flex-start',
+    },
+    focusTimeValue: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.accent,
+        lineHeight: theme.fontSize.lg * 1.1,
+    },
+    focusTimeLabel: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        marginTop: -2,
+    },
+
+    // Daily Progress styles
+    dailyProgressPill: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: theme.spacing.xs,
     },
     dailyProgressIcon: {
         fontSize: 14,
-    },
-    dailyProgressLabel: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-        textTransform: 'uppercase',
     },
     dailyProgressSegments: {
         flexDirection: 'row',
@@ -375,5 +839,112 @@ const styles = StyleSheet.create({
     },
     dailyProgressValueComplete: {
         color: theme.colors.success,
+    },
+
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    },
+    modalContent: {
+        width: '85%',
+        maxHeight: '70%',
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.xl,
+        ...theme.shadows.large,
+        overflow: 'hidden',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.surfaceLight,
+    },
+    modalTitle: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    modalCloseButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: theme.colors.surfaceLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCloseText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.textSecondary,
+    },
+    modalBody: {
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
+    },
+
+    // Stats Section styles
+    statsSection: {
+        marginBottom: theme.spacing.lg,
+    },
+    statsSectionTitle: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.textSecondary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: theme.spacing.sm,
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: theme.colors.surfaceLight,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    statCardHighlight: {
+        borderWidth: 2,
+        borderColor: theme.colors.legendary,
+    },
+    statCardIcon: {
+        fontSize: 24,
+        marginBottom: theme.spacing.xs,
+    },
+    statCardValue: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    statCardLabel: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textSecondary,
+        marginTop: 2,
+    },
+    statCardBestBadge: {
+        position: 'absolute',
+        top: theme.spacing.xs,
+        right: theme.spacing.xs,
+        backgroundColor: theme.colors.legendary,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: theme.borderRadius.sm,
+    },
+    statCardBestText: {
+        fontSize: 8,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.background,
+        letterSpacing: 0.5,
     },
 });

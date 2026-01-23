@@ -117,8 +117,18 @@ export const translations = {
         noAnimalsYet: "You don't have any animals yet!",
         completeSessionsToHatch: 'Complete focus sessions to hatch animals from eggs.',
 
+        // Settings Screen - Section Headers
+        sectionSession: 'Session',
+        sectionSoundsHaptics: 'Sounds & Haptics',
+        sectionNotifications: 'Notifications',
+        sectionAppearance: 'Appearance',
+        sectionProgress: 'Progress & Stats',
+        sectionData: 'Data & Backup',
+        sectionDeveloper: 'Developer',
+
         // Settings Screen
         focusDuration: 'Focus Duration',
+        focusDurationDesc: 'Set your preferred focus session length',
         notifications: 'Notifications',
         pushNotifications: 'Push Notifications',
         soundEffects: 'Sound Effects',
@@ -146,6 +156,9 @@ export const translations = {
         monthlyTrendChart: 'Monthly Trend',
         detailedStats: 'Detailed Statistics',
         totalFocusTime: 'Total Focus Time',
+        todayFocusTime: 'Today',
+        averagePerDay: 'Avg/Day',
+        close: 'Close',
         completedSessions: 'Completed Sessions',
         failedSessions: 'Failed Sessions',
         completionRate: 'Completion Rate',
@@ -701,8 +714,18 @@ export const translations = {
         noAnimalsYet: 'Henüz hayvanın yok!',
         completeSessionsToHatch: 'Odaklanma seanslarını tamamlayarak yumurtadan hayvanlar çıkar.',
 
+        // Settings Screen - Section Headers
+        sectionSession: 'Oturum',
+        sectionSoundsHaptics: 'Sesler ve Dokunma',
+        sectionNotifications: 'Bildirimler',
+        sectionAppearance: 'Görünüm',
+        sectionProgress: 'İlerleme ve İstatistikler',
+        sectionData: 'Veri ve Yedekleme',
+        sectionDeveloper: 'Geliştirici',
+
         // Settings Screen
         focusDuration: 'Odaklanma Süresi',
+        focusDurationDesc: 'Tercih ettiğiniz odaklanma süresi',
         notifications: 'Bildirimler',
         pushNotifications: 'Anlık Bildirimler',
         soundEffects: 'Ses Efektleri',
@@ -730,6 +753,9 @@ export const translations = {
         monthlyTrendChart: 'Aylik Trend',
         detailedStats: 'Detayli Istatistikler',
         totalFocusTime: 'Toplam Odaklanma Suresi',
+        todayFocusTime: 'Bugun',
+        averagePerDay: 'Ort/Gun',
+        close: 'Kapat',
         completedSessions: 'Tamamlanan Seanslar',
         failedSessions: 'Basarisiz Seanslar',
         completionRate: 'Tamamlanma Orani',
@@ -1283,8 +1309,18 @@ export const translations = {
         noAnimalsYet: '¡Aún no tienes animales!',
         completeSessionsToHatch: 'Completa sesiones de enfoque para incubar animales de los huevos.',
 
+        // Settings Screen - Section Headers
+        sectionSession: 'Sesión',
+        sectionSoundsHaptics: 'Sonidos y Táctil',
+        sectionNotifications: 'Notificaciones',
+        sectionAppearance: 'Apariencia',
+        sectionProgress: 'Progreso y Estadísticas',
+        sectionData: 'Datos y Respaldo',
+        sectionDeveloper: 'Desarrollador',
+
         // Settings Screen
         focusDuration: 'Duración del Enfoque',
+        focusDurationDesc: 'Configura tu duración de sesión preferida',
         notifications: 'Notificaciones',
         pushNotifications: 'Notificaciones Push',
         soundEffects: 'Efectos de Sonido',
@@ -1312,6 +1348,9 @@ export const translations = {
         monthlyTrendChart: 'Tendencia Mensual',
         detailedStats: 'Estadísticas Detalladas',
         totalFocusTime: 'Tiempo Total de Enfoque',
+        todayFocusTime: 'Hoy',
+        averagePerDay: 'Prom/Día',
+        close: 'Cerrar',
         completedSessions: 'Sesiones Completadas',
         failedSessions: 'Sesiones Fallidas',
         completionRate: 'Tasa de Completación',

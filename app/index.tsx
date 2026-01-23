@@ -1186,11 +1186,21 @@ export default function HomeScreen() {
                     dailyGoal={state.settings.dailyGoal}
                     currentStreak={state.stats.currentStreak}
                     bestStreak={state.stats.bestStreak}
+                    totalFocusMinutes={state.stats.totalFocusMinutes}
+                    hapticsEnabled={state.settings.hapticsEnabled}
                     labels={{
                         session: i18n('session'),
                         animals: i18n('animals'),
                         dailyGoalProgress: i18n('dailyGoalProgress'),
                         streak: i18n('dayStreak'),
+                        todayFocusTime: i18n('todayFocusTime'),
+                        viewDetails: i18n('statsTitle'),
+                        close: i18n('close'),
+                        totalSessions: i18n('totalSessions'),
+                        totalFocusTime: i18n('totalFocusTime'),
+                        averagePerDay: i18n('averagePerDay'),
+                        bestStreakLabel: i18n('best'),
+                        dailyGoalLabel: i18n('dailyGoal'),
                     }}
                 />
 
