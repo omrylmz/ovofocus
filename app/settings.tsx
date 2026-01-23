@@ -21,6 +21,7 @@ import { ExportModal } from '../src/components/ExportModal';
 import { EggStylePicker } from '../src/components/EggStylePicker';
 import { getEggStyleById, getDefaultEggStyle, UnlockCheckParams } from '../src/data/eggStyles';
 import { StyledEgg } from '../src/components/StyledEgg';
+import { CalendarView } from '../src/components/CalendarView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -511,6 +512,7 @@ export default function SettingsScreen() {
     const [showEggStylePicker, setShowEggStylePicker] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [showCalendarView, setShowCalendarView] = useState(false);
 
     // Create dynamic styles based on current theme
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -882,6 +884,18 @@ export default function SettingsScreen() {
                     )}
                 </View>
 
+                {/* ===== CALENDAR INTEGRATION ===== */}
+                <View style={styles.section}>
+                    <SectionHeader styles={styles} icon="📅" title={i18n('calendarIntegration')} />
+                    <Text style={styles.settingDescription}>{i18n('calendarDesc')}</Text>
+                    <PixelButton
+                        title={i18n('viewCalendar')}
+                        onPress={() => setShowCalendarView(true)}
+                        variant="secondary"
+                        icon="📅"
+                    />
+                </View>
+
                 {/* ===== STREAK FREEZE ===== */}
                 <View style={styles.section}>
                     <SectionHeader styles={styles} icon="❄️" title={i18n('streakFreezes')} />
@@ -1244,6 +1258,14 @@ export default function SettingsScreen() {
                     </Pressable>
                 </Pressable>
             </Modal>
+
+            {/* Calendar View Modal */}
+            <CalendarView
+                visible={showCalendarView}
+                onClose={() => setShowCalendarView(false)}
+                language={state.settings.language}
+                focusDuration={state.settings.focusDuration}
+            />
         </SafeAreaView>
     );
 }
