@@ -268,6 +268,23 @@ export const translations = {
         sessionCompleteBody: 'You hatched a new animal! Open the app to see it.',
         newAnimalTitle: 'New Animal! 🥚✨',
 
+        // Streak Reminder Notifications
+        streakReminderTitle: "Don't break your streak! 🔥",
+        streakReminderBody: "You have a {count}-day streak! Complete a session today to keep it going.",
+
+        // Achievement Notifications
+        achievementUnlockedTitle: 'Achievement Unlocked!',
+
+        // Daily Goal Notifications
+        dailyGoalReminderTitle: 'Daily Goal Reminder 🎯',
+        dailyGoalReminderBody: "You need {remaining} more session(s) to reach your daily goal of {goal}!",
+        dailyGoalAchievedTitle: 'Daily Goal Achieved! 🎉',
+        dailyGoalAchievedBody: "Congratulations! You completed {goal} session(s) today!",
+
+        // Re-engagement Notifications
+        reengagementTitle: 'Your eggs miss you! 🥚',
+        reengagementBody: "It's been a while! Come back and hatch some animals.",
+
         // Animals (names)
         chick: 'Chick',
         bunny: 'Bunny',
@@ -836,6 +853,23 @@ export const translations = {
         sessionCompleteBody: 'Yeni bir hayvan çıkardın! Görmek için uygulamayı aç.',
         newAnimalTitle: 'Yeni Hayvan! 🥚✨',
 
+        // Streak Reminder Notifications
+        streakReminderTitle: 'Serisini bozma! 🔥',
+        streakReminderBody: '{count} günlük serin var! Devam ettirmek için bugün bir seans tamamla.',
+
+        // Achievement Notifications
+        achievementUnlockedTitle: 'Başarı Açıldı!',
+
+        // Daily Goal Notifications
+        dailyGoalReminderTitle: 'Günlük Hedef Hatırlatması 🎯',
+        dailyGoalReminderBody: 'Günlük {goal} hedefine ulaşmak için {remaining} seans daha gerekli!',
+        dailyGoalAchievedTitle: 'Günlük Hedef Tamamlandı! 🎉',
+        dailyGoalAchievedBody: 'Tebrikler! Bugün {goal} seans tamamladın!',
+
+        // Re-engagement Notifications
+        reengagementTitle: 'Yumurtaların seni özledi! 🥚',
+        reengagementBody: 'Uzun zaman oldu! Gel ve yeni hayvanlar çıkar.',
+
         // Animals (names)
         chick: 'Civciv',
         bunny: 'Tavşan',
@@ -1393,6 +1427,23 @@ export const translations = {
         sessionCompleteTitle: '¡Sesión Completada! 🎉',
         sessionCompleteBody: '¡Incubaste un nuevo animal! Abre la app para verlo.',
         newAnimalTitle: '¡Nuevo Animal! 🥚✨',
+
+        // Streak Reminder Notifications
+        streakReminderTitle: '¡No pierdas tu racha! 🔥',
+        streakReminderBody: '¡Tienes una racha de {count} días! Completa una sesión hoy para mantenerla.',
+
+        // Achievement Notifications
+        achievementUnlockedTitle: '¡Logro Desbloqueado!',
+
+        // Daily Goal Notifications
+        dailyGoalReminderTitle: 'Recordatorio de Meta Diaria 🎯',
+        dailyGoalReminderBody: '¡Necesitas {remaining} sesión(es) más para alcanzar tu meta diaria de {goal}!',
+        dailyGoalAchievedTitle: '¡Meta Diaria Alcanzada! 🎉',
+        dailyGoalAchievedBody: '¡Felicidades! ¡Completaste {goal} sesión(es) hoy!',
+
+        // Re-engagement Notifications
+        reengagementTitle: '¡Tus huevos te extrañan! 🥚',
+        reengagementBody: '¡Ha pasado un tiempo! Vuelve y eclosiona algunos animales.',
 
         // Animals (names)
         chick: 'Pollito',
