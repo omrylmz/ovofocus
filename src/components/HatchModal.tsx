@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -26,8 +26,8 @@ interface HatchModalProps {
 
 const NOTES_MAX_LENGTH = 200;
 
-// Confetti particle component
-function ConfettiParticle({ delay, startX, color }: { delay: number; startX: number; color: string }) {
+// Confetti particle component - memoized to prevent re-renders
+const ConfettiParticle = React.memo(function ConfettiParticle({ delay, startX, color }: { delay: number; startX: number; color: string }) {
     const translateY = useSharedValue(-50);
     const translateX = useSharedValue(startX);
     const rotate = useSharedValue(0);
@@ -69,9 +69,9 @@ function ConfettiParticle({ delay, startX, color }: { delay: number; startX: num
     return (
         <Animated.View style={[styles.confettiParticle, { backgroundColor: color }, style]} />
     );
-}
+});
 
-export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchModalProps) {
+function HatchModalComponent({ visible, animal, onClose, language = 'en' }: HatchModalProps) {
     const scale = useSharedValue(0);
     const rotation = useSharedValue(0);
     const particleOpacity = useSharedValue(0);
@@ -97,6 +97,7 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
     const buttonOpacity = useSharedValue(0);
     const buttonTranslateY = useSharedValue(20);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only animation; shared values are stable refs
     useEffect(() => {
         if (visible && animal) {
             // Play celebration sound based on rarity
@@ -278,17 +279,16 @@ export function HatchModal({ visible, animal, onClose, language = 'en' }: HatchM
         transform: [{ scale: 1 + auraPulse.value * 0.1 }],
     }));
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         onClose(notes.trim() || undefined);
-    };
+    }, [onClose, notes]);
+
+    // Memoize computed values
+    const rarityColor = useMemo(() => animal ? getRarityColor(animal.rarity) : '', [animal]);
+    const isRare = useMemo(() => animal ? (animal.rarity === 'legendary' || animal.rarity === 'epic') : false, [animal]);
+    const confettiColors = useMemo(() => animal ? getConfettiColors(animal.rarity) : [], [animal]);
 
     if (!animal) return null;
-
-    const rarityColor = getRarityColor(animal.rarity);
-    const isRare = animal.rarity === 'legendary' || animal.rarity === 'epic';
-
-    // Generate confetti colors based on rarity
-    const confettiColors = getConfettiColors(animal.rarity);
 
     return (
         <Modal visible={visible} transparent animationType="none">
@@ -560,3 +560,7 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.sm,
     },
 });
+
+// Export memoized component to prevent unnecessary re-renders
+HatchModalComponent.displayName = 'HatchModal';
+export const HatchModal = React.memo(HatchModalComponent);

@@ -106,7 +106,7 @@ function getRelativeTime(dateString: string, language: Language): string {
     }
 }
 
-export function AnimalDetailModal({
+function AnimalDetailModalComponent({
     visible,
     animal,
     count,
@@ -336,7 +336,7 @@ export function AnimalDetailModal({
         }
     }, [visible]);
 
-    const handleFavoritePress = () => {
+    const handleFavoritePress = useCallback(() => {
         // Dramatic heart animation
         heartScale.value = withSequence(
             withSpring(0.7, { damping: 3, stiffness: 400 }),
@@ -378,9 +378,9 @@ export function AnimalDetailModal({
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         onSetFavorite?.();
-    };
+    }, [isFavorite, onSetFavorite, heartScale, heartRotation, heartBounce, heartGlow]);
 
-    const handlePet = async () => {
+    const handlePet = useCallback(async () => {
         if (!animal || petCooldown > 0) return;
 
         petButtonScale.value = withSequence(
@@ -417,9 +417,9 @@ export function AnimalDetailModal({
             setPetCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, petCooldown, petAnimal, petButtonScale, floatingHeartOpacity, floatingHeart, happinessGlow, bounceValue]);
 
-    const handleFeed = async () => {
+    const handleFeed = useCallback(async () => {
         if (!animal || feedCooldown > 0) return;
 
         feedButtonScale.value = withSequence(
@@ -448,9 +448,9 @@ export function AnimalDetailModal({
             setFeedCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, feedCooldown, feedAnimal, feedButtonScale, modalScale, happinessGlow]);
 
-    const handlePlay = async () => {
+    const handlePlay = useCallback(async () => {
         if (!animal || playCooldown > 0) return;
 
         playButtonScale.value = withSequence(
@@ -502,9 +502,9 @@ export function AnimalDetailModal({
             setPlayCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, playCooldown, playWithAnimal, playButtonScale, bounceValue, rotation, floatingIconOpacity, floatingIcon, happinessGlow]);
 
-    const handleTrain = async () => {
+    const handleTrain = useCallback(async () => {
         if (!animal || trainCooldown > 0) return;
 
         trainButtonScale.value = withSequence(
@@ -546,9 +546,9 @@ export function AnimalDetailModal({
             setTrainCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, trainCooldown, trainAnimal, trainButtonScale, modalScale, floatingIconOpacity, floatingIcon, happinessGlow]);
 
-    const handleGroom = async () => {
+    const handleGroom = useCallback(async () => {
         if (!animal || groomCooldown > 0) return;
 
         groomButtonScale.value = withSequence(
@@ -590,9 +590,9 @@ export function AnimalDetailModal({
             setGroomCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, groomCooldown, groomAnimal, groomButtonScale, bounceValue, floatingIconOpacity, floatingIcon, happinessGlow]);
 
-    const handleTalk = async () => {
+    const handleTalk = useCallback(async () => {
         if (!animal || talkCooldown > 0) return;
 
         talkButtonScale.value = withSequence(
@@ -634,7 +634,7 @@ export function AnimalDetailModal({
             setTalkCooldown(result.cooldownRemaining);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-    };
+    }, [animal, talkCooldown, talkToAnimal, talkButtonScale, rotation, floatingIconOpacity, floatingIcon, happinessGlow]);
 
     // Animated styles
     const backdropStyle = useAnimatedStyle(() => ({
@@ -1522,3 +1522,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
     },
 });
+
+// Export memoized component to prevent unnecessary re-renders
+AnimalDetailModalComponent.displayName = 'AnimalDetailModal';
+export const AnimalDetailModal = React.memo(AnimalDetailModalComponent);

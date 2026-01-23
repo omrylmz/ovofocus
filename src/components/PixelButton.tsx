@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
     Text,
     StyleSheet,
@@ -41,7 +41,11 @@ interface PixelButtonProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function PixelButton({
+// Spring configs moved to module scope for stable references
+const SPRING_CONFIG = { damping: 15, stiffness: 400 };
+const RELEASE_SPRING_CONFIG = { damping: 12, stiffness: 300 };
+
+function PixelButtonComponent({
     title,
     onPress,
     variant = 'primary',
@@ -63,9 +67,7 @@ export function PixelButton({
     const glowOpacity = useSharedValue(0);
     const pressOpacity = useSharedValue(1);
 
-    // Spring config for snappy feel
-    const springConfig = { damping: 15, stiffness: 400 };
-    const releaseSpringConfig = { damping: 12, stiffness: 300 };
+    // Use module-scoped spring configs for stable references
 
     // Prominent buttons have deeper scale and translateY for more impactful feedback
     const pressScale = prominent ? 0.92 : 0.95;
@@ -76,8 +78,8 @@ export function PixelButton({
         // Skip animations for disabled buttons
         if (disabled) return;
 
-        scale.value = withSpring(pressScale, springConfig);
-        translateY.value = withSpring(pressTranslateY, springConfig);
+        scale.value = withSpring(pressScale, SPRING_CONFIG);
+        translateY.value = withSpring(pressTranslateY, SPRING_CONFIG);
         pressOpacity.value = withTiming(pressOpacityValue, { duration: 50 });
     }, [scale, translateY, pressOpacity, disabled, pressScale, pressTranslateY, pressOpacityValue]);
 
@@ -85,8 +87,8 @@ export function PixelButton({
         // Skip animations for disabled buttons
         if (disabled) return;
 
-        scale.value = withSpring(1, releaseSpringConfig);
-        translateY.value = withSpring(0, releaseSpringConfig);
+        scale.value = withSpring(1, RELEASE_SPRING_CONFIG);
+        translateY.value = withSpring(0, RELEASE_SPRING_CONFIG);
         pressOpacity.value = withTiming(1, { duration: 100 });
     }, [scale, translateY, pressOpacity, disabled]);
 
@@ -126,7 +128,8 @@ export function PixelButton({
         opacity: glowOpacity.value,
     }));
 
-    const getVariantStyles = () => {
+    // Memoize variant styles to prevent recreation on every render
+    const variantStyles = useMemo(() => {
         switch (variant) {
             case 'primary':
                 return {
@@ -153,9 +156,10 @@ export function PixelButton({
                     glow: theme.colors.textSecondary,
                 };
         }
-    };
+    }, [variant]);
 
-    const getSizeStyles = () => {
+    // Memoize size styles to prevent recreation on every render
+    const sizeStyles = useMemo(() => {
         switch (size) {
             case 'small':
                 return {
@@ -173,10 +177,7 @@ export function PixelButton({
                     text: styles.largeText,
                 };
         }
-    };
-
-    const variantStyles = getVariantStyles();
-    const sizeStyles = getSizeStyles();
+    }, [size]);
 
     return (
         <View style={styles.wrapper}>
@@ -298,3 +299,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
 });
+
+// Export memoized component to prevent unnecessary re-renders
+PixelButtonComponent.displayName = 'PixelButton';
+export const PixelButton = React.memo(PixelButtonComponent);

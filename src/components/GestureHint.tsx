@@ -30,11 +30,31 @@ interface AnimatedHintItemProps {
     animationType: 'tap' | 'double' | 'hold';
 }
 
-function AnimatedHintItem({ icon, text, delay, animationType }: AnimatedHintItemProps) {
+// Static hint data moved to module scope for stable reference
+const GESTURE_HINTS = [
+    {
+        icon: '👆',
+        textKey: 'gestureHintTap' as TranslationKey,
+        animationType: 'tap' as const,
+    },
+    {
+        icon: '👆👆',
+        textKey: 'gestureHintDoubleTap' as TranslationKey,
+        animationType: 'double' as const,
+    },
+    {
+        icon: '👇',
+        textKey: 'gestureHintLongPress' as TranslationKey,
+        animationType: 'hold' as const,
+    },
+] as const;
+
+const AnimatedHintItem = React.memo(function AnimatedHintItem({ icon, text, delay, animationType }: AnimatedHintItemProps) {
     const iconScale = useSharedValue(1);
     const iconRotation = useSharedValue(0);
     const glowOpacity = useSharedValue(0);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Shared values are stable refs
     useEffect(() => {
         // Different animations based on gesture type
         if (animationType === 'tap') {
@@ -122,12 +142,13 @@ function AnimatedHintItem({ icon, text, delay, animationType }: AnimatedHintItem
             <Text style={styles.hintText}>{text}</Text>
         </Animated.View>
     );
-}
+});
 
-export function GestureHint({ visible, onDismiss, language, variant = 'full' }: GestureHintProps) {
+function GestureHintComponent({ visible, onDismiss, language, variant = 'full' }: GestureHintProps) {
     const titleScale = useSharedValue(0.8);
     const titleOpacity = useSharedValue(0);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Shared values are stable refs
     useEffect(() => {
         if (visible) {
             titleScale.value = withSpring(1, { damping: 12, stiffness: 200 });
@@ -140,25 +161,9 @@ export function GestureHint({ visible, onDismiss, language, variant = 'full' }: 
         opacity: titleOpacity.value,
     }));
 
-    if (!visible) return null;
+    // Use module-scoped GESTURE_HINTS for stable reference
 
-    const hints = [
-        {
-            icon: '👆',
-            textKey: 'gestureHintTap' as TranslationKey,
-            animationType: 'tap' as const,
-        },
-        {
-            icon: '👆👆',
-            textKey: 'gestureHintDoubleTap' as TranslationKey,
-            animationType: 'double' as const,
-        },
-        {
-            icon: '👇',
-            textKey: 'gestureHintLongPress' as TranslationKey,
-            animationType: 'hold' as const,
-        },
-    ];
+    if (!visible) return null;
 
     if (variant === 'compact') {
         return (
@@ -197,7 +202,7 @@ export function GestureHint({ visible, onDismiss, language, variant = 'full' }: 
                     </Animated.View>
 
                     <View style={styles.hintsContainer}>
-                        {hints.map((hint, index) => (
+                        {GESTURE_HINTS.map((hint, index) => (
                             <AnimatedHintItem
                                 key={hint.textKey}
                                 icon={hint.icon}
@@ -231,7 +236,7 @@ interface InlineHintProps {
     position?: 'top' | 'bottom';
 }
 
-export function InlineHint({ visible, message, position = 'bottom' }: InlineHintProps) {
+function InlineHintComponent({ visible, message, position = 'bottom' }: InlineHintProps) {
     if (!visible) return null;
 
     return (
@@ -253,6 +258,12 @@ export function InlineHint({ visible, message, position = 'bottom' }: InlineHint
         </Animated.View>
     );
 }
+
+// Export memoized components to prevent unnecessary re-renders
+GestureHintComponent.displayName = 'GestureHint';
+InlineHintComponent.displayName = 'InlineHint';
+export const GestureHint = React.memo(GestureHintComponent);
+export const InlineHint = React.memo(InlineHintComponent);
 
 const styles = StyleSheet.create({
     overlay: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, AccessibilityState } from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -73,7 +73,7 @@ function getLevelBadgeColors(level: number, rarityColor: string): { bg: string; 
     return { bg: theme.colors.surfaceLight, text: theme.colors.textSecondary };
 }
 
-export function AnimalCard({
+function AnimalCardComponent({
     animal,
     collected = true,
     count = 1,
@@ -99,15 +99,19 @@ export function AnimalCard({
     const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
     const entranceTranslateY = useSharedValue(entranceDelay !== undefined ? 20 : 0);
 
-    const level = getAnimalLevel(count);
-    const isMaxLevel = level >= 5;
-    const rarityColor = getRarityColor(animal.rarity);
-    const rarityGradient = getRarityGradient(animal.rarity);
-    const rarityIndicator = getRarityIndicator(animal.rarity);
-    const xpProgress = getXPProgress(count);
-    const levelBadgeColors = getLevelBadgeColors(level, rarityColor);
-    const sizeStyles = getSizeStyles(size, customWidth);
-    const shouldShowXPBar = showXPBar ?? (size !== 'small' && collected && !isMaxLevel);
+    // Memoize computed values to prevent recalculation on every render
+    const level = useMemo(() => getAnimalLevel(count), [count]);
+    const isMaxLevel = useMemo(() => level >= 5, [level]);
+    const rarityColor = useMemo(() => getRarityColor(animal.rarity), [animal.rarity]);
+    const rarityGradient = useMemo(() => getRarityGradient(animal.rarity), [animal.rarity]);
+    const rarityIndicator = useMemo(() => getRarityIndicator(animal.rarity), [animal.rarity]);
+    const xpProgress = useMemo(() => getXPProgress(count), [count]);
+    const levelBadgeColors = useMemo(() => getLevelBadgeColors(level, rarityColor), [level, rarityColor]);
+    const sizeStyles = useMemo(() => getSizeStyles(size, customWidth), [size, customWidth]);
+    const shouldShowXPBar = useMemo(
+        () => showXPBar ?? (size !== 'small' && collected && !isMaxLevel),
+        [showXPBar, size, collected, isMaxLevel]
+    );
 
     // Accessibility labels and hints
     const a11y = useMemo(() => {
@@ -253,7 +257,7 @@ export function AnimalCard({
         };
     }, [collected, animal.rarity, isMaxLevel, breatheScale, idleOffset, borderGlowIntensity, shinePosition, glowOpacity, mysteryPulse]);
 
-    const handlePressIn = () => {
+    const handlePressIn = useCallback(() => {
         scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
         rotation.value = withSequence(
             withTiming(-2, { duration: 50 }),
@@ -263,13 +267,13 @@ export function AnimalCard({
         if (collected) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-    };
+    }, [scale, rotation, collected]);
 
-    const handlePressOut = () => {
+    const handlePressOut = useCallback(() => {
         scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-    };
+    }, [scale]);
 
-    const handlePress = () => {
+    const handlePress = useCallback(() => {
         if (onPress) {
             onPress();
         } else if (collected) {
@@ -285,7 +289,7 @@ export function AnimalCard({
             );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-    };
+    }, [onPress, collected, scale, breatheScale]);
 
     // Note: Removed zIndex animation to prevent overlap issues on Android
     // Android's zIndex handling with flexWrap is unreliable and causes cards to overlap
@@ -784,3 +788,7 @@ const styles = StyleSheet.create({
         borderRadius: 2.5,
     },
 });
+
+// Export memoized component to prevent unnecessary re-renders in FlashList
+AnimalCardComponent.displayName = 'AnimalCard';
+export const AnimalCard = React.memo(AnimalCardComponent);
