@@ -93,58 +93,98 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         fontSize: 14,
         color: theme.colors.textSecondary,
     },
-    filterRow: {
+    // Filter section container with label and badge
+    filterSection: {
+        marginBottom: theme.spacing.md,
+    },
+    filterSectionHeader: {
         flexDirection: 'row',
-        gap: theme.spacing.sm,
+        alignItems: 'center',
         marginBottom: theme.spacing.sm,
     },
-    filterChip: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.round,
-        backgroundColor: theme.colors.surface,
-    },
-    filterChipActive: {
-        backgroundColor: theme.colors.accent,
-    },
-    filterChipText: {
+    filterSectionLabel: {
         fontSize: theme.fontSize.sm,
         color: theme.colors.textSecondary,
         fontWeight: theme.fontWeight.medium,
     },
-    filterChipTextActive: {
+    activeFilterBadge: {
+        marginLeft: theme.spacing.sm,
+        backgroundColor: theme.colors.accent,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 2,
+        borderRadius: theme.borderRadius.round,
+    },
+    activeFilterBadgeText: {
+        fontSize: theme.fontSize.xs,
         color: theme.colors.background,
         fontWeight: theme.fontWeight.bold,
     },
-    sortRow: {
+    filterRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        flexWrap: 'wrap',
         gap: theme.spacing.sm,
-        marginBottom: theme.spacing.lg,
     },
-    sortLabel: {
+    // Unified chip styles - consistent for both filter and sort
+    chip: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.round,
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+        backgroundColor: 'transparent',
+    },
+    chipActive: {
+        borderColor: theme.colors.accent,
+        backgroundColor: theme.colors.accent,
+    },
+    chipText: {
         fontSize: theme.fontSize.sm,
         color: theme.colors.textSecondary,
-    },
-    sortChip: {
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: theme.spacing.xs,
-        borderRadius: theme.borderRadius.sm,
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: theme.colors.surface,
-    },
-    sortChipActive: {
-        borderColor: theme.colors.secondary,
-        backgroundColor: theme.colors.surface,
-    },
-    sortChipText: {
-        fontSize: theme.fontSize.xs,
-        color: theme.colors.textSecondary,
-    },
-    sortChipTextActive: {
-        color: theme.colors.secondary,
         fontWeight: theme.fontWeight.medium,
+    },
+    chipTextActive: {
+        color: theme.colors.background,
+        fontWeight: theme.fontWeight.bold,
+    },
+    // Sort section with segmented control style
+    sortSection: {
+        marginBottom: theme.spacing.lg,
+    },
+    sortSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    sortSectionLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    sortSegmentedControl: {
+        flexDirection: 'row',
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        padding: 4,
+    },
+    sortSegment: {
+        flex: 1,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sortSegmentActive: {
+        backgroundColor: theme.colors.secondary,
+    },
+    sortSegmentText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
+    },
+    sortSegmentTextActive: {
+        color: theme.colors.background,
+        fontWeight: theme.fontWeight.bold,
     },
     progressCard: {
         backgroundColor: theme.colors.surface,
@@ -242,54 +282,53 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
 });
 
-// Filter chip component - memoized to prevent unnecessary re-renders
-interface FilterChipProps {
+// Unified chip component - memoized to prevent unnecessary re-renders
+// Used for both filter and sort options with consistent styling
+interface ChipProps {
     label: string;
-    value: FilterOption;
     active: boolean;
-    onPress: (value: FilterOption) => void;
+    onPress: () => void;
     styles: ReturnType<typeof createStyles>;
     accessibilityHint?: string;
 }
 
-const FilterChip = React.memo(function FilterChip({ label, value, active, onPress, styles, accessibilityHint }: FilterChipProps) {
+const Chip = React.memo(function Chip({ label, active, onPress, styles, accessibilityHint }: ChipProps) {
     return (
         <Pressable
-            style={[styles.filterChip, active && styles.filterChipActive]}
-            onPress={() => onPress(value)}
+            style={[styles.chip, active && styles.chipActive]}
+            onPress={onPress}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint={accessibilityHint}
             accessibilityState={{ selected: active }}
         >
-            <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
         </Pressable>
     );
 });
 
-// Sort chip component - memoized to prevent unnecessary re-renders
-interface SortChipProps {
+// Sort segment component for segmented control - memoized
+interface SortSegmentProps {
     label: string;
-    value: SortOption;
     active: boolean;
-    onPress: (value: SortOption) => void;
+    onPress: () => void;
     styles: ReturnType<typeof createStyles>;
     accessibilityHint?: string;
 }
 
-const SortChip = React.memo(function SortChip({ label, value, active, onPress, styles, accessibilityHint }: SortChipProps) {
+const SortSegment = React.memo(function SortSegment({ label, active, onPress, styles, accessibilityHint }: SortSegmentProps) {
     return (
         <Pressable
-            style={[styles.sortChip, active && styles.sortChipActive]}
-            onPress={() => onPress(value)}
+            style={[styles.sortSegment, active && styles.sortSegmentActive]}
+            onPress={onPress}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint={accessibilityHint}
             accessibilityState={{ selected: active }}
         >
-            <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+            <Text style={[styles.sortSegmentText, active && styles.sortSegmentTextActive]}>{label}</Text>
         </Pressable>
     );
 });
@@ -562,7 +601,11 @@ export default function CollectionScreen() {
     // Render item for FlashList
     const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
         switch (item.type) {
-            case 'filter-header':
+            case 'filter-header': {
+                // Calculate active filter count for badge
+                const activeFilterCount = (activeFilter !== 'all' ? 1 : 0) +
+                    (searchQuery.trim() ? 1 : 0);
+
                 return (
                     <View>
                         {/* Search Bar */}
@@ -593,72 +636,90 @@ export default function CollectionScreen() {
                             )}
                         </View>
 
-                        {/* Filter Chips */}
-                        <View style={styles.filterRow} accessibilityRole="radiogroup">
-                            <FilterChip
-                                label={i18n('filterAll')}
-                                value="all"
-                                active={activeFilter === 'all'}
-                                onPress={handleFilterPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Tüm hayvanları göster' : 'Show all animals'}
-                            />
-                            <FilterChip
-                                label={i18n('filterCollected')}
-                                value="collected"
-                                active={activeFilter === 'collected'}
-                                onPress={handleFilterPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Sadece toplanan hayvanları göster' : 'Show collected animals only'}
-                            />
-                            <FilterChip
-                                label={i18n('filterUncollected')}
-                                value="uncollected"
-                                active={activeFilter === 'uncollected'}
-                                onPress={handleFilterPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Sadece eksik hayvanları göster' : 'Show missing animals only'}
-                            />
-                            <FilterChip
-                                label={state.settings.language === 'tr' ? 'Favoriler' : 'Favorites'}
-                                value="favorites"
-                                active={activeFilter === 'favorites'}
-                                onPress={handleFilterPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Sadece favori hayvanları göster' : 'Show favorite animals only'}
-                            />
+                        {/* Filter Section with Label and Active Badge */}
+                        <View style={styles.filterSection}>
+                            <View style={styles.filterSectionHeader}>
+                                <Text style={styles.filterSectionLabel}>
+                                    {state.settings.language === 'tr' ? 'Filtrele' : 'Filter'}
+                                </Text>
+                                {activeFilterCount > 0 && (
+                                    <View
+                                        style={styles.activeFilterBadge}
+                                        accessible={true}
+                                        accessibilityLabel={state.settings.language === 'tr'
+                                            ? `${activeFilterCount} aktif filtre`
+                                            : `${activeFilterCount} active filter${activeFilterCount > 1 ? 's' : ''}`}
+                                    >
+                                        <Text style={styles.activeFilterBadgeText}>{activeFilterCount}</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <View style={styles.filterRow} accessibilityRole="radiogroup">
+                                <Chip
+                                    label={i18n('filterAll')}
+                                    active={activeFilter === 'all'}
+                                    onPress={() => handleFilterPress('all')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Tüm hayvanları göster' : 'Show all animals'}
+                                />
+                                <Chip
+                                    label={i18n('filterCollected')}
+                                    active={activeFilter === 'collected'}
+                                    onPress={() => handleFilterPress('collected')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Sadece toplanan hayvanları göster' : 'Show collected animals only'}
+                                />
+                                <Chip
+                                    label={i18n('filterUncollected')}
+                                    active={activeFilter === 'uncollected'}
+                                    onPress={() => handleFilterPress('uncollected')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Sadece eksik hayvanları göster' : 'Show missing animals only'}
+                                />
+                                <Chip
+                                    label={state.settings.language === 'tr' ? 'Favoriler' : 'Favorites'}
+                                    active={activeFilter === 'favorites'}
+                                    onPress={() => handleFilterPress('favorites')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Sadece favori hayvanları göster' : 'Show favorite animals only'}
+                                />
+                            </View>
                         </View>
 
-                        {/* Sort Chips */}
-                        <View style={styles.sortRow} accessibilityRole="radiogroup">
-                            <Text style={styles.sortLabel} importantForAccessibility="no">{i18n('sort')}:</Text>
-                            <SortChip
-                                label={i18n('sortByRarity')}
-                                value="rarity"
-                                active={activeSort === 'rarity'}
-                                onPress={handleSortPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları nadirliğe göre sırala' : 'Sort animals by rarity'}
-                            />
-                            <SortChip
-                                label={i18n('sortByRecent')}
-                                value="recent"
-                                active={activeSort === 'recent'}
-                                onPress={handleSortPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları en son toplanana göre sırala' : 'Sort by most recently collected'}
-                            />
-                            <SortChip
-                                label={i18n('sortByName')}
-                                value="name"
-                                active={activeSort === 'name'}
-                                onPress={handleSortPress}
-                                styles={styles}
-                                accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları alfabetik sırala' : 'Sort animals alphabetically'}
-                            />
+                        {/* Sort Section with Segmented Control */}
+                        <View style={styles.sortSection}>
+                            <View style={styles.sortSectionHeader}>
+                                <Text style={styles.sortSectionLabel}>
+                                    {i18n('sort')}
+                                </Text>
+                            </View>
+                            <View style={styles.sortSegmentedControl} accessibilityRole="radiogroup">
+                                <SortSegment
+                                    label={i18n('sortByRarity')}
+                                    active={activeSort === 'rarity'}
+                                    onPress={() => handleSortPress('rarity')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları nadirliğe göre sırala' : 'Sort animals by rarity'}
+                                />
+                                <SortSegment
+                                    label={i18n('sortByRecent')}
+                                    active={activeSort === 'recent'}
+                                    onPress={() => handleSortPress('recent')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları en son toplanana göre sırala' : 'Sort by most recently collected'}
+                                />
+                                <SortSegment
+                                    label={i18n('sortByName')}
+                                    active={activeSort === 'name'}
+                                    onPress={() => handleSortPress('name')}
+                                    styles={styles}
+                                    accessibilityHint={state.settings.language === 'tr' ? 'Hayvanları alfabetik sırala' : 'Sort animals alphabetically'}
+                                />
+                            </View>
                         </View>
                     </View>
                 );
+            }
 
             case 'progress-card':
                 return (
@@ -791,7 +852,8 @@ export default function CollectionScreen() {
     ) => {
         switch (item.type) {
             case 'filter-header':
-                layout.size = 180;
+                // Filter header includes: search bar (~60), filter section (~80), sort section (~70)
+                layout.size = 220;
                 layout.span = numColumns;
                 break;
             case 'progress-card':
