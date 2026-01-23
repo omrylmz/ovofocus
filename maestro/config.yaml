@@ -1,0 +1,15 @@
+# Maestro E2E Test Configuration for Ovo Focus
+# This file contains global settings for all test flows
+
+# App identifier (iOS uses bundleIdentifier, Android uses package)
+# Both platforms use the same identifier: com.ovofocus.app
+appId: com.ovofocus.app
+
+# Environment variables that can be used across all flows
+env:
+  # App name for assertions
+  APP_NAME: "Ovo Focus"
+  # Default timeout for element visibility (in milliseconds)
+  DEFAULT_TIMEOUT: 5000
+  # Longer timeout for animations and loading states
+  ANIMATION_TIMEOUT: 10000

@@ -1,0 +1,115 @@
+# Flow: Open Collection Screen
+# Description: Tests navigating to and verifying the animal collection screen
+# This verifies the collection navigation and UI elements are working
+
+appId: com.ovofocus.app
+
+---
+# Wait for the app to load completely
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 10000
+
+# Verify we're on the main screen
+- assertVisible:
+    text: "Start Focus"
+
+# Take screenshot of main screen before navigation
+- takeScreenshot: "01-main-screen"
+
+# The collection is accessed via the "Collection" button in the header
+# The button shows a box emoji and "Collection" text
+- tapOn:
+    text: "Collection"
+
+# Wait for the collection screen to load
+# The screen title should be "My Collection"
+- extendedWaitUntil:
+    visible: "My Collection"
+    timeout: 5000
+
+# Take screenshot of collection screen
+- takeScreenshot: "02-collection-screen"
+
+# Verify key elements of the collection screen are present
+
+# 1. Collection Progress section should be visible
+- assertVisible:
+    text: "Collection Progress"
+
+# 2. The search bar placeholder should be visible
+- assertVisible:
+    text: "Search animals..."
+
+# 3. Filter chips should be present
+- assertVisible:
+    text: "All"
+- assertVisible:
+    text: "Collected"
+- assertVisible:
+    text: "Missing"
+
+# 4. Sort options should be visible
+- assertVisible:
+    text: "Sort"
+- assertVisible:
+    text: "By Rarity"
+- assertVisible:
+    text: "Recent"
+
+# 5. Stats section should show statistics
+- assertVisible:
+    text: "Minutes"
+- assertVisible:
+    text: "Completed"
+- assertVisible:
+    text: "Best Streak"
+
+# Take screenshot of collection with filters visible
+- takeScreenshot: "03-collection-filters"
+
+# Test the filter functionality - tap on "Collected" filter
+- tapOn:
+    text: "Collected"
+
+# Wait for filter to be applied
+- extendedWaitUntil:
+    visible: "Collected"
+    timeout: 2000
+
+# Take screenshot showing filtered view
+- takeScreenshot: "04-collection-filtered"
+
+# Test the "Favorites" filter
+- tapOn:
+    text: "Favorites"
+
+# Wait for filter to be applied
+- extendedWaitUntil:
+    visible: "Favorites"
+    timeout: 2000
+
+# Take screenshot of favorites filter
+- takeScreenshot: "05-collection-favorites"
+
+# Reset to "All" filter
+- tapOn:
+    text: "All"
+
+# Verify we're back to all animals view
+- extendedWaitUntil:
+    visible: "All"
+    timeout: 2000
+
+# Navigate back to main screen
+- back
+
+# Verify we returned to main screen
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 5000
+
+# Take final screenshot
+- takeScreenshot: "06-back-to-main"
+
+# Test successful - collection screen navigation works correctly

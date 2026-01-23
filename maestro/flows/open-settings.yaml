@@ -1,0 +1,183 @@
+# Flow: Open Settings Screen
+# Description: Tests navigating to and verifying the settings screen
+# This verifies the settings navigation and key setting options are present
+
+appId: com.ovofocus.app
+
+---
+# Wait for the app to load completely
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 10000
+
+# Verify we're on the main screen
+- assertVisible:
+    text: "Start Focus"
+
+# Take screenshot of main screen before navigation
+- takeScreenshot: "01-main-screen"
+
+# The settings is accessed via the gear icon button in the header
+# The settings button has a testID for reliable selection across devices
+- tapOn:
+    id: "settings-button"
+
+# Wait for the settings screen to load
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 5000
+
+# Verify the settings screen title is visible
+- assertVisible:
+    text: "Settings"
+
+# Take screenshot of settings screen top
+- takeScreenshot: "02-settings-top"
+
+# Verify key settings sections are present
+
+# 1. Language section
+- assertVisible:
+    text: "Language"
+
+# 2. Verify language options are present
+- assertVisible:
+    text: "English"
+
+# 3. Appearance/Theme section
+- assertVisible:
+    text: "Appearance"
+
+# 4. Theme options
+- assertVisible:
+    text: "Light"
+- assertVisible:
+    text: "Dark"
+- assertVisible:
+    text: "System"
+
+# Take screenshot of appearance settings
+- takeScreenshot: "03-settings-appearance"
+
+# Scroll down to see more settings
+- scroll:
+    direction: DOWN
+
+# 5. Focus Duration section
+- assertVisible:
+    text: "Focus Duration"
+    optional: true
+
+# Take screenshot after scrolling
+- takeScreenshot: "04-settings-timer"
+
+# Continue scrolling to find more sections
+- scroll:
+    direction: DOWN
+
+# 6. Tolerance section
+- assertVisible:
+    text: "Background Tolerance"
+    optional: true
+
+# 7. Daily Goal section
+- assertVisible:
+    text: "Daily Goal"
+    optional: true
+
+# Take screenshot of more settings
+- takeScreenshot: "05-settings-goals"
+
+# Scroll further to find notifications and developer settings
+- scroll:
+    direction: DOWN
+
+# 8. Notifications section
+- assertVisible:
+    text: "Notifications"
+    optional: true
+
+# 9. Sound and haptics toggles
+- assertVisible:
+    text: "Sound Effects"
+    optional: true
+- assertVisible:
+    text: "Vibration"
+    optional: true
+
+# Take screenshot of notification settings
+- takeScreenshot: "06-settings-notifications"
+
+# Scroll to find developer section
+- scrollUntilVisible:
+    element:
+      text: "Developer"
+    direction: DOWN
+    timeout: 10000
+
+# 10. Developer section with debug mode
+- assertVisible:
+    text: "Developer"
+- assertVisible:
+    text: "Debug Mode"
+
+# Take screenshot of developer settings
+- takeScreenshot: "07-settings-developer"
+
+# Scroll to find statistics section
+- scroll:
+    direction: DOWN
+
+# 11. Statistics section
+- assertVisible:
+    text: "Statistics"
+    optional: true
+
+# 12. Total Sessions stat
+- assertVisible:
+    text: "Total Sessions"
+    optional: true
+
+# Take screenshot of statistics
+- takeScreenshot: "08-settings-statistics"
+
+# Scroll to find danger zone at the bottom
+- scrollUntilVisible:
+    element:
+      text: "Danger Zone"
+    direction: DOWN
+    timeout: 10000
+
+# 13. Danger Zone section
+- assertVisible:
+    text: "Danger Zone"
+- assertVisible:
+    text: "Delete All Data"
+
+# Take screenshot of danger zone
+- takeScreenshot: "09-settings-danger-zone"
+
+# 14. App info at the very bottom
+- scroll:
+    direction: DOWN
+
+- assertVisible:
+    text: "Ovo Focus"
+- assertVisible:
+    text: "v1.0.0"
+
+# Take screenshot of app info
+- takeScreenshot: "10-settings-app-info"
+
+# Navigate back to main screen
+- back
+
+# Verify we returned to main screen
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 5000
+
+# Take final screenshot
+- takeScreenshot: "11-back-to-main"
+
+# Test successful - settings screen navigation and verification complete

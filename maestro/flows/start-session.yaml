@@ -1,0 +1,64 @@
+# Flow: Start a Focus Session
+# Description: Tests the core flow of starting a focus session
+# This verifies the main app functionality is working correctly
+
+appId: com.ovofocus.app
+
+---
+# Wait for the app to load completely
+# The app shows a loading indicator initially while fetching data from AsyncStorage
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 10000
+
+# Verify the main screen is displayed with key elements
+# Check that the timer display is visible (shows initial time like "25:00")
+- assertVisible:
+    text: ".*:.*"  # Timer format MM:SS
+
+# Verify the collection button is visible in the header
+- assertVisible:
+    text: "Collection"
+
+# Verify the session stats bar is displayed
+- assertVisible:
+    text: "Sessions"
+
+# Take a screenshot of the idle state before starting
+- takeScreenshot: "01-idle-state"
+
+# Tap the Start Focus button to begin a session
+# The button has the text "Start Focus" with an egg emoji icon
+- tapOn:
+    text: "Start Focus"
+
+# Wait for the session to become active
+# The timer should now be running and showing countdown
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 5000
+
+# Verify the session is in active state
+# - Timer should be visible and counting down
+# - Pause button should be available
+# - Give Up button should be available
+- assertVisible:
+    text: "Pause"
+
+- assertVisible:
+    text: "Give Up"
+
+# Verify the progress percentage is displayed (shows 0% initially)
+- assertVisible:
+    text: ".*%"  # Progress percentage
+
+# Take a screenshot of the active session state
+- takeScreenshot: "02-active-session"
+
+# Verify the egg animation area is present
+# During active session, there should be a progress ring visible
+# (The egg component animates during the session)
+
+# Test successful - session started correctly
+# Note: We don't complete or cancel the session here to keep this test focused
+# The complete-session.yaml flow tests the full session lifecycle

@@ -1,0 +1,120 @@
+# Flow: Complete a Full Focus Session
+# Description: Tests completing an entire focus session using debug mode (10 seconds)
+# Prerequisites: Debug mode should be enabled (timer is 10 seconds instead of 25 min)
+
+appId: com.ovofocus.app
+
+---
+# Wait for the app to load
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 10000
+
+# First, we need to enable debug mode to use the short 10-second timer
+# Navigate to settings to enable debug mode
+- tapOn:
+    # The settings button has a testID for reliable selection
+    id: "settings-button"
+
+# Wait for settings screen to load
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 5000
+
+# Take screenshot of settings screen
+- takeScreenshot: "01-settings-screen"
+
+# Scroll down to find the Developer section with debug mode toggle
+- scrollUntilVisible:
+    element:
+      text: "Debug Mode"
+    direction: DOWN
+    timeout: 10000
+
+# Enable debug mode if not already enabled
+# The debug mode toggle is a switch next to "Debug Mode" label
+- tapOn:
+    text: "Debug Mode"
+
+# Wait a moment for the setting to be applied
+- extendedWaitUntil:
+    visible: "Debug Mode"
+    timeout: 2000
+
+# Take screenshot showing debug mode enabled
+- takeScreenshot: "02-debug-mode-enabled"
+
+# Navigate back to the main screen
+# On iOS/Android, we can use the back button or swipe
+- back
+
+# Wait for main screen to load again
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 5000
+
+# Verify debug mode indicator is shown (appears at bottom of screen)
+# In debug mode, a badge shows "Debug Mode (10s)"
+- assertVisible:
+    text: "Debug Mode"
+    optional: true  # May not be visible if scrolled
+
+# Take screenshot of main screen with debug mode active
+- takeScreenshot: "03-main-screen-debug-mode"
+
+# Start the focus session
+- tapOn:
+    text: "Start Focus"
+
+# Wait for session to become active
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 5000
+
+# Verify session started
+- assertVisible:
+    text: "Pause"
+- assertVisible:
+    text: "Give Up"
+
+# Take screenshot of active session
+- takeScreenshot: "04-session-active"
+
+# Wait for the 10-second session to complete
+# In debug mode, the timer is only 10 seconds
+# We'll wait up to 15 seconds to account for any delays
+- extendedWaitUntil:
+    visible: "Congratulations"
+    timeout: 15000
+
+# The hatch modal should appear after session completes
+# Verify the congratulations message and animal reveal
+- assertVisible:
+    text: "Congratulations"
+
+# Take screenshot of the hatch modal with the new animal
+- takeScreenshot: "05-hatch-modal-congratulations"
+
+# Verify the "Add to Collection" button is present
+- assertVisible:
+    text: "Add to Collection"
+
+# Tap to add the animal to collection and close the modal
+- tapOn:
+    text: "Add to Collection"
+
+# Wait for modal to close and return to main screen
+- extendedWaitUntil:
+    visible: "Start Focus"
+    timeout: 5000
+
+# Verify we're back on the main screen in idle state
+- assertVisible:
+    text: "Start Focus"
+
+# Take final screenshot showing successful completion
+- takeScreenshot: "06-session-completed-idle"
+
+# Test successful - full session lifecycle completed
+# The session was started, ran for 10 seconds (debug mode),
+# completed successfully, showed the hatch modal, and returned to idle state
