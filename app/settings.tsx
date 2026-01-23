@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, Dimensions, Modal, TextInput } from 'react-native';
 import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { theme as darkTheme, ThemeMode, Theme } from '../src/styles/theme';
 import { useTheme } from '../src/context/ThemeContext';
@@ -360,6 +360,98 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         color: theme.colors.textSecondary,
         marginTop: theme.spacing.xs,
     },
+    // Danger Zone styles
+    dangerZoneContainer: {
+        backgroundColor: 'rgba(255, 82, 82, 0.1)',
+        borderWidth: 2,
+        borderColor: theme.colors.error,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+    },
+    dangerZoneWarning: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+    dangerZoneWarningIcon: {
+        fontSize: 24,
+    },
+    dangerZoneWarningText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.error,
+        fontWeight: theme.fontWeight.medium,
+        flex: 1,
+    },
+    // Delete confirmation modal styles
+    deleteModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: theme.spacing.lg,
+    },
+    deleteModalContent: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.lg,
+        width: '100%',
+        maxWidth: 400,
+        borderWidth: 2,
+        borderColor: theme.colors.error,
+    },
+    deleteModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+    deleteModalIcon: {
+        fontSize: 28,
+    },
+    deleteModalTitle: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.error,
+    },
+    deleteModalWarning: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.lg,
+        lineHeight: 22,
+    },
+    deleteModalInputLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.sm,
+    },
+    deleteModalInput: {
+        backgroundColor: theme.colors.background,
+        borderWidth: 2,
+        borderColor: theme.colors.semantic.border,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        fontSize: theme.fontSize.md,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.lg,
+    },
+    deleteModalInputError: {
+        borderColor: theme.colors.error,
+    },
+    deleteModalFinalWarning: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.error,
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    deleteModalButtons: {
+        flexDirection: 'row',
+        gap: theme.spacing.md,
+    },
+    deleteModalButtonWrapper: {
+        flex: 1,
+    },
 });
 
 // Section Header Component with Icon
@@ -417,6 +509,8 @@ export default function SettingsScreen() {
     const [canUseFreezeNow, setCanUseFreezeNow] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [showEggStylePicker, setShowEggStylePicker] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
     // Create dynamic styles based on current theme
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -452,22 +546,29 @@ export default function SettingsScreen() {
         });
     }, [navigation, i18n]);
 
-    const handleClearData = () => {
-        Alert.alert(
-            i18n('deleteConfirmTitle'),
-            i18n('deleteConfirmMessage'),
-            [
-                { text: i18n('cancel'), style: 'cancel' },
-                {
-                    text: i18n('delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        await clearAllData();
-                        Alert.alert(i18n('done'), i18n('restartApp'));
-                    },
-                },
-            ]
-        );
+    const handleOpenDeleteModal = () => {
+        setDeleteConfirmText('');
+        setShowDeleteModal(true);
+    };
+
+    const handleCloseDeleteModal = () => {
+        setDeleteConfirmText('');
+        setShowDeleteModal(false);
+    };
+
+    const handleConfirmDelete = async () => {
+        const confirmWord = i18n('deleteConfirmationWord');
+        if (deleteConfirmText.toUpperCase() === confirmWord.toUpperCase()) {
+            await clearAllData();
+            setShowDeleteModal(false);
+            setDeleteConfirmText('');
+            Alert.alert(i18n('done'), i18n('restartApp'));
+        }
+    };
+
+    const isDeleteConfirmValid = () => {
+        const confirmWord = i18n('deleteConfirmationWord');
+        return deleteConfirmText.toUpperCase() === confirmWord.toUpperCase();
     };
 
     const handleNotificationToggle = async (value: boolean) => {
@@ -1031,12 +1132,20 @@ export default function SettingsScreen() {
                 {/* ===== DANGER ZONE ===== */}
                 <View style={styles.section}>
                     <SectionHeader styles={styles} icon="⚠️" title={i18n('dangerZone')} color={theme.colors.error} />
-                    <PixelButton
-                        title={i18n('deleteAllData')}
-                        onPress={handleClearData}
-                        variant="danger"
-                        icon="🗑️"
-                    />
+                    <View style={styles.dangerZoneContainer}>
+                        <View style={styles.dangerZoneWarning}>
+                            <Text style={styles.dangerZoneWarningIcon}>🚨</Text>
+                            <Text style={styles.dangerZoneWarningText}>
+                                {i18n('dangerZoneWarning')}
+                            </Text>
+                        </View>
+                        <PixelButton
+                            title={i18n('deleteAllData')}
+                            onPress={handleOpenDeleteModal}
+                            variant="danger"
+                            icon="🗑️"
+                        />
+                    </View>
                 </View>
 
                 {/* ===== APP INFO ===== */}
@@ -1067,6 +1176,74 @@ export default function SettingsScreen() {
                 unlockParams={eggUnlockParams}
                 i18n={i18n}
             />
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                visible={showDeleteModal}
+                transparent
+                animationType="fade"
+                onRequestClose={handleCloseDeleteModal}
+            >
+                <Pressable
+                    style={styles.deleteModalOverlay}
+                    onPress={handleCloseDeleteModal}
+                >
+                    <Pressable
+                        style={styles.deleteModalContent}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.deleteModalHeader}>
+                            <Text style={styles.deleteModalIcon}>⚠️</Text>
+                            <Text style={styles.deleteModalTitle}>{i18n('deleteConfirmTitle')}</Text>
+                        </View>
+
+                        <Text style={styles.deleteModalWarning}>
+                            {i18n('deleteWarningDetailed')}
+                        </Text>
+
+                        <Text style={styles.deleteModalInputLabel}>
+                            {i18n('deleteConfirmationType')}
+                        </Text>
+
+                        <TextInput
+                            style={[
+                                styles.deleteModalInput,
+                                deleteConfirmText.length > 0 && !isDeleteConfirmValid() && styles.deleteModalInputError,
+                            ]}
+                            value={deleteConfirmText}
+                            onChangeText={setDeleteConfirmText}
+                            placeholder={i18n('deleteConfirmationPlaceholder')}
+                            placeholderTextColor={theme.colors.textSecondary}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                        />
+
+                        {isDeleteConfirmValid() && (
+                            <Text style={styles.deleteModalFinalWarning}>
+                                {i18n('deleteFinalWarning')}
+                            </Text>
+                        )}
+
+                        <View style={styles.deleteModalButtons}>
+                            <View style={styles.deleteModalButtonWrapper}>
+                                <PixelButton
+                                    title={i18n('cancel')}
+                                    onPress={handleCloseDeleteModal}
+                                    variant="secondary"
+                                />
+                            </View>
+                            <View style={styles.deleteModalButtonWrapper}>
+                                <PixelButton
+                                    title={i18n('delete')}
+                                    onPress={handleConfirmDelete}
+                                    variant="danger"
+                                    disabled={!isDeleteConfirmValid()}
+                                />
+                            </View>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
