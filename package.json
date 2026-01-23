@@ -10,7 +10,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "maestro:test": "maestro test maestro/flows/",
+    "maestro:record": "maestro record"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -24,6 +26,7 @@
     "expo-file-system": "^19.0.21",
     "expo-haptics": "~15.0.8",
     "expo-keep-awake": "~15.0.8",
+    "expo-linear-gradient": "^15.0.8",
     "expo-linking": "~8.0.11",
     "expo-localization": "~17.0.8",
     "expo-notifications": "~0.32.16",

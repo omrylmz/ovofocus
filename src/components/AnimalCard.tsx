@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, AccessibilityState } from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -9,12 +9,15 @@ import Animated, {
     withDelay,
     useSharedValue,
     Easing,
+    interpolate,
+    cancelAnimation,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../styles/theme';
-import { Animal, getRarityColor, Rarity } from '../data/animals';
+import { Animal, getRarityColor, Rarity, getRarityIndicator } from '../data/animals';
 import { Language, getAnimalName, getRarityLabelI18n } from '../i18n/translations';
-import { getAnimalLevel } from '../utils/levelBonuses';
+import { getAnimalLevel, LEVEL_THRESHOLDS } from '../utils/levelBonuses';
 
 interface AnimalCardProps {
     animal: Animal;
@@ -25,6 +28,49 @@ interface AnimalCardProps {
     language?: Language;
     entranceDelay?: number;  // For staggered entrance animations
     customWidth?: number;    // Override width for responsive layouts
+    showXPBar?: boolean;     // Show XP progress bar (default: true for medium/large)
+}
+
+// Helper to get gradient colors for rarity
+function getRarityGradient(rarity: Rarity): [string, string, string] {
+    const gradients: Record<Rarity, [string, string, string]> = {
+        common: ['#A8A8A8', '#8A8A8A', '#A8A8A8'],
+        rare: ['#4FC3F7', '#29B6F6', '#4FC3F7'],
+        epic: ['#E040FB', '#C77DDB', '#E040FB'],
+        legendary: ['#FFD700', '#FFA500', '#FFD700'],
+    };
+    return gradients[rarity];
+}
+
+// Helper to get XP progress toward next level
+function getXPProgress(count: number): { current: number; max: number; percentage: number } {
+    const level = getAnimalLevel(count);
+    if (level >= 5) {
+        return { current: count, max: count, percentage: 100 };
+    }
+    const currentThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
+    const nextThreshold = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[4];
+    const progress = count - currentThreshold;
+    const required = nextThreshold - currentThreshold;
+    return {
+        current: progress,
+        max: required,
+        percentage: Math.min((progress / required) * 100, 100),
+    };
+}
+
+// Helper to get level badge style based on level
+function getLevelBadgeColors(level: number, rarityColor: string): { bg: string; text: string } {
+    if (level >= 5) {
+        return { bg: rarityColor, text: '#000' };
+    }
+    if (level >= 4) {
+        return { bg: theme.colors.accent, text: '#000' };
+    }
+    if (level >= 3) {
+        return { bg: theme.colors.secondary, text: '#000' };
+    }
+    return { bg: theme.colors.surfaceLight, text: theme.colors.textSecondary };
 }
 
 export function AnimalCard({
@@ -36,12 +82,18 @@ export function AnimalCard({
     language = 'en',
     entranceDelay,
     customWidth,
+    showXPBar,
 }: AnimalCardProps) {
     const scale = useSharedValue(1);
     const rotation = useSharedValue(0);
     const idleOffset = useSharedValue(0);
     const shinePosition = useSharedValue(-50);
     const glowOpacity = useSharedValue(0);
+    const breatheScale = useSharedValue(1);
+    const mysteryPulse = useSharedValue(0);
+    const countBounce = useSharedValue(1);
+    const borderGlowIntensity = useSharedValue(0);
+    const prevCountRef = useRef(count);
 
     // Entrance animation values
     const entranceOpacity = useSharedValue(entranceDelay !== undefined ? 0 : 1);
@@ -50,7 +102,12 @@ export function AnimalCard({
     const level = getAnimalLevel(count);
     const isMaxLevel = level >= 5;
     const rarityColor = getRarityColor(animal.rarity);
+    const rarityGradient = getRarityGradient(animal.rarity);
+    const rarityIndicator = getRarityIndicator(animal.rarity);
+    const xpProgress = getXPProgress(count);
+    const levelBadgeColors = getLevelBadgeColors(level, rarityColor);
     const sizeStyles = getSizeStyles(size, customWidth);
+    const shouldShowXPBar = showXPBar ?? (size !== 'small' && collected && !isMaxLevel);
 
     // Accessibility labels and hints
     const a11y = useMemo(() => {
@@ -63,6 +120,7 @@ export function AnimalCard({
                 hint: language === 'tr'
                     ? 'Bu hayvanı keşfetmek için odaklanma seanslarını tamamlayın'
                     : 'Complete focus sessions to discover this animal',
+                role: 'image' as const,
             };
         }
 
@@ -75,14 +133,20 @@ export function AnimalCard({
         const maxLevelText = isMaxLevel
             ? (language === 'tr' ? ', maksimum seviye' : ', max level')
             : '';
+        const xpText = !isMaxLevel && shouldShowXPBar
+            ? (language === 'tr'
+                ? `, ${xpProgress.current}/${xpProgress.max} sonraki seviyeye`
+                : `, ${xpProgress.current}/${xpProgress.max} to next level`)
+            : '';
 
         return {
-            label: `${animalName}, ${rarityLabel}${countText}${levelText}${maxLevelText}`,
+            label: `${animalName}, ${rarityLabel}${countText}${levelText}${maxLevelText}${xpText}`,
             hint: onPress
                 ? (language === 'tr' ? 'Detayları görmek için dokunun' : 'Tap to view details')
                 : undefined,
+            role: (collected && onPress ? 'button' : 'image') as 'button' | 'image',
         };
-    }, [animal.id, animal.rarity, collected, count, level, isMaxLevel, language, onPress]);
+    }, [animal.id, animal.rarity, collected, count, level, isMaxLevel, language, onPress, shouldShowXPBar, xpProgress]);
 
     // Entrance animation for staggered card appearance
     useEffect(() => {
@@ -98,25 +162,58 @@ export function AnimalCard({
         }
     }, [entranceDelay, entranceOpacity, entranceTranslateY]);
 
-    // Idle animation for collected animals
+    // Count bounce animation when count increases
+    useEffect(() => {
+        if (count > prevCountRef.current && collected) {
+            countBounce.value = withSequence(
+                withSpring(1.3, { damping: 8, stiffness: 400 }),
+                withSpring(1, { damping: 12, stiffness: 300 })
+            );
+        }
+        prevCountRef.current = count;
+    }, [count, collected, countBounce]);
+
+    // Idle animations for collected animals
     useEffect(() => {
         if (collected) {
-            // Gentle floating animation
-            idleOffset.value = withRepeat(
+            // Gentle breathing animation (subtle scale pulse)
+            breatheScale.value = withRepeat(
                 withSequence(
-                    withTiming(-3, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(3, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+                    withTiming(1.02, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) })
                 ),
                 -1,
                 true
             );
 
-            // Legendary/Epic shine effect
+            // Gentle floating animation
+            idleOffset.value = withRepeat(
+                withSequence(
+                    withTiming(-3, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(3, { duration: 2500, easing: Easing.inOut(Easing.ease) })
+                ),
+                -1,
+                true
+            );
+
+            // Border glow pulse for rare+ animals
+            if (animal.rarity !== 'common') {
+                borderGlowIntensity.value = withRepeat(
+                    withSequence(
+                        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+            }
+
+            // Legendary/Epic shimmer effect
             if (animal.rarity === 'legendary' || animal.rarity === 'epic') {
                 shinePosition.value = withRepeat(
                     withSequence(
-                        withDelay(Math.random() * 3000, withTiming(100, { duration: 800, easing: Easing.inOut(Easing.ease) })),
-                        withDelay(4000, withTiming(-50, { duration: 0 }))
+                        withDelay(Math.random() * 2000, withTiming(150, { duration: 1000, easing: Easing.inOut(Easing.ease) })),
+                        withDelay(3000, withTiming(-50, { duration: 0 }))
                     ),
                     -1,
                     false
@@ -127,15 +224,34 @@ export function AnimalCard({
             if (isMaxLevel) {
                 glowOpacity.value = withRepeat(
                     withSequence(
-                        withTiming(0.6, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                        withTiming(0.2, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                        withTiming(0.7, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0.2, { duration: 1200, easing: Easing.inOut(Easing.ease) })
                     ),
                     -1,
                     true
                 );
             }
+        } else {
+            // Mystery pulse for uncollected animals
+            mysteryPulse.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+                ),
+                -1,
+                true
+            );
         }
-    }, [collected, animal.rarity, isMaxLevel, idleOffset, shinePosition, glowOpacity]);
+
+        return () => {
+            cancelAnimation(breatheScale);
+            cancelAnimation(idleOffset);
+            cancelAnimation(borderGlowIntensity);
+            cancelAnimation(shinePosition);
+            cancelAnimation(glowOpacity);
+            cancelAnimation(mysteryPulse);
+        };
+    }, [collected, animal.rarity, isMaxLevel, breatheScale, idleOffset, borderGlowIntensity, shinePosition, glowOpacity, mysteryPulse]);
 
     const handlePressIn = () => {
         scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
@@ -159,8 +275,13 @@ export function AnimalCard({
         } else if (collected) {
             // Fun interaction when tapping collected animals
             scale.value = withSequence(
-                withSpring(1.05, { damping: 10 }),
+                withSpring(1.08, { damping: 10, stiffness: 300 }),
                 withSpring(1, { damping: 12 })
+            );
+            // Trigger a small bounce on the emoji
+            breatheScale.value = withSequence(
+                withSpring(1.15, { damping: 8 }),
+                withSpring(1.02, { damping: 12 })
             );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -184,12 +305,33 @@ export function AnimalCard({
         ],
     }));
 
+    // Breathing animation for emoji
+    const breatheStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: breatheScale.value }],
+    }));
+
     const shineStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: shinePosition.value }],
     }));
 
     const glowStyle = useAnimatedStyle(() => ({
         opacity: glowOpacity.value,
+    }));
+
+    // Count badge bounce animation
+    const countBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: countBounce.value }],
+    }));
+
+    // Border glow animation for rare+ animals
+    const borderGlowStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(borderGlowIntensity.value, [0, 1], [0.4, 1]),
+    }));
+
+    // Mystery pulse for uncollected animals
+    const mysteryStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(mysteryPulse.value, [0, 1], [0.4, 0.7]),
+        transform: [{ scale: interpolate(mysteryPulse.value, [0, 1], [0.98, 1.02]) }],
     }));
 
     return (
@@ -200,109 +342,184 @@ export function AnimalCard({
                 onPressOut={handlePressOut}
                 disabled={!onPress && !collected}
                 accessible={true}
-                accessibilityRole={collected && onPress ? 'button' : 'image'}
+                accessibilityRole={a11y.role}
                 accessibilityLabel={a11y.label}
                 accessibilityHint={a11y.hint}
                 accessibilityState={{
                     disabled: !onPress && !collected,
+                    selected: collected,
                 } as AccessibilityState}
             >
                 <Animated.View
                     style={[
                         styles.container,
                         sizeStyles.container,
-                        { borderColor: collected ? rarityColor : theme.colors.surfaceLight },
-                        !collected && styles.uncollected,
                         animatedStyle,
                     ]}
                 >
-                    {/* Max level glow */}
-                    {collected && isMaxLevel && (
-                        <Animated.View
-                            style={[
-                                styles.maxLevelGlow,
-                                { backgroundColor: rarityColor },
-                                glowStyle
-                            ]}
-                        />
-                    )}
-
-                    {/* Shine effect for rare animals */}
-                    {collected && (animal.rarity === 'legendary' || animal.rarity === 'epic') && (
-                        <View style={styles.shineContainer}>
-                            <Animated.View style={[styles.shine, shineStyle]} />
-                        </View>
-                    )}
-
-                    {/* Emoji */}
-                    <Text style={[styles.emoji, sizeStyles.emoji]}>
-                        {collected ? animal.emoji : '❓'}
-                    </Text>
-
-                    {/* Name */}
-                    <Text
-                        style={[
-                            styles.name,
-                            sizeStyles.name,
-                            { color: collected ? theme.colors.text : theme.colors.textSecondary },
-                        ]}
-                        numberOfLines={1}
-                    >
-                        {collected ? getAnimalName(animal.id, language) : '???'}
-                    </Text>
-
-                    {/* Rarity badge */}
+                    {/* Gradient border for collected animals */}
                     {collected && (
-                        <View style={[styles.rarityBadge, { backgroundColor: rarityColor }]}>
-                            <Text style={styles.rarityText}>{getRarityLabelI18n(animal.rarity, language)}</Text>
-                        </View>
+                        <Animated.View style={[styles.gradientBorderContainer, borderGlowStyle]}>
+                            <LinearGradient
+                                colors={rarityGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.gradientBorder}
+                            />
+                        </Animated.View>
                     )}
 
-                    {/* Count/Level badge */}
-                    {collected && count > 1 && (
-                        <View style={[
-                            styles.countBadge,
-                            isMaxLevel && styles.maxLevelBadge,
-                            isMaxLevel && { backgroundColor: rarityColor }
-                        ]}>
-                            <Text style={[
-                                styles.countText,
-                                isMaxLevel && styles.maxLevelText
-                            ]}>
-                                {isMaxLevel ? '⭐' : `x${count}`}
-                            </Text>
-                        </View>
-                    )}
+                    {/* Inner content container */}
+                    <View style={[
+                        styles.innerContainer,
+                        sizeStyles.innerContainer,
+                        !collected && styles.uncollectedInner,
+                    ]}>
+                        {/* Max level glow */}
+                        {collected && isMaxLevel && (
+                            <Animated.View
+                                style={[
+                                    styles.maxLevelGlow,
+                                    { backgroundColor: rarityColor },
+                                    glowStyle
+                                ]}
+                            />
+                        )}
 
-                    {/* Level indicator for medium/large cards */}
-                    {collected && level > 1 && size !== 'small' && (
-                        <View style={styles.levelContainer}>
-                            {Array.from({ length: level }).map((_, i) => (
-                                <View
-                                    key={i}
+                        {/* Shimmer effect for legendary/epic */}
+                        {collected && (animal.rarity === 'legendary' || animal.rarity === 'epic') && (
+                            <View style={styles.shineContainer}>
+                                <Animated.View
                                     style={[
-                                        styles.levelDot,
-                                        { backgroundColor: i < level ? rarityColor : theme.colors.surfaceLight }
+                                        styles.shine,
+                                        shineStyle,
+                                        animal.rarity === 'legendary' && styles.legendaryShine,
                                     ]}
                                 />
-                            ))}
-                        </View>
-                    )}
+                            </View>
+                        )}
 
-                    {/* Compact level badge for small cards */}
-                    {collected && size === 'small' && (
-                        <View style={[
-                            styles.smallLevelBadge,
-                            isMaxLevel && { backgroundColor: rarityColor }
-                        ]}>
-                            <Text style={[
-                                styles.smallLevelText,
-                                isMaxLevel && styles.maxLevelSmallText
-                            ]}>
-                                {isMaxLevel ? '★' : `L${level}`}
-                            </Text>
-                        </View>
-                    )}
+                        {/* Emoji with breathing animation */}
+                        {collected ? (
+                            <Animated.Text style={[styles.emoji, sizeStyles.emoji, breatheStyle]}>
+                                {animal.emoji}
+                            </Animated.Text>
+                        ) : (
+                            <Animated.View style={[styles.uncollectedEmojiContainer, mysteryStyle]}>
+                                <Text style={[styles.emoji, sizeStyles.emoji, styles.silhouetteEmoji]}>
+                                    {animal.emoji}
+                                </Text>
+                                <View style={styles.lockIconContainer}>
+                                    <Text style={[styles.lockIcon, sizeStyles.lockIcon]}>🔒</Text>
+                                </View>
+                            </Animated.View>
+                        )}
+
+                        {/* Name */}
+                        <Text
+                            style={[
+                                styles.name,
+                                sizeStyles.name,
+                                { color: collected ? theme.colors.text : theme.colors.textSecondary },
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {collected ? getAnimalName(animal.id, language) : '???'}
+                        </Text>
+
+                        {/* XP Progress bar (medium/large cards only) */}
+                        {shouldShowXPBar && (
+                            <View style={styles.xpBarContainer}>
+                                <View style={styles.xpBarBackground}>
+                                    <View
+                                        style={[
+                                            styles.xpBarFill,
+                                            {
+                                                width: `${xpProgress.percentage}%`,
+                                                backgroundColor: rarityColor,
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={styles.xpText}>
+                                    {xpProgress.current}/{xpProgress.max}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Rarity indicator with gradient badge */}
+                        {collected && (
+                            <View style={styles.rarityBadgeContainer}>
+                                <LinearGradient
+                                    colors={[rarityGradient[0], rarityGradient[1]]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.rarityBadgeGradient}
+                                >
+                                    <Text style={styles.rarityText}>
+                                        {size === 'small' ? rarityIndicator.icon : getRarityLabelI18n(animal.rarity, language)}
+                                    </Text>
+                                </LinearGradient>
+                            </View>
+                        )}
+
+                        {/* Uncollected rarity hint */}
+                        {!collected && size !== 'small' && (
+                            <View style={[styles.rarityHintBadge, { borderColor: rarityColor }]}>
+                                <Text style={[styles.rarityHintText, { color: rarityColor }]}>
+                                    {rarityIndicator.icon}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Level badge with count */}
+                        {collected && (
+                            <Animated.View
+                                style={[
+                                    styles.levelBadge,
+                                    sizeStyles.levelBadge,
+                                    { backgroundColor: levelBadgeColors.bg },
+                                    isMaxLevel && styles.maxLevelBadgeStyle,
+                                    countBounceStyle,
+                                ]}
+                            >
+                                {isMaxLevel ? (
+                                    <Text style={[styles.levelBadgeText, { color: levelBadgeColors.text }]}>
+                                        ★ MAX
+                                    </Text>
+                                ) : (
+                                    <Text style={[styles.levelBadgeText, sizeStyles.levelBadgeText, { color: levelBadgeColors.text }]}>
+                                        {size === 'small' ? `L${level}` : `Lv.${level}`}
+                                    </Text>
+                                )}
+                            </Animated.View>
+                        )}
+
+                        {/* Count badge (separate from level) */}
+                        {collected && count > 1 && (
+                            <Animated.View style={[styles.countBadge, countBounceStyle]}>
+                                <Text style={styles.countText}>×{count}</Text>
+                            </Animated.View>
+                        )}
+
+                        {/* Level dots indicator for medium/large */}
+                        {collected && size !== 'small' && (
+                            <View style={styles.levelDotsContainer}>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <View
+                                        key={i}
+                                        style={[
+                                            styles.levelDot,
+                                            {
+                                                backgroundColor: i < level ? rarityColor : theme.colors.surfaceLight,
+                                                opacity: i < level ? 1 : 0.3,
+                                            }
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                        )}
+                    </View>
                 </Animated.View>
             </Pressable>
         </Animated.View>
@@ -312,50 +529,108 @@ export function AnimalCard({
 function getSizeStyles(size: 'small' | 'medium' | 'large', customWidth?: number) {
     // Base dimensions for each size
     const baseDimensions = {
-        small: { width: 80, height: 100, padding: theme.spacing.xs, emoji: 32, name: theme.fontSize.xs },
-        medium: { width: 100, height: 130, padding: theme.spacing.sm, emoji: 48, name: theme.fontSize.sm },
-        large: { width: 140, height: 180, padding: theme.spacing.md, emoji: 64, name: theme.fontSize.md },
+        small: {
+            width: 80,
+            height: 100,
+            padding: theme.spacing.xs,
+            borderWidth: 2,
+            emoji: 28,
+            name: theme.fontSize.xs,
+            lockIcon: 12,
+            levelBadge: { paddingHorizontal: 4, paddingVertical: 1 },
+            levelBadgeText: { fontSize: 8 },
+        },
+        medium: {
+            width: 100,
+            height: 140,
+            padding: theme.spacing.sm,
+            borderWidth: 3,
+            emoji: 40,
+            name: theme.fontSize.sm,
+            lockIcon: 16,
+            levelBadge: { paddingHorizontal: 6, paddingVertical: 2 },
+            levelBadgeText: { fontSize: 10 },
+        },
+        large: {
+            width: 140,
+            height: 190,
+            padding: theme.spacing.md,
+            borderWidth: 3,
+            emoji: 56,
+            name: theme.fontSize.md,
+            lockIcon: 20,
+            levelBadge: { paddingHorizontal: 8, paddingVertical: 3 },
+            levelBadgeText: { fontSize: 12 },
+        },
     };
 
     const base = baseDimensions[size];
 
     // If customWidth provided, scale proportionally
     if (customWidth !== undefined) {
-        const scale = customWidth / base.width;
+        const scaleFactor = customWidth / base.width;
         return {
             container: {
                 width: customWidth,
-                height: Math.round(base.height * scale),
-                padding: base.padding,
+                height: Math.round(base.height * scaleFactor),
             },
-            emoji: { fontSize: Math.round(base.emoji * Math.min(scale, 1.2)) }, // Cap emoji scaling
-            name: { fontSize: Math.max(10, Math.round(base.name * Math.min(scale, 1.1))) }, // Min 10px, cap scaling
+            innerContainer: {
+                padding: base.padding,
+                borderRadius: theme.borderRadius.lg - base.borderWidth,
+            },
+            emoji: { fontSize: Math.round(base.emoji * Math.min(scaleFactor, 1.2)) },
+            name: { fontSize: Math.max(10, Math.round(base.name * Math.min(scaleFactor, 1.1))) },
+            lockIcon: { fontSize: Math.round(base.lockIcon * Math.min(scaleFactor, 1.2)) },
+            levelBadge: base.levelBadge,
+            levelBadgeText: base.levelBadgeText,
         };
     }
 
     return {
-        container: { width: base.width, height: base.height, padding: base.padding },
+        container: { width: base.width, height: base.height },
+        innerContainer: {
+            padding: base.padding,
+            borderRadius: theme.borderRadius.lg - base.borderWidth,
+        },
         emoji: { fontSize: base.emoji },
         name: { fontSize: base.name },
+        lockIcon: { fontSize: base.lockIcon },
+        levelBadge: base.levelBadge,
+        levelBadgeText: base.levelBadgeText,
     };
 }
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
-        borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        ...theme.shadows.small,
+        ...theme.shadows.medium,
     },
-    uncollected: {
-        opacity: 0.5,
+    gradientBorderContainer: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: theme.borderRadius.lg,
+    },
+    gradientBorder: {
+        flex: 1,
+        borderRadius: theme.borderRadius.lg,
+    },
+    innerContainer: {
+        flex: 1,
+        margin: 2,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg - 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    uncollectedInner: {
+        backgroundColor: theme.colors.surfaceLight,
     },
     maxLevelGlow: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: theme.borderRadius.lg,
+        borderRadius: theme.borderRadius.lg - 2,
     },
     shineContainer: {
         ...StyleSheet.absoluteFillObject,
@@ -363,82 +638,149 @@ const styles = StyleSheet.create({
     },
     shine: {
         position: 'absolute',
-        width: 30,
-        height: 150,
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        transform: [{ rotate: '20deg' }],
-        top: -30,
+        width: 40,
+        height: 180,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        transform: [{ rotate: '25deg' }],
+        top: -40,
+    },
+    legendaryShine: {
+        backgroundColor: 'rgba(255, 215, 0, 0.4)',
+        width: 50,
     },
     emoji: {
         marginBottom: theme.spacing.xs,
     },
+    uncollectedEmojiContainer: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    silhouetteEmoji: {
+        opacity: 0.15,
+        marginBottom: theme.spacing.xs,
+    },
+    lockIconContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lockIcon: {
+        opacity: 0.6,
+    },
     name: {
         fontWeight: theme.fontWeight.semibold,
         textAlign: 'center',
+        paddingHorizontal: 4,
     },
-    rarityBadge: {
+    // XP Progress bar styles
+    xpBarContainer: {
+        width: '80%',
+        marginTop: theme.spacing.xs,
+        marginBottom: theme.spacing.xs,
+    },
+    xpBarBackground: {
+        height: 4,
+        backgroundColor: theme.colors.surfaceLight,
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    xpBarFill: {
+        height: '100%',
+        borderRadius: 2,
+    },
+    xpText: {
+        fontSize: 8,
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
+        marginTop: 2,
+        fontWeight: theme.fontWeight.medium,
+    },
+    // Rarity badge with gradient
+    rarityBadgeContainer: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        borderRadius: theme.borderRadius.sm,
+        overflow: 'hidden',
+    },
+    rarityBadgeGradient: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+    },
+    rarityText: {
+        fontSize: 8,
+        fontWeight: theme.fontWeight.bold,
+        color: '#000',
+        textShadowColor: 'rgba(255, 255, 255, 0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+    },
+    // Rarity hint for uncollected
+    rarityHintBadge: {
         position: 'absolute',
         top: 4,
         right: 4,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: theme.borderRadius.sm,
+        borderWidth: 1,
+        backgroundColor: 'transparent',
     },
-    rarityText: {
-        fontSize: 8,
+    rarityHintText: {
+        fontSize: 10,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
     },
+    // Level badge
+    levelBadge: {
+        position: 'absolute',
+        bottom: 4,
+        left: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: theme.borderRadius.sm,
+        minWidth: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    maxLevelBadgeStyle: {
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    levelBadgeText: {
+        fontSize: 9,
+        fontWeight: theme.fontWeight.bold,
+    },
+    // Count badge
     countBadge: {
         position: 'absolute',
         bottom: 4,
         right: 4,
         backgroundColor: theme.colors.accent,
-        paddingHorizontal: 6,
+        paddingHorizontal: 5,
         paddingVertical: 2,
-        borderRadius: theme.borderRadius.sm,
-    },
-    maxLevelBadge: {
-        paddingHorizontal: 4,
-    },
-    countText: {
-        fontSize: 10,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.background,
-    },
-    maxLevelText: {
-        fontSize: 12,
-    },
-    levelContainer: {
-        position: 'absolute',
-        bottom: 4,
-        left: 4,
-        flexDirection: 'row',
-        gap: 2,
-    },
-    levelDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
-    smallLevelBadge: {
-        position: 'absolute',
-        bottom: 2,
-        left: 2,
-        backgroundColor: theme.colors.surfaceLight,
-        paddingHorizontal: 4,
-        paddingVertical: 1,
         borderRadius: theme.borderRadius.sm,
         minWidth: 20,
         alignItems: 'center',
     },
-    smallLevelText: {
-        fontSize: 8,
+    countText: {
+        fontSize: 9,
         fontWeight: theme.fontWeight.bold,
-        color: theme.colors.textSecondary,
+        color: theme.colors.background,
     },
-    maxLevelSmallText: {
-        fontSize: 10,
-        color: '#000',
+    // Level dots indicator
+    levelDotsContainer: {
+        position: 'absolute',
+        bottom: 22,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 3,
+    },
+    levelDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
     },
 });
