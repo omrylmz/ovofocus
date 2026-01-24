@@ -64,12 +64,6 @@ const OnboardingFlow = lazy(() =>
 // Create animated SVG components
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-// Progress Ring Size Constants
-const PROGRESS_RING_SIZE = 280;
-const PROGRESS_RING_STROKE_WIDTH = 12;
-const PROGRESS_RING_RADIUS = (PROGRESS_RING_SIZE - PROGRESS_RING_STROKE_WIDTH) / 2;
-const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RING_RADIUS;
-
 // Enhanced Timer Display with Progress Ring
 interface EnhancedTimerDisplayProps {
     formattedTime: string;
@@ -79,6 +73,8 @@ interface EnhancedTimerDisplayProps {
     isPaused: boolean;
     language?: 'en' | 'tr' | 'es';
     theme: Theme;
+    progressRingSize: number;
+    timerFontSize: number;
 }
 
 function EnhancedTimerDisplay({
@@ -89,7 +85,14 @@ function EnhancedTimerDisplay({
     isPaused,
     language = 'en',
     theme,
+    progressRingSize,
+    timerFontSize,
 }: EnhancedTimerDisplayProps) {
+    // Calculate ring geometry from props
+    const STROKE_WIDTH = Math.round(progressRingSize * 0.043); // ~12 at 280
+    const RADIUS = (progressRingSize - STROKE_WIDTH) / 2;
+    const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
     // Accessibility labels
     const timerLabel = language === 'tr' ? 'Odaklanma zamanlayıcısı' :
                        language === 'es' ? 'Temporizador de enfoque' : 'Focus timer';
@@ -189,7 +192,7 @@ function EnhancedTimerDisplay({
 
     // Animated props for the progress circle
     const animatedProgressProps = useAnimatedProps(() => {
-        const strokeDashoffset = PROGRESS_RING_CIRCUMFERENCE * (1 - progressAnim.value);
+        const strokeDashoffset = CIRCUMFERENCE * (1 - progressAnim.value);
         return {
             strokeDashoffset,
         };
@@ -277,13 +280,26 @@ function EnhancedTimerDisplay({
         >
             {/* Progress Ring */}
             {sessionState === 'active' && (
-                <Animated.View style={[enhancedTimerStyles.ringContainer, ringContainerStyle]}>
+                <Animated.View style={[
+                    enhancedTimerStyles.ringContainer,
+                    ringContainerStyle,
+                    { width: progressRingSize, height: progressRingSize }
+                ]}>
                     {/* Glow effect behind the ring */}
-                    <Animated.View style={[enhancedTimerStyles.ringGlow, ringGlowStyle, { backgroundColor: ringColor }]} />
+                    <Animated.View style={[
+                        enhancedTimerStyles.ringGlow,
+                        ringGlowStyle,
+                        {
+                            width: progressRingSize + 20,
+                            height: progressRingSize + 20,
+                            borderRadius: (progressRingSize + 20) / 2,
+                            backgroundColor: ringColor
+                        }
+                    ]} />
 
                     <Svg
-                        width={PROGRESS_RING_SIZE}
-                        height={PROGRESS_RING_SIZE}
+                        width={progressRingSize}
+                        height={progressRingSize}
                         style={enhancedTimerStyles.svg}
                     >
                         <Defs>
@@ -295,35 +311,35 @@ function EnhancedTimerDisplay({
 
                         {/* Background circle */}
                         <Circle
-                            cx={PROGRESS_RING_SIZE / 2}
-                            cy={PROGRESS_RING_SIZE / 2}
-                            r={PROGRESS_RING_RADIUS}
+                            cx={progressRingSize / 2}
+                            cy={progressRingSize / 2}
+                            r={RADIUS}
                             stroke={theme.colors.surface}
-                            strokeWidth={PROGRESS_RING_STROKE_WIDTH}
+                            strokeWidth={STROKE_WIDTH}
                             fill="transparent"
                             opacity={0.3}
                         />
 
                         {/* Progress circle */}
                         <AnimatedCircle
-                            cx={PROGRESS_RING_SIZE / 2}
-                            cy={PROGRESS_RING_SIZE / 2}
-                            r={PROGRESS_RING_RADIUS}
+                            cx={progressRingSize / 2}
+                            cy={progressRingSize / 2}
+                            r={RADIUS}
                             stroke="url(#progressGradient)"
-                            strokeWidth={PROGRESS_RING_STROKE_WIDTH}
+                            strokeWidth={STROKE_WIDTH}
                             fill="transparent"
                             strokeLinecap="round"
-                            strokeDasharray={PROGRESS_RING_CIRCUMFERENCE}
+                            strokeDasharray={CIRCUMFERENCE}
                             animatedProps={animatedProgressProps}
-                            transform={`rotate(-90 ${PROGRESS_RING_SIZE / 2} ${PROGRESS_RING_SIZE / 2})`}
+                            transform={`rotate(-90 ${progressRingSize / 2} ${progressRingSize / 2})`}
                         />
 
                         {/* Progress end cap glow */}
                         {progress > 0.01 && (
                             <Circle
-                                cx={PROGRESS_RING_SIZE / 2 + PROGRESS_RING_RADIUS * Math.cos((progress * 360 - 90) * Math.PI / 180)}
-                                cy={PROGRESS_RING_SIZE / 2 + PROGRESS_RING_RADIUS * Math.sin((progress * 360 - 90) * Math.PI / 180)}
-                                r={PROGRESS_RING_STROKE_WIDTH / 2 + 4}
+                                cx={progressRingSize / 2 + RADIUS * Math.cos((progress * 360 - 90) * Math.PI / 180)}
+                                cy={progressRingSize / 2 + RADIUS * Math.sin((progress * 360 - 90) * Math.PI / 180)}
+                                r={STROKE_WIDTH / 2 + 4}
                                 fill={ringColor}
                                 opacity={0.5}
                             />
@@ -334,18 +350,22 @@ function EnhancedTimerDisplay({
 
             {/* Completion Ring Effect */}
             {sessionState === 'completed' && (
-                <Animated.View style={[enhancedTimerStyles.completionRing, ringContainerStyle]}>
+                <Animated.View style={[
+                    enhancedTimerStyles.completionRing,
+                    ringContainerStyle,
+                    { width: progressRingSize, height: progressRingSize }
+                ]}>
                     <Svg
-                        width={PROGRESS_RING_SIZE}
-                        height={PROGRESS_RING_SIZE}
+                        width={progressRingSize}
+                        height={progressRingSize}
                         style={enhancedTimerStyles.svg}
                     >
                         <Circle
-                            cx={PROGRESS_RING_SIZE / 2}
-                            cy={PROGRESS_RING_SIZE / 2}
-                            r={PROGRESS_RING_RADIUS}
+                            cx={progressRingSize / 2}
+                            cy={progressRingSize / 2}
+                            r={RADIUS}
                             stroke={theme.colors.success}
-                            strokeWidth={PROGRESS_RING_STROKE_WIDTH}
+                            strokeWidth={STROKE_WIDTH}
                             fill="transparent"
                             opacity={0.8}
                         />
@@ -357,7 +377,7 @@ function EnhancedTimerDisplay({
             <Animated.Text
                 style={[
                     enhancedTimerStyles.timer,
-                    { color: timerColor },
+                    { color: timerColor, fontSize: timerFontSize },
                     timerGlowStyle,
                 ]}
             >
@@ -408,28 +428,23 @@ const enhancedTimerStyles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: darkTheme.spacing.xl,
-        marginBottom: darkTheme.spacing.md,
-        minHeight: PROGRESS_RING_SIZE + 40,
+        // minHeight is now calculated from responsive progressRingSize
     },
     ringContainer: {
         position: 'absolute',
-        width: PROGRESS_RING_SIZE,
-        height: PROGRESS_RING_SIZE,
+        // width/height are now dynamic
         alignItems: 'center',
         justifyContent: 'center',
     },
     ringGlow: {
         position: 'absolute',
-        width: PROGRESS_RING_SIZE + 20,
-        height: PROGRESS_RING_SIZE + 20,
-        borderRadius: (PROGRESS_RING_SIZE + 20) / 2,
+        // width, height, borderRadius are now dynamic
     },
     svg: {
         transform: [{ rotateZ: '0deg' }],
     },
     timer: {
-        fontSize: darkTheme.fontSize.timer,
+        // fontSize is now dynamic
         fontWeight: darkTheme.fontWeight.bold,
         fontVariant: ['tabular-nums'],
     },
@@ -455,8 +470,7 @@ const enhancedTimerStyles = StyleSheet.create({
     },
     completionRing: {
         position: 'absolute',
-        width: PROGRESS_RING_SIZE,
-        height: PROGRESS_RING_SIZE,
+        // width/height are now dynamic
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1261,6 +1275,8 @@ export default function HomeScreen() {
                         isPaused={state.isPaused}
                         language={state.settings.language}
                         theme={theme}
+                        progressRingSize={responsive.progressRingSize}
+                        timerFontSize={responsive.timerFontSize}
                     />
 
                     {/* Pomodoro Phase Indicator */}
