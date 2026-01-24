@@ -18,6 +18,7 @@ import { WarningLevel } from '../hooks/useToleranceSystem';
 import { EggStyle, getDefaultEggStyle, getEggStyleById } from '../data/eggStyles';
 import { StyledEgg } from './StyledEgg';
 import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface EggProps {
     sessionState: SessionState;
@@ -37,6 +38,17 @@ const WARNING_COLORS = {
 export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0, eggStyleId }: EggProps) {
     // Track app state for animation pausing (battery optimization)
     const isAppActive = useAppStateAnimation();
+
+    // Get responsive sizing
+    const { eggSize } = useResponsive();
+
+    // Calculate derived sizes proportionally
+    const glowSize = Math.round(eggSize * 1.4);
+    const innerGlowSize = Math.round(eggSize * 1.0);
+    const sparkleContainerSize = Math.round(eggSize * 1.25);
+    const warningGlowSize = Math.round(eggSize * 1.55);
+    const containerHeight = Math.round(eggSize * 1.9);
+    const styledEggSize = Math.round(eggSize * 0.5);
 
     // Get the current egg style
     const currentEggStyle = useMemo(() => {
@@ -320,7 +332,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
     return (
         <View
-            style={styles.container}
+            style={[styles.container, { height: containerHeight }]}
             accessible={true}
             accessibilityRole="image"
             accessibilityLabel={
@@ -339,7 +351,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 style={[
                     styles.glow,
                     glowStyle,
-                    { backgroundColor: currentEggStyle.primaryColor }
+                    {
+                        width: glowSize,
+                        height: glowSize,
+                        borderRadius: glowSize / 2,
+                        backgroundColor: currentEggStyle.primaryColor
+                    }
                 ]}
                 importantForAccessibility="no"
             />
@@ -350,7 +367,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                     style={[
                         styles.warningGlow,
                         warningGlowStyle,
-                        { backgroundColor: WARNING_COLORS[warningLevel] }
+                        {
+                            width: warningGlowSize,
+                            height: warningGlowSize,
+                            borderRadius: warningGlowSize / 2,
+                            backgroundColor: WARNING_COLORS[warningLevel]
+                        }
                     ]}
                     importantForAccessibility="no"
                 />
@@ -358,7 +380,14 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
             {/* Rotating sparkles */}
             {sessionState === 'active' && progress > 0.3 && (
-                <Animated.View style={[styles.sparkleContainer, sparkleStyle]} importantForAccessibility="no">
+                <Animated.View
+                    style={[
+                        styles.sparkleContainer,
+                        sparkleStyle,
+                        { width: sparkleContainerSize, height: sparkleContainerSize }
+                    ]}
+                    importantForAccessibility="no"
+                >
                     <Text style={[styles.sparkle, { color: currentEggStyle.primaryColor }]}>✦</Text>
                     <Text style={[styles.sparkle, styles.sparkle2, { color: currentEggStyle.primaryColor }]}>✦</Text>
                     <Text style={[styles.sparkle, styles.sparkle3, { color: currentEggStyle.primaryColor }]}>✦</Text>
@@ -371,7 +400,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 style={[
                     styles.innerGlow,
                     innerGlowStyle,
-                    { backgroundColor: currentEggStyle.primaryColor }
+                    {
+                        width: innerGlowSize,
+                        height: innerGlowSize,
+                        borderRadius: innerGlowSize / 2,
+                        backgroundColor: currentEggStyle.primaryColor
+                    }
                 ]}
                 importantForAccessibility="no"
             />
@@ -382,7 +416,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 {sessionState !== 'failed' && sessionState !== 'completed' && (
                     <StyledEgg
                         eggStyle={currentEggStyle}
-                        size={80}
+                        size={styledEggSize}
                         showPattern={true}
                         glowColor={currentEggStyle.primaryColor}
                         glowIntensity={progress * 0.5}
@@ -435,26 +469,19 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 300,
+        // height is now dynamic
     },
     glow: {
         position: 'absolute',
-        width: 220,
-        height: 220,
-        borderRadius: 110,
-        backgroundColor: theme.colors.accent,
+        // width, height, borderRadius are now dynamic
     },
     innerGlow: {
         position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        backgroundColor: theme.colors.accent,
+        // width, height, borderRadius are now dynamic
     },
     sparkleContainer: {
         position: 'absolute',
-        width: 200,
-        height: 200,
+        // width, height are now dynamic
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -511,8 +538,6 @@ const styles = StyleSheet.create({
     },
     warningGlow: {
         position: 'absolute',
-        width: 250,
-        height: 250,
-        borderRadius: 125,
+        // width, height, borderRadius are now dynamic
     },
 });
