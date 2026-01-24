@@ -508,10 +508,25 @@ const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) =
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         paddingHorizontal: responsive.horizontalPadding,
         paddingTop: 8,
         paddingBottom: 16,
+    },
+    timerSection: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    eggSection: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    controlsSection: {
+        alignItems: 'center',
+        width: '100%',
     },
     debugBadge: {
         position: 'absolute',
@@ -1266,70 +1281,74 @@ export default function HomeScreen() {
 
                 {/* Main content */}
                 <View style={styles.content}>
-                    {/* Enhanced Timer with Progress Ring */}
-                    <EnhancedTimerDisplay
-                        formattedTime={formattedTime}
-                        isRunning={isRunning}
-                        progress={progress}
-                        sessionState={state.sessionState}
-                        isPaused={state.isPaused}
-                        language={state.settings.language}
-                        theme={theme}
-                        progressRingSize={responsive.progressRingSize}
-                        timerFontSize={responsive.timerFontSize}
-                    />
+                    {/* Timer Section - separate from egg */}
+                    <View style={styles.timerSection}>
+                        <EnhancedTimerDisplay
+                            formattedTime={formattedTime}
+                            isRunning={isRunning}
+                            progress={progress}
+                            sessionState={state.sessionState}
+                            isPaused={state.isPaused}
+                            language={state.settings.language}
+                            theme={theme}
+                            progressRingSize={responsive.progressRingSize}
+                            timerFontSize={responsive.timerFontSize}
+                        />
 
-                    {/* Pomodoro Phase Indicator */}
-                    {isPomodoroMode && state.sessionState === 'active' && (
-                        <View style={styles.pomodoroIndicator}>
-                            <View style={styles.pomodoroPhaseContainer}>
-                                <Text style={styles.pomodoroPhaseIcon}>
-                                    {pomodoroPhase === 'work' ? '🍅' : pomodoroPhase === 'longBreak' ? '☕' : '🧘'}
+                        {/* Pomodoro Phase Indicator */}
+                        {isPomodoroMode && state.sessionState === 'active' && (
+                            <View style={styles.pomodoroIndicator}>
+                                <View style={styles.pomodoroPhaseContainer}>
+                                    <Text style={styles.pomodoroPhaseIcon}>
+                                        {pomodoroPhase === 'work' ? '🍅' : pomodoroPhase === 'longBreak' ? '☕' : '🧘'}
+                                    </Text>
+                                    <Text style={[
+                                        styles.pomodoroPhaseText,
+                                        pomodoroPhase === 'work' ? styles.pomodoroPhaseTextWork : styles.pomodoroPhaseTextBreak
+                                    ]}>
+                                        {pomodoroPhase === 'work'
+                                            ? i18n('pomodoroWork')
+                                            : pomodoroPhase === 'shortBreak'
+                                            ? i18n('pomodoroShortBreak')
+                                            : i18n('pomodoroLongBreak')}
+                                    </Text>
+                                </View>
+                                <View style={styles.pomodoroDivider} />
+                                <Text style={styles.pomodoroSessionCounter}>
+                                    {i18n('pomodoroSessionCount')} {pomodoroWorkSessions + (pomodoroPhase === 'work' ? 1 : 0)}/{state.settings.sessionsBeforeLongBreak}
                                 </Text>
-                                <Text style={[
-                                    styles.pomodoroPhaseText,
-                                    pomodoroPhase === 'work' ? styles.pomodoroPhaseTextWork : styles.pomodoroPhaseTextBreak
-                                ]}>
-                                    {pomodoroPhase === 'work'
-                                        ? i18n('pomodoroWork')
-                                        : pomodoroPhase === 'shortBreak'
-                                        ? i18n('pomodoroShortBreak')
-                                        : i18n('pomodoroLongBreak')}
-                                </Text>
+                                {pomodoroPhase !== 'work' && (
+                                    <Pressable
+                                        style={styles.pomodoroSkipButton}
+                                        onPress={() => {
+                                            pomodoroTimer.skipBreak();
+                                            if (state.settings.hapticsEnabled) {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.pomodoroSkipText}>{i18n('pomodoroSkipBreak')}</Text>
+                                    </Pressable>
+                                )}
                             </View>
-                            <View style={styles.pomodoroDivider} />
-                            <Text style={styles.pomodoroSessionCounter}>
-                                {i18n('pomodoroSessionCount')} {pomodoroWorkSessions + (pomodoroPhase === 'work' ? 1 : 0)}/{state.settings.sessionsBeforeLongBreak}
-                            </Text>
-                            {pomodoroPhase !== 'work' && (
-                                <Pressable
-                                    style={styles.pomodoroSkipButton}
-                                    onPress={() => {
-                                        pomodoroTimer.skipBreak();
-                                        if (state.settings.hapticsEnabled) {
-                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.pomodoroSkipText}>{i18n('pomodoroSkipBreak')}</Text>
-                                </Pressable>
-                            )}
-                        </View>
-                    )}
+                        )}
+                    </View>
 
-                    {/* Interactive Egg */}
-                    <InteractiveEgg
-                        sessionState={state.sessionState}
-                        progress={progress}
-                        duration={duration}
-                        warningLevel={warningLevel as 0 | 1 | 2 | 3}
-                        language={state.settings.language}
-                        hapticsEnabled={state.settings.hapticsEnabled}
-                        hasSeenGestureHints={state.settings.hasSeenGestureHints}
-                        eggStyleId={state.settings.selectedEggStyle}
-                        onStart={handleStart}
-                        onShowGestureHints={() => setShowGestureHints(true)}
-                    />
+                    {/* Egg Section - separate from timer */}
+                    <View style={styles.eggSection}>
+                        <InteractiveEgg
+                            sessionState={state.sessionState}
+                            progress={progress}
+                            duration={duration}
+                            warningLevel={warningLevel as 0 | 1 | 2 | 3}
+                            language={state.settings.language}
+                            hapticsEnabled={state.settings.hapticsEnabled}
+                            hasSeenGestureHints={state.settings.hasSeenGestureHints}
+                            eggStyleId={state.settings.selectedEggStyle}
+                            onStart={handleStart}
+                            onShowGestureHints={() => setShowGestureHints(true)}
+                        />
+                    </View>
 
                     {/* Session Controls */}
                     <SessionControls
