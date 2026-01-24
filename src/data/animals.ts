@@ -103,15 +103,18 @@ export function getRarityColor(rarity: Rarity): string {
 }
 
 // Rarity indicator icons - Alternative visual cues for accessibility (non-color-dependent)
-export const rarityIndicators: Record<Rarity, { icon: string; stars: number; label: string }> = {
-    common: { icon: '●', stars: 1, label: 'Common' },
-    rare: { icon: '◆', stars: 2, label: 'Rare' },
-    epic: { icon: '★', stars: 3, label: 'Epic' },
-    legendary: { icon: '✦', stars: 4, label: 'Legendary' },
+// The 'label' field stores the translation key (same as rarity value) for i18n lookup
+// Use getRarityLabelI18n from i18n/translations.ts to get the localized label
+export const rarityIndicators: Record<Rarity, { icon: string; stars: number; label: Rarity }> = {
+    common: { icon: '●', stars: 1, label: 'common' },
+    rare: { icon: '◆', stars: 2, label: 'rare' },
+    epic: { icon: '★', stars: 3, label: 'epic' },
+    legendary: { icon: '✦', stars: 4, label: 'legendary' },
 };
 
 // Get rarity indicator for accessibility
-export function getRarityIndicator(rarity: Rarity): { icon: string; stars: number; label: string } {
+// The label is a translation key - use getRarityLabelI18n to get the localized string
+export function getRarityIndicator(rarity: Rarity): { icon: string; stars: number; label: Rarity } {
     return rarityIndicators[rarity];
 }
 

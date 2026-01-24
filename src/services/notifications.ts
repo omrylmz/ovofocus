@@ -2,7 +2,7 @@
 // Note: Push notifications are not supported in Expo Go (SDK 53+)
 // This service gracefully handles the case when notifications are unavailable
 
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import { Animal } from '../data/animals';
 import { Language, t, getAnimalName } from '../i18n/translations';
@@ -17,6 +17,53 @@ const NOTIFICATION_IDS = {
 // Check if we're running in Expo Go (notifications not supported)
 const isExpoGo = Constants.appOwnership === 'expo';
 
+// ============================================
+// Synchronized App State Tracking
+// ============================================
+// This module-level state tracker ensures we always have the most
+// up-to-date app state, avoiding race conditions that can occur
+// when reading AppState.currentState directly in async contexts.
+
+let currentAppState: AppStateStatus = AppState.currentState;
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+
+/**
+ * Initialize the app state listener. This should be called once when
+ * the app starts (e.g., in the root layout or App component).
+ * The listener keeps currentAppState synchronized with actual app state.
+ */
+export function initializeAppStateListener(): () => void {
+    // Clean up any existing subscription
+    if (appStateSubscription) {
+        appStateSubscription.remove();
+    }
+
+    // Set initial state
+    currentAppState = AppState.currentState;
+
+    // Subscribe to state changes
+    appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+        currentAppState = nextAppState;
+    });
+
+    // Return cleanup function
+    return () => {
+        if (appStateSubscription) {
+            appStateSubscription.remove();
+            appStateSubscription = null;
+        }
+    };
+}
+
+/**
+ * Get the current app foreground state in a race-condition-safe way.
+ * This reads from our synchronized state tracker rather than directly
+ * from AppState.currentState, which can be stale in async contexts.
+ */
+function isAppInForeground(): boolean {
+    return currentAppState === 'active';
+}
+
 // Dynamically import notifications only when not in Expo Go
 let Notifications: typeof import('expo-notifications') | null = null;
 
@@ -29,16 +76,16 @@ async function getNotificationsModule() {
         try {
             Notifications = await import('expo-notifications');
             // Configure notification behavior - only show if app is backgrounded
-            // Check AppState.currentState directly to avoid race conditions with stale state
+            // Use synchronized state tracker to avoid race conditions
             Notifications.setNotificationHandler({
                 handleNotification: async () => {
-                    const isInForeground = AppState.currentState === 'active';
+                    const inForeground = isAppInForeground();
                     return {
-                        shouldShowAlert: !isInForeground,
-                        shouldPlaySound: !isInForeground,
+                        shouldShowAlert: !inForeground,
+                        shouldPlaySound: !inForeground,
                         shouldSetBadge: false,
-                        shouldShowBanner: !isInForeground,
-                        shouldShowList: !isInForeground,
+                        shouldShowBanner: !inForeground,
+                        shouldShowList: !inForeground,
                     };
                 },
             });
@@ -93,8 +140,8 @@ export async function sendSessionCompleteNotification(
     language: Language
 ): Promise<void> {
     // Only send notification if app is backgrounded
-    // Check AppState.currentState directly to avoid race conditions with stale state
-    if (AppState.currentState === 'active') {
+    // Use synchronized state tracker to avoid race conditions
+    if (isAppInForeground()) {
         console.log('App in foreground - skipping notification');
         return;
     }
@@ -323,7 +370,8 @@ export async function scheduleAchievementNotification(
     }
 
     // Only send if app is backgrounded
-    if (AppState.currentState === 'active') {
+    // Use synchronized state tracker to avoid race conditions
+    if (isAppInForeground()) {
         console.log('[Notifications] App in foreground - skipping achievement notification');
         return;
     }
@@ -441,7 +489,8 @@ export async function sendDailyGoalAchievedNotification(
     }
 
     // Only send if app is backgrounded
-    if (AppState.currentState === 'active') {
+    // Use synchronized state tracker to avoid race conditions
+    if (isAppInForeground()) {
         console.log('[Notifications] App in foreground - skipping daily goal achieved notification');
         return;
     }

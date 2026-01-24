@@ -96,8 +96,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             crackLevel.value = withTiming(0, { duration: 300 });
             colorProgress.value = withTiming(0, { duration: 300 });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [sessionState, isAppActive]);
+    }, [sessionState, isAppActive, wobble, scale, glowOpacity, crackLevel, colorProgress]);
 
     // Active session - more wobble as progress increases with pulse effect
     useEffect(() => {
@@ -150,8 +149,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             // Crack level increases with progress
             crackLevel.value = withTiming(Math.floor(progress * 4), { duration: 300 });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [sessionState, progress]);
+    }, [sessionState, progress, wobble, pulseValue, glowOpacity, glowScale, sparkleRotation, colorProgress, crackLevel]);
 
     // Warning level animations - urgent feedback when backgrounded too long
     useEffect(() => {
@@ -185,8 +183,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             anxiousShake.value = withTiming(0, { duration: 200 });
             warningPulse.value = withTiming(0, { duration: 200 });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [warningLevel, sessionState]);
+    }, [warningLevel, sessionState, anxiousShake, warningPulse]);
 
     // Hatching animation - dramatic climax
     useEffect(() => {
@@ -225,8 +222,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 withTiming(2, { duration: 200 })
             );
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [sessionState]);
+    }, [sessionState, wobble, scale, pulseValue, opacity, glowOpacity, glowScale]);
 
     // Breaking animation (failed session)
     useEffect(() => {
@@ -259,8 +255,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             // Red tint
             colorProgress.value = withTiming(-1, { duration: 300 });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [sessionState]);
+    }, [sessionState, wobble, scale, pulseValue, opacity, crackLevel, colorProgress]);
 
     const animatedStyle = useAnimatedStyle(() => {
         // Ensure minimum opacity of 0.01 to prevent complete invisibility issues on Android

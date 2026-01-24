@@ -8,6 +8,7 @@ import { GameProvider, useGame } from '../src/context/GameContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { theme as darkTheme } from '../src/styles/theme';
 import { audioManager } from '../src/services/audioManager';
+import { initializeAppStateListener } from '../src/services/notifications';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 // Inner layout component that can access theme context
@@ -15,10 +16,14 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
     const router = useRouter();
     const { theme, isDarkMode } = useTheme();
 
-    // Initialize audio manager and notification listeners on app startup
+    // Initialize audio manager, app state listener, and notification listeners on app startup
     useEffect(() => {
         // Initialize audio asynchronously - playSound() also auto-initializes if needed
         void audioManager.initialize();
+
+        // Initialize app state listener for synchronized foreground state tracking
+        // This prevents race conditions when checking app state in notification handlers
+        const cleanupAppStateListener = initializeAppStateListener();
 
         // Handle notification responses (when user taps notification)
         const notificationSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -29,6 +34,7 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
         // Cleanup on unmount
         return () => {
             audioManager.cleanup();
+            cleanupAppStateListener();
             notificationSubscription?.();
         };
     }, [router]);
