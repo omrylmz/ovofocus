@@ -58,7 +58,18 @@ import {
     unlockAchievement,
 } from '../utils/storage';
 import { checkAndAwardFreeze } from '../utils/streakFreeze';
-import { t, TranslationKey, getDeviceLanguage } from '../i18n/translations';
+import { t, TranslationKey, getDeviceLanguage, getAnimalName } from '../i18n/translations';
+import {
+    announceSessionStart,
+    announceSessionPause,
+    announceSessionResume,
+    announceSessionComplete,
+    announceSessionFailed,
+    announceStreakUpdate,
+    announceAchievementUnlocked,
+    announceMilestoneReached,
+    announceDailyGoalComplete,
+} from '../utils/accessibility';
 
 // Types
 export type SessionState = 'idle' | 'active' | 'completed' | 'failed';
@@ -499,13 +510,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 duration,
             },
         });
+
+        // Announce session start to screen readers
+        const durationMinutes = Math.round(duration / 60);
+        announceSessionStart(durationMinutes, state.settings.language);
     };
 
     const pauseSession = () => {
+        // Calculate remaining pauses (maxPauses - currentPauseCount - 1 because we're about to use one)
+        const pausesRemaining = state.settings.maxPausesPerSession - state.pauseCount - 1;
+
         dispatch({
             type: 'PAUSE_SESSION',
             payload: { pausedAt: new Date().toISOString() },
         });
+
+        // Announce pause to screen readers (only if not already paused)
+        if (!state.isPaused) {
+            announceSessionPause(Math.max(0, pausesRemaining), state.settings.language);
+        }
     };
 
     const emergencyPause = () => {
@@ -527,6 +550,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             type: 'RESUME_SESSION',
             payload: { accumulatedPauseTime: newAccumulatedPauseTime },
         });
+
+        // Announce resume to screen readers
+        announceSessionResume(state.settings.language);
     };
 
     // Helper function to check and trigger achievements
@@ -601,13 +627,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
         };
         dispatch({ type: 'ADD_UNLOCKED_ACHIEVEMENT', payload: newUnlockedAchievement });
 
+        // Get localized achievement name for screen reader
+        const achievementNameKey = `achievement_${achievement.id}` as TranslationKey;
+        const achievementName = t(achievementNameKey, state.settings.language) || achievement.id;
+
         // Check if this achievement deserves an enhanced milestone celebration
         if (isMilestoneCelebration(achievement)) {
             // Show the enhanced milestone celebration modal
             dispatch({ type: 'SET_PENDING_MILESTONE', payload: achievement });
+
+            // Announce milestone to screen readers (with delay to not overlap with other announcements)
+            setTimeout(() => {
+                announceMilestoneReached(achievementName, state.settings.language);
+            }, 500);
         } else {
             // Show the regular achievement modal
             dispatch({ type: 'SET_PENDING_ACHIEVEMENT', payload: achievement });
+
+            // Announce achievement to screen readers (with delay to not overlap with other announcements)
+            setTimeout(() => {
+                announceAchievementUnlocked(achievementName, state.settings.language);
+            }, 500);
         }
     };
 
@@ -643,6 +683,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
             const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
             dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
+
+            // Announce session completion to screen readers
+            const animalName = getAnimalName(animal.id, state.settings.language);
+            announceSessionComplete(animalName, animal.rarity, state.settings.language);
+
+            // Announce streak update if applicable
+            if (updatedStats.currentStreak > 0) {
+                const isBestStreak = updatedStats.currentStreak > state.stats.bestStreak;
+                // Small delay to let the session complete announcement finish
+                setTimeout(() => {
+                    announceStreakUpdate(updatedStats.currentStreak, isBestStreak, state.settings.language);
+                }, 1500);
+            }
+
+            // Announce daily goal completion if achieved
+            if (updatedDailyProgress.goalAchieved && !state.dailyProgress.goalAchieved) {
+                setTimeout(() => {
+                    announceDailyGoalComplete(updatedDailyProgress.completedSessions, state.settings.language);
+                }, 3000);
+            }
 
             // Check and award streak freeze based on streak milestone (non-critical, don't fail session)
             try {
@@ -690,6 +750,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         const updatedStats = await incrementSession(false, focusMinutes);
         dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+
+        // Announce session failure to screen readers
+        announceSessionFailed(state.settings.language);
     };
 
     const resetSession = () => {

@@ -591,6 +591,21 @@ export const translations = {
         milestoneDailyGoalTitle: 'Daily Goal Achieved!',
         milestoneDailyGoalSubtitle: 'Great work today!',
 
+        // Screen Reader Announcements
+        a11yAnnounceSessionStarted: 'Focus session started. {minutes} minutes remaining.',
+        a11yAnnounceSessionPaused: 'Session paused. {pauses} pauses remaining.',
+        a11yAnnounceSessionResumed: 'Session resumed.',
+        a11yAnnounceSessionCompleted: 'Session complete! You hatched a {rarity} {animal}!',
+        a11yAnnounceSessionFailed: 'Session failed. The egg has broken.',
+        a11yAnnounceStreakUpdate: 'Current streak: {count} days.',
+        a11yAnnounceNewBestStreak: 'New best streak! {count} days. This is your best streak!',
+        a11yAnnounceTimerWarning1min: '1 minute remaining.',
+        a11yAnnounceTimerWarning5min: '5 minutes remaining.',
+        a11yAnnounceTimerWarning10min: '10 minutes remaining.',
+        a11yAnnounceAchievementUnlocked: 'Achievement unlocked: {achievement}',
+        a11yAnnounceMilestoneReached: 'Milestone reached: {milestone}',
+        a11yAnnounceDailyGoalComplete: 'Daily goal complete! {count} sessions today.',
+
         // Calendar Integration
         calendar: 'Calendar',
         calendarIntegration: 'Calendar Integration',
@@ -1189,6 +1204,21 @@ export const translations = {
         milestoneDailyGoalTitle: 'Gunluk Hedef Tamamlandi!',
         milestoneDailyGoalSubtitle: 'Bugun harika is cikardin!',
 
+        // Screen Reader Announcements
+        a11yAnnounceSessionStarted: 'Odaklanma seansı başladı. {minutes} dakika kaldı.',
+        a11yAnnounceSessionPaused: 'Seans duraklatıldı. {pauses} duraklatma hakkı kaldı.',
+        a11yAnnounceSessionResumed: 'Seans devam ediyor.',
+        a11yAnnounceSessionCompleted: 'Seans tamamlandı! {rarity} {animal} çıkardın!',
+        a11yAnnounceSessionFailed: 'Seans başarısız. Yumurta kırıldı.',
+        a11yAnnounceStreakUpdate: 'Mevcut seri: {count} gün.',
+        a11yAnnounceNewBestStreak: 'Yeni en iyi seri! {count} gün. Bu senin en iyi serin!',
+        a11yAnnounceTimerWarning1min: '1 dakika kaldı.',
+        a11yAnnounceTimerWarning5min: '5 dakika kaldı.',
+        a11yAnnounceTimerWarning10min: '10 dakika kaldı.',
+        a11yAnnounceAchievementUnlocked: 'Başarı kazanıldı: {achievement}',
+        a11yAnnounceMilestoneReached: 'Kilometre taşına ulaşıldı: {milestone}',
+        a11yAnnounceDailyGoalComplete: 'Günlük hedef tamamlandı! Bugün {count} seans.',
+
         // Calendar Integration
         calendar: 'Takvim',
         calendarIntegration: 'Takvim Entegrasyonu',
@@ -1760,6 +1790,21 @@ export const translations = {
         milestoneRarityTitle: '¡Nuevo Descubrimiento!',
         milestoneDailyGoalTitle: '¡Meta Diaria Lograda!',
         milestoneDailyGoalSubtitle: '¡Gran trabajo hoy!',
+
+        // Screen Reader Announcements
+        a11yAnnounceSessionStarted: 'Sesión de enfoque iniciada. {minutes} minutos restantes.',
+        a11yAnnounceSessionPaused: 'Sesión pausada. {pauses} pausas restantes.',
+        a11yAnnounceSessionResumed: 'Sesión reanudada.',
+        a11yAnnounceSessionCompleted: '¡Sesión completada! ¡Eclosionaste un {animal} {rarity}!',
+        a11yAnnounceSessionFailed: 'Sesión fallida. El huevo se ha roto.',
+        a11yAnnounceStreakUpdate: 'Racha actual: {count} días.',
+        a11yAnnounceNewBestStreak: '¡Nueva mejor racha! {count} días. ¡Esta es tu mejor racha!',
+        a11yAnnounceTimerWarning1min: '1 minuto restante.',
+        a11yAnnounceTimerWarning5min: '5 minutos restantes.',
+        a11yAnnounceTimerWarning10min: '10 minutos restantes.',
+        a11yAnnounceAchievementUnlocked: 'Logro desbloqueado: {achievement}',
+        a11yAnnounceMilestoneReached: 'Meta alcanzada: {milestone}',
+        a11yAnnounceDailyGoalComplete: '¡Meta diaria completada! {count} sesiones hoy.',
 
         // Calendar Integration
         calendar: 'Calendario',

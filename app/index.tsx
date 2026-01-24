@@ -36,6 +36,7 @@ import { DailyRewardModal } from '../src/components/DailyRewardModal';
 import { checkDailyReward, claimDailyReward, RewardType } from '../src/utils/dailyRewards';
 import { audioManager } from '../src/services/audioManager';
 import { ambientSoundService, AmbientSoundType } from '../src/services/ambientSoundService';
+import { announceTimerWarning } from '../src/utils/accessibility';
 
 // Extracted session components
 import {
@@ -583,6 +584,8 @@ export default function HomeScreen() {
     const previousBestStreakRef = useRef<number>(state.stats.bestStreak);
     const hasInitializedRef = useRef(false);
     const prevWarningLevelRef = useRef(0);
+    // Track which timer warnings have been announced to avoid duplicates
+    const announcedWarningsRef = useRef<Set<number>>(new Set());
 
     // Update previousBestStreakRef ONLY ONCE when stats finish loading
     // This prevents the ref from being overwritten on subsequent bestStreak changes
@@ -771,16 +774,19 @@ export default function HomeScreen() {
         isRunning,
         progress,
         elapsedMinutes,
+        timeRemaining,
     } = isPomodoroMode ? {
         formattedTime: pomodoroTimer.formattedTime,
         isRunning: pomodoroTimer.isRunning,
         progress: pomodoroTimer.progress,
         elapsedMinutes: pomodoroTimer.elapsedMinutes,
+        timeRemaining: pomodoroTimer.timeRemaining,
     } : {
         formattedTime: regularTimer.formattedTime,
         isRunning: regularTimer.isRunning,
         progress: regularTimer.progress,
         elapsedMinutes: regularTimer.elapsedMinutes,
+        timeRemaining: regularTimer.timeRemaining,
     };
 
     // Timer control functions that work with both modes
@@ -988,6 +994,43 @@ export default function HomeScreen() {
             console.log(`Failed due to exceeding tolerance: ${timeInBackground}s > ${effectiveTolerance}s`);
         }
     }, [toleranceExceeded, state.sessionState, stopTimer, failSession, elapsedMinutes, resetTolerance, state.settings.hapticsEnabled, timeInBackground, effectiveTolerance]);
+
+    // Announce timer warnings to screen readers (1, 5, 10 minutes remaining)
+    // Only announce during work phases in Pomodoro mode, and only announce each warning once per session
+    useEffect(() => {
+        // Only announce during active, non-paused sessions
+        if (state.sessionState !== 'active' || state.isPaused || !isRunning) {
+            return;
+        }
+
+        // In Pomodoro mode, only announce during work phase
+        if (isPomodoroMode && pomodoroPhase !== 'work') {
+            return;
+        }
+
+        // Check for specific warning thresholds (check at exact minute boundaries)
+        // We check if we're at exactly the warning minute (within the first second)
+        const warningMinutes = [10, 5, 1];
+
+        for (const warningMinute of warningMinutes) {
+            const warningSeconds = warningMinute * 60;
+            // Announce when crossing the threshold (within 1 second window)
+            if (timeRemaining <= warningSeconds && timeRemaining > warningSeconds - 1) {
+                if (!announcedWarningsRef.current.has(warningMinute)) {
+                    announcedWarningsRef.current.add(warningMinute);
+                    announceTimerWarning(warningMinute, state.settings.language);
+                }
+                break;
+            }
+        }
+    }, [timeRemaining, state.sessionState, state.isPaused, isRunning, isPomodoroMode, pomodoroPhase, state.settings.language]);
+
+    // Reset announced warnings when session starts or resets
+    useEffect(() => {
+        if (state.sessionState === 'idle') {
+            announcedWarningsRef.current.clear();
+        }
+    }, [state.sessionState]);
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
