@@ -7,7 +7,9 @@ import Animated, {
     withTiming,
     withDelay,
     Easing,
+    cancelAnimation,
 } from 'react-native-reanimated';
+import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,13 +38,21 @@ interface Particle {
     opacity: number;
 }
 
-function FloatingParticle({ particle, isActive, color }: { particle: Particle; isActive: boolean; color: string }) {
+function FloatingParticle({ particle, isActive, color, isAppActive }: { particle: Particle; isActive: boolean; color: string; isAppActive: boolean }) {
     const translateY = useSharedValue(0);
     const translateX = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(particle.opacity);
 
     useEffect(() => {
+        if (!isAppActive) {
+            // Pause all particle animations when app is backgrounded to save battery
+            cancelAnimation(translateY);
+            cancelAnimation(translateX);
+            cancelAnimation(scale);
+            return;
+        }
+
         const floatDuration = particle.duration;
 
         translateY.value = withDelay(
@@ -73,7 +83,8 @@ function FloatingParticle({ particle, isActive, color }: { particle: Particle; i
         );
 
         opacity.value = withTiming(isActive ? particle.opacity * 1.5 : particle.opacity, { duration: 500 });
-    }, [isActive]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
+    }, [isActive, isAppActive]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
@@ -103,6 +114,9 @@ function FloatingParticle({ particle, isActive, color }: { particle: Particle; i
 }
 
 export function FloatingParticles({ count = 15, isActive = false, progress = 0, variant = 'session' }: FloatingParticlesProps) {
+    // Track app state for animation pausing (battery optimization)
+    const isAppActive = useAppStateAnimation();
+
     // Get particle color based on variant
     const particleColor = PARTICLE_COLORS[variant];
 
@@ -132,6 +146,7 @@ export function FloatingParticles({ count = 15, isActive = false, progress = 0, 
                     particle={particle}
                     isActive={isActive}
                     color={particleColor}
+                    isAppActive={isAppActive}
                 />
             ))}
         </View>

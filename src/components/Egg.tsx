@@ -17,6 +17,7 @@ import { Language, t } from '../i18n/translations';
 import { WarningLevel } from '../hooks/useToleranceSystem';
 import { EggStyle, getDefaultEggStyle, getEggStyleById } from '../data/eggStyles';
 import { StyledEgg } from './StyledEgg';
+import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
 
 interface EggProps {
     sessionState: SessionState;
@@ -34,6 +35,9 @@ const WARNING_COLORS = {
 };
 
 export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0, eggStyleId }: EggProps) {
+    // Track app state for animation pausing (battery optimization)
+    const isAppActive = useAppStateAnimation();
+
     // Get the current egg style
     const currentEggStyle = useMemo(() => {
         if (eggStyleId) {
@@ -61,31 +65,39 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     const anxiousShake = useSharedValue(0);
 
     // Idle animation - gentle wobble with breathing effect
+    // Pauses when app is backgrounded to save battery
     useEffect(() => {
         if (sessionState === 'idle') {
-            wobble.value = withRepeat(
-                withSequence(
-                    withTiming(-3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-            scale.value = withRepeat(
-                withSequence(
-                    withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0.98, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
+            if (isAppActive) {
+                // Start/resume idle animations
+                wobble.value = withRepeat(
+                    withSequence(
+                        withTiming(-3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+                scale.value = withRepeat(
+                    withSequence(
+                        withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0.98, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+            } else {
+                // Pause idle animations when backgrounded
+                cancelAnimation(wobble);
+                cancelAnimation(scale);
+            }
             // Reset values
             glowOpacity.value = withTiming(0, { duration: 300 });
             crackLevel.value = withTiming(0, { duration: 300 });
             colorProgress.value = withTiming(0, { duration: 300 });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
-    }, [sessionState]);
+    }, [sessionState, isAppActive]);
 
     // Active session - more wobble as progress increases with pulse effect
     useEffect(() => {

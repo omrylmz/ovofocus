@@ -7,8 +7,10 @@ import Animated, {
     withTiming,
     interpolateColor,
     Easing,
+    cancelAnimation,
 } from 'react-native-reanimated';
 import { SessionState } from '../context/GameContext';
+import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,10 +54,20 @@ const COLLECTION_COLORS = {
 };
 
 export function AnimatedBackground({ sessionState, progress = 0, variant = 'session' }: AnimatedBackgroundProps) {
+    // Track app state for animation pausing (battery optimization)
+    const isAppActive = useAppStateAnimation();
+
     const colorProgress = useSharedValue(0);
     const pulseValue = useSharedValue(0);
 
     useEffect(() => {
+        if (!isAppActive) {
+            // Pause background animations when app is backgrounded to save battery
+            cancelAnimation(colorProgress);
+            cancelAnimation(pulseValue);
+            return;
+        }
+
         // Gentle color cycling
         colorProgress.value = withRepeat(
             withTiming(1, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
@@ -69,7 +81,8 @@ export function AnimatedBackground({ sessionState, progress = 0, variant = 'sess
             -1,
             true
         );
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
+    }, [isAppActive]);
 
     const getColors = () => {
         // Use collection colors for collection variant
