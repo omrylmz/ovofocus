@@ -1,0 +1,655 @@
+Summary,Issue key,Issue id,Issue Type,Status,Project key,Project name,Project type,Project lead,Project lead id,Project description,Priority,Resolution,Assignee,Assignee Id,Reporter,Reporter Id,Creator,Creator Id,Created,Updated,Last Viewed,Resolved,Due date,Votes,Description,Environment,Watchers,Watchers Id,Original estimate,Remaining Estimate,Time Spent,Work Ratio,Σ Original Estimate,Σ Remaining Estimate,Σ Time Spent,Security Level,Custom field (Actual end),Custom field (Actual start),Custom field (Affected hardware),Custom field (Affected services),Custom field (Approvals),Custom field (Change reason),Custom field (Change risk),Custom field (Change type),Custom field (Development),Custom field (Epic Color),Custom field (Epic Name),Custom field (Epic Status),Custom field (Focus Areas),Custom field (Goals),Custom field (Impact),Custom field (Issue color),Custom field (Locked forms),Custom field (Major incident),Custom field (Open forms),Custom field (Pending reason),Custom field (Project overview key),Custom field (Project overview status),Custom field (Rank),Custom field (Request Type),Custom field (Request language),Custom field (Request participants),Custom field (Responders),Satisfaction rating,Custom field (Satisfaction date),Custom field (Sentiment),Custom field (Severity),Custom field (Start date),Custom field (Story Points),Custom field (Story point estimate),Custom field (Submitted forms),Custom field (Target end),Custom field (Target start),Custom field (Team),Custom field (Time to close after resolution),Custom field (Time to done),Custom field (Time to first response),Custom field (Time to resolution),Custom field (Total forms),Custom field (Urgency),Custom field (Vulnerability),Custom field (Work category),Custom field ([CHART] Date of First Response),Custom field ([CHART] Time in Status),Parent,Parent key,Parent summary,Status Category,Status Category Changed
+Sprint: Parallel Bug Fixes (5 Independent Issues),OVOFOCUS-117,11621,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 2:09 AM,18/Jan/26 2:09 AM,18/Jan/26 12:20 PM,,,0,"*Sprint Goal:* Fix 5 independent bugs in parallel without file conflicts.
+
+h2. Selected Issues (All Independent Files)
+
+||Key||File||Summary||
+|OVOFOCUS-88|{{src/components/PixelButton.tsx}}|useCallback hooks missing shared value dependencies|
+|OVOFOCUS-84|{{src/services/notifications.ts}}|isAppInForeground race condition|
+|OVOFOCUS-76|{{src/data/animals.ts}}|getRarityLabel only returns Turkish labels|
+|OVOFOCUS-69|{{src/hooks/useTimer.ts}}|elapsedMinutes loses partial minutes (floor rounding)|
+|OVOFOCUS-80|{{src/components/Egg.tsx}}|useEffects missing shared value dependencies|
+
+h2. Independence Verification
+
+* ✅ Each bug is in a separate file
+* ✅ No shared state dependencies between files
+* ✅ No import/export relationships between the affected files
+* ✅ Safe for parallel development by subagents",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@1062ea0e,,,,{},ghx-label-3,,To Do,,,,yellow,,,,,,,0|i006mn:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,18/Jan/26 2:09 AM
+Optimize render performance with memoization,OVOFOCUS-114,11588,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 2:01 AM,18/Jan/26 2:01 AM,,,,0,"h2. Context
+
+Collection may re-render unnecessarily, no memoization audit, heavy component tree.
+
+h2. Requirements
+
+* Implement React.memo for pure components
+* Add useMemo/useCallback where appropriate
+* Split large components into smaller chunks
+* Implement lazy loading for modals
+* Profile renders with React DevTools
+
+h2. Technical Details
+
+* Audit all components for unnecessary re-renders
+* Use React.memo, useMemo, useCallback appropriately
+* Add React.lazy for modal components
+
+h2. Acceptance Criteria
+
+* [ ] Reduced re-renders on state changes (measurable)
+* [ ] Modals load on-demand
+* [ ] Measurable performance improvement (profile before/after)
+* [ ] No regressions in functionality
+
+h2. Labels
+
+ui-ux, performance, phase-6",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@1b64da4a,,,,{},,,,,,,,,,,,,,0|i006in:,,,,,,,,,,,,,,,,,,,,,,,,,,11455,OVOFOCUS-91,Complete UI/UX Overhaul,To Do,18/Jan/26 2:01 AM
+Optimize animation performance and battery usage,OVOFOCUS-111,11561,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 2:01 AM,18/Jan/26 2:01 AM,,,,0,"h2. Context
+
+Multiple simultaneous animations on egg, infinite animations drain battery, confetti particles not cleaned up immediately.
+
+h2. Requirements
+
+* Implement animation budgeting (max concurrent animations)
+* Pause animations when app backgrounded
+* Clean up particles immediately after fade
+* Use native driver for all animations
+* Profile and optimize heavy animations
+
+h2. Technical Details
+
+* Add AppState listener to pause animations
+* Audit all Reanimated animations for useNativeDriver
+* Implement animation manager/coordinator
+* Profile with Flipper or React DevTools
+
+h2. Acceptance Criteria
+
+* [ ] Consistent 60fps during animations
+* [ ] Battery usage reduced when idle/backgrounded
+* [ ] No memory leaks from animations
+* [ ] All animations use native driver where possible
+
+h2. Labels
+
+ui-ux, performance, phase-5",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@61bb7082,,,,{},,,,,,,,,,,,,,0|i006fj:,,,,,,,,,,,,,,,,,,,,,,,,,,11455,OVOFOCUS-91,Complete UI/UX Overhaul,To Do,18/Jan/26 2:01 AM
+Redesign session controls with improved button hierarchy,OVOFOCUS-97,11489,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 1:59 AM,18/Jan/26 1:59 AM,,,,0,"h2. Context
+
+Controls at bottom could be more prominent, give up button placement could lead to accidental taps, pause count indicator is subtle.
+
+h2. Requirements
+
+* Create floating action bar with clear button hierarchy
+* Add safe distance between destructive (give up) and constructive actions
+* Make pause count indicator more prominent with visual badges
+* Add micro-animations on button state changes
+* Consider swipe gestures for common actions
+
+h2. Technical Details
+
+* Create SessionControls component
+* Update PixelButton for new variants if needed
+* Implement swipe gesture with react-native-gesture-handler
+
+h2. Acceptance Criteria
+
+* [ ] Primary action (start/pause/resume) is most prominent
+* [ ] Destructive actions require deliberate interaction (separated by > 24px)
+* [ ] Pause count clearly visible at all times
+* [ ] Button state changes have micro-animations
+
+h2. Labels
+
+ui-ux, home-screen, phase-2",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@e4ba920,,,,{},,,,,,,,,,,,,,0|i0067b:,,,,,,,,,,,,,,,,,,,,,,,,,,11455,OVOFOCUS-91,Complete UI/UX Overhaul,To Do,18/Jan/26 1:59 AM
+Audit and fix spacing consistency across all components,OVOFOCUS-94,11462,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 1:58 AM,18/Jan/26 1:58 AM,,,,0,"h2. Context
+
+Some components have inconsistent padding, screen margins vary, and touch targets are occasionally below 44px minimum.
+
+h2. Requirements
+
+* Audit all components for spacing consistency
+* Implement 8px grid system strictly
+* Ensure all interactive elements have minimum 44x44px touch targets
+* Standardize screen padding (16px horizontal, 24px vertical)
+
+h2. Technical Details
+
+* Review all components in src/components/
+* Update theme.ts spacing scale if needed
+* Add hitSlop to buttons/touchables where needed
+
+h2. Acceptance Criteria
+
+* [ ] All touch targets >= 44x44px
+* [ ] Consistent 8px grid alignment
+* [ ] Screen padding standardized across all views
+* [ ] No spacing inconsistencies visible
+
+h2. Labels
+
+ui-ux, design-system, phase-1",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@47e72db4,,,,{},,,,,,,,,,,,,,0|i00647:,,,,,,,,,,,,,,,,,,,,,,,,,,11455,OVOFOCUS-91,Complete UI/UX Overhaul,To Do,18/Jan/26 1:58 AM
+Complete UI/UX Overhaul,OVOFOCUS-91,11455,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,18/Jan/26 1:58 AM,18/Jan/26 1:58 AM,,,,0,"h2. Overview
+
+Comprehensive UI/UX improvements to transform Ovo Focus into a polished, production-ready mobile experience.
+
+h2. Objectives
+
+* Improve visual hierarchy and design consistency
+* Enhance accessibility for all users
+* Optimize performance and animations
+* Create a premium, engaging user experience
+
+h2. Scope
+
+* Visual Design System refinement
+* Home Screen improvements
+* Collection Screen overhaul
+* Settings Screen improvements
+* Animation and transition polish
+* Accessibility improvements
+* Performance optimization
+* Advanced UX features
+
+h2. Success Criteria
+
+* Maintain 60fps during all animations
+* Pass WCAG AA accessibility audit
+* Positive user feedback on visual improvements
+* Improved session completion rate
+
+h2. Implementation Phases
+
+# *Phase 1 - Foundation* (3 tickets): Typography, Colors, Spacing
+# *Phase 2 - Core Experience* (5 tickets): Header, Timer, Controls, Transitions, Accessibility
+# *Phase 3 - Collection* (4 tickets): Filters, Grid, Cards, Empty States
+# *Phase 4 - Details* (5 tickets): Egg Interaction, Stats, Micro-interactions, Loading, Contrast
+# *Phase 5 - Advanced* (5 tickets): Detail Modal, Settings, Performance, Onboarding
+# *Phase 6 - Polish* (4 tickets): Reduced Motion, Render Optimization, Danger Zone, Achievements
+
+h2. Source
+
+Design Document: {{docs/plans/2026-01-18-ui-ux-improvements-design.md}}",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@5730271c,,,,{},ghx-label-2,,To Do,,,,dark_yellow,,,,,,,0|i0063b:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,18/Jan/26 1:58 AM
+Optimize tablet and web layouts,OVOFOCUS-60,10804,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*Objective:* Make app look great on larger screens.
+
+*Tasks:*
+
+* Add responsive breakpoints to theme
+* Create tablet-optimized layouts
+* Optimize for Expo Web
+* Test on various screen sizes
+* Support landscape mode on tablets
+* Adjust touch targets for larger screens
+
+*Target Devices:*
+
+* iPad (all sizes)
+* Android tablets
+* Web browsers (desktop/laptop)",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@4e8fa39f,,,,{},,,,,,,,,,,,,,0|i003tz:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Add Siri and Google Assistant integration,OVOFOCUS-58,10801,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*As a* user
+*I want* to control the app with voice commands
+*So that* I can start sessions hands-free
+
+*Acceptance Criteria:*
+
+* Siri Shortcuts support
+* Google Assistant actions
+* Voice commands: start session, check streak, view stats
+* Shortcuts appear in suggestions
+* Natural language responses
+
+*Commands:*
+
+* ""Start a focus session""
+* ""How's my streak?""
+* ""How much did I focus today?""",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@5cb04075,,,,{},,,,,,,,,,,,,,0|i003tj:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Implement in-app purchases with react-native-iap,OVOFOCUS-53,10796,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*Objective:* Enable monetization through IAP.
+
+*Tasks:*
+
+* Install and configure react-native-iap
+* Create products in App Store Connect
+* Create products in Google Play Console
+* Implement purchase flow
+* Handle receipt validation
+* Add purchase history
+* Handle restore purchases
+* Test sandbox purchases
+
+*Product Types:*
+
+* Consumables (power-up packs)
+* Non-consumables (cosmetic packs)
+* Subscriptions (premium tier)",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@59d80657,,,,{},,,,,,,,,,,,,,0|i003sf:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Design and implement premium subscription,OVOFOCUS-52,10795,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*As a* user
+*I want* access to premium features
+*So that* I can enhance my experience
+
+*Premium Features:*
+
+* Unlimited customization options
+* Exclusive animals
+* Advanced statistics
+* Cloud sync included
+* Ad-free experience
+* Extra power-ups
+* Priority support
+
+*Acceptance Criteria:*
+
+* Clear value proposition
+* Smooth upgrade flow
+* Subscription management works
+* Restore purchases functional
+* Free tier remains valuable",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@7dc4cccf,,,,{},,,,,,,,,,,,,,0|i003s7:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Implement cloud backup and sync,OVOFOCUS-51,10794,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*As a* user
+*I want* my data backed up to the cloud
+*So that* I don't lose progress and can use multiple devices
+
+*Acceptance Criteria:*
+
+* User authentication (email, social login)
+* Data syncs across devices
+* Conflict resolution for simultaneous edits
+* Sync status indicator visible
+* Works offline with sync on reconnect
+* Can be disabled in settings
+
+*Technical Options:*
+
+* Firebase
+* Supabase
+* Custom backend",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@4192cad4,,,,{},,,,,,,,,,,,,,0|i003rz:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Create App Store and Play Store assets,OVOFOCUS-50,10777,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:03 AM,17/Jan/26 2:03 AM,,,,0,"*Objective:* Prepare all assets needed for app store submission.
+
+*Deliverables:*
+
+* App icon (all required sizes)
+* Screenshots for iPhone (6.5"", 5.5"")
+* Screenshots for iPad
+* Screenshots for Android phones and tablets
+* App preview video (optional)
+* Feature graphic (Play Store)
+* Store descriptions (EN/TR)
+* Keywords and categories
+* Privacy policy URL
+
+*Requirements:*
+
+* Follow Apple/Google screenshot guidelines
+* Localize for Turkish market
+* Highlight key features visually",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@5d6a1393,,,,{},,,,,,,,,,,,,,0|i003pz:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:03 AM
+Performance optimization and profiling,OVOFOCUS-44,10755,Task,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:02 AM,17/Jan/26 2:02 AM,,,,0,"*Objective:* Ensure smooth performance on all devices.
+
+*Tasks:*
+
+* Profile animations on low-end devices
+* Optimize Reanimated usage
+* Implement list virtualization for collection
+* Memoize expensive computations
+* Reduce bundle size
+* Add performance monitoring
+
+*Targets:*
+
+* 60fps animations on mid-range devices
+* Collection scrolls smoothly with 100+ items
+* App startup under 2 seconds
+* No memory leaks",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@39939bca,,,,{},,,,,,,,,,,,,,0|i003mv:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:02 AM
+Add seasonal events with limited animals,OVOFOCUS-34,10733,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* special seasonal events with exclusive animals
+*So that* I have time-limited goals to work toward
+
+*Acceptance Criteria:*
+
+* Events trigger automatically by date
+* Limited animals only available during events
+* Event UI clearly visible
+* Event-specific quests and rewards
+* Past event animals shown in collection (grayed if not owned)
+* Event countdown and notifications
+
+*Events:*
+
+* Halloween (October)
+* Winter/Holiday (December)
+* Spring (March/April)
+* Summer (June/July)",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@2ed6565c,,,,{},,,,,,,,,,,,,,0|i003j3:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Add more power-up types,OVOFOCUS-33,10730,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* more power-ups to help my sessions
+*So that* I have more strategic options
+
+*Acceptance Criteria:*
+
+* At least 3 new power-up types available
+* Power-ups earnable through gameplay
+* Clear UI for selecting and using power-ups
+* Effects properly applied during sessions
+
+*New Power-Up Types:*
+
+* Double Collection: 2x animal chance
+* Rarity Boost: Increase rare+ drop rates
+* Focus Multiplier: Earn bonus focus minutes
+* Immunity Shield: Session can't fail
+* Time Warp: Reduce session time slightly",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@591861ea,,,,{},,,,,,,,,,,,,,0|i003iv:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Add session tags and categories,OVOFOCUS-30,10725,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* to tag my sessions by category
+*So that* I can track time spent on different activities
+
+*Acceptance Criteria:*
+
+* Preset tags (Work, Study, Creative, Personal)
+* Custom tags supported
+* Filter statistics by tag
+* Color-code sessions by category
+* Track time per category
+* Quick tag selection before starting",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@3b0d44e,,,,{},,,,,,,,,,,,,,0|i003hz:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Add Focus Mode / Do Not Disturb integration,OVOFOCUS-28,10723,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* Do Not Disturb to activate automatically during sessions
+*So that* I'm not interrupted while focusing
+
+*Acceptance Criteria:*
+
+* Auto-enable DND when session starts (with permission)
+* Integrate with iOS Focus Modes
+* Integrate with Android Focus Mode
+* Restore previous DND state after session
+* Can be disabled in settings",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@62f5927d,,,,{},,,,,,,,,,,,,,0|i003hj:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Integrate with Apple Health and Google Fit,OVOFOCUS-27,10722,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* my focus time to sync with health apps
+*So that* I can track mindfulness alongside other health data
+
+*Acceptance Criteria:*
+
+* Sync to Apple HealthKit as mindfulness minutes
+* Sync to Google Fit as focus time
+* Permissions requested appropriately
+* Data appears in Health/Fit apps
+* Can be disabled in settings
+* Historical data can be synced",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@126cc318,,,,{},,,,,,,,,,,,,,0|i003hb:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Add Apple Watch and Wear OS companion apps,OVOFOCUS-26,10721,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:01 AM,17/Jan/26 2:01 AM,,,,0,"*As a* user
+*I want* to control focus sessions from my smartwatch
+*So that* I can start/pause without reaching for my phone
+
+*Acceptance Criteria:*
+
+* Apple Watch app with timer display
+* Wear OS app with timer display
+* Sync session state with phone
+* Haptic notifications on watch
+* Quick start/pause from watch
+* Battery efficient implementation",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@27962714,,,,{},,,,,,,,,,,,,,0|i003h3:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:01 AM
+Add iOS and Android home screen widgets,OVOFOCUS-25,10706,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* a widget showing my streak and progress
+*So that* I can see my status without opening the app
+
+*Acceptance Criteria:*
+
+* iOS widget with streak/daily progress
+* Android widget with quick start button
+* Multiple widget sizes supported
+* Data updates reliably
+* Deep link to app from widget
+* Shows current animal or egg status",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@1a73aede,,,,{},,,,,,,,,,,,,,0|i003fb:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add multiplayer focus rooms,OVOFOCUS-20,10701,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* to focus together with friends in real-time
+*So that* I feel accountable and supported
+
+*Acceptance Criteria:*
+
+* Create/join focus rooms with friends
+* See friends' session progress in real-time
+* Group completion celebration
+* Handles connection drops gracefully
+* Room history and stats
+
+*Features:*
+
+* Room codes for easy joining
+* Live progress indicators
+* Group chat during breaks
+* Shared rewards for group completion",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@2ee6de78,,,,{},,,,,,,,,,,,,,0|i003e7:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add leaderboards for competitive engagement,OVOFOCUS-19,10700,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* to see how I rank against others
+*So that* I'm motivated to improve my focus habits
+
+*Acceptance Criteria:*
+
+* Global leaderboards (streaks, focus time, collection)
+* Friend-only leaderboards
+* Weekly and monthly competitions
+* Rankings update in real-time
+* Opt-out option for privacy
+
+*Leaderboard Categories:*
+
+* Longest current streak
+* Total focus time (week/month/all-time)
+* Collection completion %
+* Sessions completed",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@30d087de,,,,{},,,,,,,,,,,,,,0|i003dz:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add friend system and social connections,OVOFOCUS-18,10699,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* to connect with friends in the app
+*So that* I can see their progress and stay motivated together
+
+*Acceptance Criteria:*
+
+* Add friends by code or username
+* View friend's collection and stats
+* Friend activity feed
+* Privacy controls for what's visible
+* Remove/block friends
+
+*Features:*
+
+* Unique friend codes
+* Friend request system
+* Activity notifications
+* Collection comparison",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@3bff3603,,,,{},,,,,,,,,,,,,,0|i003dr:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add animal evolution at max level,OVOFOCUS-15,10689,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* my max-level animals to evolve into new forms
+*So that* I have a reason to keep interacting with favorite animals
+
+*Acceptance Criteria:*
+
+* Max level animals can evolve
+* Evolution creates visually distinct variant
+* Evolution animation/celebration plays
+* Evolved animals have enhanced bonuses
+* Evolution tracked in collection
+
+*Evolution Mechanics:*
+
+* Requires max level (Level 5)
+* May require specific items or conditions
+* Evolved form is a new entry in collection
+* Original form retained as well",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@2ae7b0b0,,,,{},,,,,,,,,,,,,,0|i003bj:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add quest and challenge system,OVOFOCUS-14,10688,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* daily and weekly challenges to complete
+*So that* I have varied goals beyond just completing sessions
+
+*Acceptance Criteria:*
+
+* Daily quests rotate each day
+* Weekly challenges available
+* Quest progress tracked in real-time
+* Rewards granted on completion (shields, XP, cosmetics)
+* Quest UI visible on home screen
+
+*Quest Types:*
+
+* Daily: Complete 3 sessions, Focus for 1 hour, No failed sessions
+* Weekly: 7-day streak, Collect 5 animals, Focus 10 hours
+* Special: Seasonal/event-based challenges",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@1ebd3ace,,,,{},,,,,,,,,,,,,,0|i003bb:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Add achievement system with unlockable badges,OVOFOCUS-13,10687,Story,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 2:00 AM,17/Jan/26 2:00 AM,,,,0,"*As a* user
+*I want* to earn achievements for my accomplishments
+*So that* I feel rewarded for my progress
+
+*Acceptance Criteria:*
+
+* At least 20 achievements defined
+* Achievements unlock automatically when conditions met
+* Visual notification on unlock with celebration
+* Achievements viewable in dedicated screen
+* Progress shown for incomplete achievements
+
+*Achievement Categories:*
+
+* Collection (first animal, complete tiers, 100%)
+* Streaks (7, 30, 100 days)
+* Sessions (10, 50, 100, 500 completed)
+* Focus time (1hr, 10hr, 100hr total)
+* Perfect (no fails in week/month)",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@78889c5d,,,,{},,,,,,,,,,,,,,0|i003b3:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 2:00 AM
+Launch & Marketing,OVOFOCUS-10,10684,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Prepare the app for public launch on app stores and establish marketing presence.
+
+*Goals:*
+
+* Successfully launch on App Store and Play Store
+* Build user awareness
+* Gather user feedback
+
+*Key Deliverables:*
+
+* App Store assets & screenshots
+* Store descriptions (EN/TR)
+* Privacy policy
+* Beta testing program
+* Analytics setup
+* Developer documentation",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@1924de96,,,,{},ghx-label-4,,To Do,,,,dark_blue,,,,,,,0|i003af:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Technical Debt & Infrastructure,OVOFOCUS-9,10683,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,20/Jan/26 2:16 PM,,,0,"Address technical debt and improve the codebase infrastructure for long-term maintainability.
+
+*Goals:*
+
+* Improve code quality and maintainability
+* Reduce bugs and crashes
+* Enable faster feature development
+
+*Key Deliverables:*
+
+* Error boundaries
+* Structured logging
+* Data validation layer
+* State management improvements
+* Code splitting
+* Data migration system",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@29536330,,,,{},ghx-label-11,,To Do,,,,teal,,,,,,,0|i003a7:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Monetization,OVOFOCUS-8,10682,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Implement sustainable monetization strategies while maintaining a great free experience.
+
+*Goals:*
+
+* Create value for premium users
+* Implement fair monetization
+* Support ongoing development
+
+*Key Deliverables:*
+
+* Premium features design
+* In-app purchases
+* Subscription system
+* Cosmetic store",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@3f1b3b91,,,,{},ghx-label-14,,To Do,,,,dark_orange,,,,,,,0|i0039z:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Platform Integrations,OVOFOCUS-7,10681,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Integrate with platform features and external services to enhance the app experience.
+
+*Goals:*
+
+* Leverage native platform capabilities
+* Integrate with popular services
+* Expand app reach across devices
+
+*Key Deliverables:*
+
+* iOS/Android widgets
+* Apple Watch / Wear OS companion
+* Siri / Google Assistant integration
+* Focus Mode / DND integration
+* App shortcuts
+* Push notifications",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@156e8a35,,,,{},ghx-label-12,,To Do,,,,grey,,,,,,,0|i0039r:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Quality & Testing,OVOFOCUS-6,10680,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,20/Jan/26 2:10 PM,,,0,"Establish testing infrastructure and ensure app quality through automated testing and performance optimization.
+
+*Goals:*
+
+* Achieve comprehensive test coverage
+* Ensure performance on all devices
+* Enable confident deployments
+
+*Key Deliverables:*
+
+* Jest unit testing setup
+* E2E testing with Detox/Maestro
+* Performance optimization
+* Error boundaries & logging
+* CI/CD pipeline",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@74cda577,,,,{},ghx-label-7,,To Do,,,,purple,,,,,,,0|i0039j:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+User Experience & Customization,OVOFOCUS-5,10679,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,20/Jan/26 2:10 PM,,,0,"Improve the overall user experience with theming, customization, and platform optimizations.
+
+*Goals:*
+
+* Allow users to personalize their experience
+* Support multiple platforms and screen sizes
+* Improve accessibility
+
+*Key Deliverables:*
+
+* Light/dark mode theming
+* Egg & UI customization
+* Tablet & web optimization
+* Accessibility improvements
+* Onboarding flow improvements
+* Multi-language support",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@32b8334,,,,{},ghx-label-4,,To Do,,,,dark_blue,,,,,,,0|i0039b:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Analytics & Data,OVOFOCUS-4,10678,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Provide users with insights into their focus habits and enable data portability.
+
+*Goals:*
+
+* Help users understand their focus patterns
+* Enable data backup and export
+* Support health app integrations
+
+*Key Deliverables:*
+
+* Statistics dashboard
+* Data export/import
+* Health app integration (Apple Health, Google Fit)
+* Calendar integration
+* Session notes & reflection",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@77abe44a,,,,{},ghx-label-8,,To Do,,,,dark_purple,,,,,,,0|i00393:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Social & Multiplayer,OVOFOCUS-3,10677,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Add social features to enable users to connect, compete, and focus together.
+
+*Goals:*
+
+* Enable social connections between users
+* Add competitive elements via leaderboards
+* Support collaborative focus sessions
+
+*Key Deliverables:*
+
+* Friend system
+* Leaderboards (global & friends)
+* Social sharing
+* Multiplayer focus rooms
+* Cloud sync & accounts",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@6ed411d5,,,,{},ghx-label-3,,To Do,,,,yellow,,,,,,,0|i0038v:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Gamification & Progression,OVOFOCUS-2,10676,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Enhance the core gamification loop with achievements, quests, evolution, and expanded content.
+
+*Goals:*
+
+* Increase user engagement through meaningful progression
+* Add variety with new animals and content
+* Create compelling reward systems
+
+*Key Deliverables:*
+
+* Achievement system
+* Quest/challenge system
+* Animal evolution
+* Expanded animal database
+* Daily rewards
+* Streak protection",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@207c1008,,,,{},ghx-label-11,,To Do,,,,teal,,,,,,,0|i0038n:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
+Audio & Sound System,OVOFOCUS-1,10675,Epic,Backlog,OVOFOCUS,OvoFocus,software,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,Medium,,,,Ömer YILMAZ,5c7cf694039b847f6a382c0a,Ömer YILMAZ,5c7cf694039b847f6a382c0a,17/Jan/26 1:59 AM,17/Jan/26 1:59 AM,,,,0,"Implement a complete audio experience for the app including sound effects, ambient sounds, and background music.
+
+*Goals:*
+
+* Enable immersive audio feedback for all interactions
+* Provide ambient/focus sounds for sessions
+* Support user preferences for audio settings
+
+*Key Deliverables:*
+
+* Sound effects for UI interactions
+* Session start/complete sounds
+* Egg hatching audio
+* Ambient sound library
+* Volume and mute controls",,Ömer YILMAZ,5c7cf694039b847f6a382c0a,,,,,,,,,,,,,com.atlassian.servicedesk.plugins.approvals.internal.customfield.ApprovalsCFValue@7f910510,,,,{},ghx-label-7,,To Do,,,,purple,,,,,,,0|i0038f:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,To Do,17/Jan/26 1:59 AM
