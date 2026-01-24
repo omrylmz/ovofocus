@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useLayoutEffect, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, Pressable } from 'react-native';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import Animated, {
     useAnimatedStyle,
@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
+import { useResponsive } from '../src/hooks/useResponsive';
 import { animals, Animal, Rarity, getRarityColor } from '../src/data/animals';
 import { AnimalCard } from '../src/components/AnimalCard';
 import { AnimalDetailModal } from '../src/components/AnimalDetailModal';
@@ -488,7 +489,7 @@ export default function CollectionScreen() {
     const navigation = useNavigation();
     const { state, toggleFavorite, i18n } = useGame();
     const { theme } = useTheme();
-    const { width: screenWidth } = useWindowDimensions();
+    const responsive = useResponsive();
     const flashListRef = useRef<FlashListRef<ListItem>>(null);
 
     // Scroll position tracking for scroll-to-top button
@@ -502,15 +503,14 @@ export default function CollectionScreen() {
         common: true,
     });
 
-    // Calculate responsive card width based on screen size
+    // Calculate card width based on responsive grid columns and padding
     const { cardWidth, numColumns } = useMemo(() => {
-        const availableWidth = screenWidth - (CONTENT_PADDING * 2);
-        const cols = Math.floor((availableWidth + GRID_GAP) / (CARD_BASE_WIDTH + GRID_GAP));
-        const clampedCols = Math.max(3, Math.min(5, cols));
-        const totalGapWidth = (clampedCols - 1) * GRID_GAP;
-        const calculatedWidth = Math.floor((availableWidth - totalGapWidth) / clampedCols);
-        return { cardWidth: calculatedWidth, numColumns: clampedCols };
-    }, [screenWidth]);
+        const cols = responsive.gridColumns;
+        const totalPadding = responsive.horizontalPadding * 2;
+        const gapSpace = (cols - 1) * GRID_GAP;
+        const calculatedWidth = Math.floor((responsive.screenWidth - totalPadding - gapSpace) / cols);
+        return { cardWidth: calculatedWidth, numColumns: cols };
+    }, [responsive.gridColumns, responsive.horizontalPadding, responsive.screenWidth]);
 
     // Create dynamic styles based on current theme
     const styles = useMemo(() => createStyles(theme), [theme]);
