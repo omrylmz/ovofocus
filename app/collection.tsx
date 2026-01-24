@@ -20,6 +20,7 @@ import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { EmptyState } from '../src/components/EmptyState';
 import { ScrollToTopButton } from '../src/components/ScrollToTopButton';
+import { SkeletonCard, SkeletonProgressCard, SkeletonStatsGrid } from '../src/components/SkeletonCard';
 import { getRarityLabelI18n, getAnimalName, Language } from '../src/i18n/translations';
 
 // Types for FlashList items
@@ -58,7 +59,20 @@ type EmptyStateItem = {
     variant: 'no-results' | 'no-collection';
 };
 
-type ListItem = SectionHeaderItem | AnimalItem | ProgressCardItem | StatsGridItem | FilterHeaderItem | ExpandAllItem | EmptyStateItem;
+type SkeletonProgressItem = {
+    type: 'skeleton-progress';
+};
+
+type SkeletonStatsItem = {
+    type: 'skeleton-stats';
+};
+
+type SkeletonCardItem = {
+    type: 'skeleton-card';
+    index: number;
+};
+
+type ListItem = SectionHeaderItem | AnimalItem | ProgressCardItem | StatsGridItem | FilterHeaderItem | ExpandAllItem | EmptyStateItem | SkeletonProgressItem | SkeletonStatsItem | SkeletonCardItem;
 
 type FilterOption = 'all' | 'collected' | 'uncollected' | 'favorites';
 type SortOption = 'rarity' | 'recent' | 'name';
@@ -627,12 +641,34 @@ export default function CollectionScreen() {
     // Check if collection is empty (no animals collected yet)
     const hasNoCollection = state.collection.length === 0;
 
+    // Check if data is still loading
+    const isLoading = state.isLoading;
+
+    // Calculate skeleton count based on numColumns (fill 2-3 rows)
+    const skeletonCount = useMemo(() => numColumns * 3, [numColumns]);
+
     // Build the list data for FlashList
     const listData = useMemo((): ListItem[] => {
         const items: ListItem[] = [];
 
         // Add filter header (contains search, filters, sorts)
         items.push({ type: 'filter-header' });
+
+        // Show skeleton loading state
+        if (isLoading) {
+            // Add skeleton progress card
+            items.push({ type: 'skeleton-progress' });
+
+            // Add skeleton stats grid
+            items.push({ type: 'skeleton-stats' });
+
+            // Add skeleton cards
+            for (let i = 0; i < skeletonCount; i++) {
+                items.push({ type: 'skeleton-card', index: i });
+            }
+
+            return items;
+        }
 
         // Add progress card
         items.push({ type: 'progress-card' });
@@ -696,7 +732,7 @@ export default function CollectionScreen() {
         }
 
         return items;
-    }, [isFilteredView, filteredAnimals, animalsByRarity, expandedSections, allExpanded, hasNoCollection]);
+    }, [isFilteredView, filteredAnimals, animalsByRarity, expandedSections, allExpanded, hasNoCollection, isLoading, skeletonCount]);
 
     // Handle tap on animal card
     const handleAnimalPress = useCallback((animal: Animal) => {
@@ -1020,6 +1056,24 @@ export default function CollectionScreen() {
                 );
             }
 
+            case 'skeleton-progress':
+                return <SkeletonProgressCard themeOverride={theme} />;
+
+            case 'skeleton-stats':
+                return <SkeletonStatsGrid themeOverride={theme} />;
+
+            case 'skeleton-card':
+                return (
+                    <View style={styles.animalCardWrapper}>
+                        <SkeletonCard
+                            size="small"
+                            customWidth={cardWidth}
+                            animationDelay={item.index * 50}
+                            themeOverride={theme}
+                        />
+                    </View>
+                );
+
             case 'empty-state':
                 if (item.variant === 'no-results') {
                     return (
@@ -1093,6 +1147,18 @@ export default function CollectionScreen() {
                 layout.size = 200; // EmptyState component height
                 layout.span = numColumns;
                 break;
+            case 'skeleton-progress':
+                layout.size = 120; // Same as progress-card
+                layout.span = numColumns;
+                break;
+            case 'skeleton-stats':
+                layout.size = 100; // Same as stats-grid
+                layout.span = numColumns;
+                break;
+            case 'skeleton-card':
+                layout.size = Math.round(cardWidth * 1.25) + 4; // Same as animal card
+                layout.span = 1;
+                break;
         }
     }, [numColumns, cardWidth]);
 
@@ -1113,6 +1179,12 @@ export default function CollectionScreen() {
                 return `animal-${item.animal.id}-${item.rarity}`;
             case 'empty-state':
                 return `empty-state-${item.variant}`;
+            case 'skeleton-progress':
+                return 'skeleton-progress';
+            case 'skeleton-stats':
+                return 'skeleton-stats';
+            case 'skeleton-card':
+                return `skeleton-card-${item.index}`;
             default:
                 return `item-${index}`;
         }
