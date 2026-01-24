@@ -17,6 +17,7 @@ import { theme as darkTheme, Theme } from '../src/styles/theme';
 import { useGame } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
 import { useTimer } from '../src/hooks/useTimer';
+import { useResponsive } from '../src/hooks/useResponsive';
 import { usePomodoroTimer, PomodoroPhase } from '../src/hooks/usePomodoroTimer';
 import { useToleranceSystem } from '../src/hooks/useToleranceSystem';
 import { PixelButton } from '../src/components/PixelButton';
@@ -468,7 +469,7 @@ const enhancedTimerStyles = StyleSheet.create({
 });
 
 // Create dynamic styles based on current theme
-const createStyles = (theme: Theme) => StyleSheet.create({
+const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -493,9 +494,10 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: 80,
+        justifyContent: 'space-between',
+        paddingHorizontal: responsive.horizontalPadding,
+        paddingTop: 8,
+        paddingBottom: 16,
     },
     debugBadge: {
         position: 'absolute',
@@ -571,9 +573,10 @@ export default function HomeScreen() {
     const router = useRouter();
     const { state, startSession, pauseSession, emergencyPause, resumeSession, completeSession, failSession, resetSession, updateUserSettings, setGestureHintsSeen, setOnboardingComplete, dismissAchievement, dismissMilestone, i18n } = useGame();
     const { theme } = useTheme();
+    const responsive = useResponsive();
 
     // Create dynamic styles based on current theme
-    const styles = useMemo(() => createStyles(theme), [theme]);
+    const styles = useMemo(() => createStyles(theme, { horizontalPadding: responsive.horizontalPadding }), [theme, responsive.horizontalPadding]);
 
     // Modal states
     const [showHatchModal, setShowHatchModal] = useState(false);
