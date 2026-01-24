@@ -19,6 +19,7 @@ import { Language, getAnimalName, getAnimalDescription, getRarityLabelI18n } fro
 import { useGame } from '../context/GameContext';
 import { AnimalInteraction } from '../utils/storage';
 import { getLevelBonusDescription, getAnimalLevel, LEVEL_THRESHOLDS } from '../utils/levelBonuses';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface AnimalDetailModalProps {
     visible: boolean;
@@ -116,6 +117,7 @@ function AnimalDetailModalComponent({
     isFavorite = false,
     language = 'en',
 }: AnimalDetailModalProps) {
+    const { modalMaxWidth } = useResponsive();
     const {
         getInteraction,
         petAnimal,
@@ -764,11 +766,11 @@ function AnimalDetailModalComponent({
                 </Animated.View>
 
                 {/* Animated modal content */}
-                <Animated.View style={[styles.container, modalStyle]}>
+                <Animated.View style={[styles.container, modalStyle, { maxWidth: modalMaxWidth }]}>
                     <ScrollView
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
-                        bounces={false}
+                        bounces={true}
                     >
                         {/* Close button */}
                         <Pressable style={styles.closeButton} onPress={handleClose}>

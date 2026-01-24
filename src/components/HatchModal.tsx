@@ -16,6 +16,7 @@ import { Animal, getRarityColor, Rarity } from '../data/animals';
 import { PixelButton } from './PixelButton';
 import { Language, t, getAnimalName, getAnimalDescription, getRarityLabelI18n } from '../i18n/translations';
 import { audioManager } from '../services/audioManager';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface HatchModalProps {
     visible: boolean;
@@ -72,6 +73,7 @@ const ConfettiParticle = React.memo(function ConfettiParticle({ delay, startX, c
 });
 
 function HatchModalComponent({ visible, animal, onClose, language = 'en' }: HatchModalProps) {
+    const { modalMaxWidth } = useResponsive();
     const scale = useSharedValue(0);
     const rotation = useSharedValue(0);
     const particleOpacity = useSharedValue(0);
@@ -301,8 +303,9 @@ function HatchModalComponent({ visible, animal, onClose, language = 'en' }: Hatc
                         contentContainerStyle={styles.scrollContent}
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={false}
+                        bounces={true}
                     >
-                        <View style={styles.container}>
+                        <View style={[styles.container, { maxWidth: modalMaxWidth }]}>
                             {/* Confetti particles */}
                             <View style={styles.confettiContainer}>
                                 {confettiColors.map((color, i) => (
