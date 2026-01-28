@@ -6,6 +6,7 @@ import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import { Animal } from '../data/animals';
 import { Language, t, getAnimalName } from '../i18n/translations';
+import { OperationResult } from '../types/results';
 
 // Notification identifiers for cancellation
 const NOTIFICATION_IDS = {
@@ -13,6 +14,11 @@ const NOTIFICATION_IDS = {
     DAILY_GOAL_REMINDER: 'daily-goal-reminder',
     REENGAGEMENT: 'reengagement-reminder',
 } as const;
+
+export type NotificationResult =
+    | { available: true; success: true; notificationId?: string }
+    | { available: true; success: false; error: string }
+    | { available: false; reason: string };
 
 // Check if we're running in Expo Go (notifications not supported)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -671,5 +677,79 @@ export async function getScheduledNotifications(): Promise<unknown[]> {
     } catch (error) {
         console.log('[Notifications] Error getting scheduled notifications:', error);
         return [];
+    }
+}
+
+/**
+ * Send session complete notification with explicit result
+ */
+export async function sendSessionCompleteNotificationSafe(
+    animal: Animal,
+    language: Language
+): Promise<NotificationResult> {
+    if (isAppInForeground()) {
+        return { available: true, success: true }; // Skipped intentionally, not an error
+    }
+
+    const notif = await getNotificationsModule();
+    if (!notif) {
+        return { available: false, reason: 'Notifications not available in Expo Go' };
+    }
+
+    try {
+        const hasPermission = await requestNotificationPermissions();
+        if (!hasPermission) {
+            return {
+                available: true,
+                success: false,
+                error: 'Notification permission not granted'
+            };
+        }
+
+        const animalName = getAnimalName(animal.id, language);
+        const title = `${animal.emoji} ${t('newAnimalTitle', language)}`;
+        const body = `${animalName} - ${t('sessionCompleteBody', language)}`;
+
+        const notificationId = await notif.scheduleNotificationAsync({
+            content: {
+                title,
+                body,
+                sound: 'default',
+                data: { animalId: animal.id },
+                categoryIdentifier: 'session',
+            },
+            trigger: null,
+        });
+
+        return { available: true, success: true, notificationId };
+    } catch (error) {
+        console.error('[Notifications] Error sending session notification:', error);
+        return {
+            available: true,
+            success: false,
+            error: `Failed to send notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        };
+    }
+}
+
+/**
+ * Cancel all notifications with explicit result
+ */
+export async function cancelAllNotificationsSafe(): Promise<NotificationResult> {
+    const notif = await getNotificationsModule();
+    if (!notif) {
+        return { available: false, reason: 'Notifications not available in Expo Go' };
+    }
+
+    try {
+        await notif.cancelAllScheduledNotificationsAsync();
+        return { available: true, success: true };
+    } catch (error) {
+        console.error('[Notifications] Error canceling notifications:', error);
+        return {
+            available: true,
+            success: false,
+            error: `Failed to cancel notifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        };
     }
 }
