@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
     STREAK_FREEZE: '@ovofocus/streak_freeze',
     ACTIVE_SESSION: '@ovofocus/active_session',
     ACHIEVEMENTS: '@ovofocus/achievements',
+    ANIMAL_NOTES: '@ovofocus/animal_notes',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -230,6 +231,27 @@ export async function updateLastAnimalNotes(notes: string): Promise<boolean> {
     } catch (error) {
         console.error("[Storage] Failed to update animal notes:", error);
         return false;
+    }
+}
+
+// Get notes for a specific animal - safe version with discriminated union result
+export async function getAnimalNotesSafe(animalId: string): Promise<AnimalNotesResult> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.ANIMAL_NOTES);
+        if (!data) {
+            return { status: 'not_found' };
+        }
+        const notes: Record<string, string> = JSON.parse(data);
+        if (animalId in notes) {
+            return { status: 'found', notes: notes[animalId] };
+        }
+        return { status: 'not_found' };
+    } catch (error) {
+        console.error('[Storage] Failed to get animal notes:', error);
+        return {
+            status: 'error',
+            error: `Failed to get notes: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        };
     }
 }
 
@@ -558,6 +580,12 @@ export async function addShield(shield: ShieldItem): Promise<ShieldItem[]> {
 // Result type for useShield - distinguishes "not found" from "error"
 export type UseShieldResult =
     | { status: 'used'; shield: ShieldItem }
+    | { status: 'not_found' }
+    | { status: 'error'; error: string };
+
+// Result type for getAnimalNotesSafe - distinguishes "found", "not found", and "error" cases
+export type AnimalNotesResult =
+    | { status: 'found'; notes: string }
     | { status: 'not_found' }
     | { status: 'error'; error: string };
 
