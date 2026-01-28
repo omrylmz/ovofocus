@@ -11,6 +11,8 @@
 
 import Constants from 'expo-constants';
 
+import { AvailabilityResult } from '../types/results';
+
 // Check if we're running in Expo Go (calendar not fully supported)
 const isExpoGo = Constants.appOwnership === 'expo';
 
@@ -404,4 +406,132 @@ export function formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+/**
+ * Get events with explicit success/failure reporting
+ */
+export async function getEventsSafe(
+    startDate: Date,
+    endDate: Date,
+    calendarIds?: string[]
+): Promise<AvailabilityResult<CalendarEvent[]>> {
+    const cal = await getCalendarModule();
+    if (!cal) {
+        return { available: false, reason: 'Calendar not available in Expo Go' };
+    }
+
+    try {
+        const hasPermission = await requestCalendarPermissions();
+        if (hasPermission !== 'granted') {
+            return {
+                available: true,
+                success: false,
+                error: 'Calendar permission not granted',
+                fallback: []
+            };
+        }
+
+        let ids = calendarIds;
+        if (!ids) {
+            const calendars = await cal.getCalendarsAsync(cal.EntityTypes.EVENT);
+            ids = calendars.map(c => c.id);
+        }
+
+        if (ids.length === 0) {
+            return { available: true, success: true, data: [] };
+        }
+
+        const events = await cal.getEventsAsync(ids, startDate, endDate);
+
+        const mappedEvents: CalendarEvent[] = events.map(event => ({
+            id: event.id,
+            title: event.title || 'Untitled',
+            startDate: new Date(event.startDate),
+            endDate: new Date(event.endDate),
+            allDay: event.allDay || false,
+            calendarId: event.calendarId,
+            notes: event.notes,
+            location: event.location ?? undefined,
+        }));
+
+        return { available: true, success: true, data: mappedEvents };
+    } catch (error) {
+        console.error('[CalendarService] Error getting events:', error);
+        return {
+            available: true,
+            success: false,
+            error: `Failed to get events: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: [],
+        };
+    }
+}
+
+/**
+ * Get available slots with explicit success/failure reporting
+ */
+export async function getAvailableSlotsSafe(
+    date: Date,
+    minDuration: number = 15,
+    workHoursStart: number = 9,
+    workHoursEnd: number = 18
+): Promise<AvailabilityResult<TimeSlot[]>> {
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), workHoursStart, 0, 0);
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), workHoursEnd, 0, 0);
+
+    const eventsResult = await getEventsSafe(startOfDay, endOfDay);
+
+    if (!eventsResult.available) {
+        return eventsResult as AvailabilityResult<TimeSlot[]>;
+    }
+
+    if (!eventsResult.success) {
+        return {
+            available: true,
+            success: false,
+            error: eventsResult.error,
+            fallback: [],
+        };
+    }
+
+    const events = eventsResult.data;
+    const sortedEvents = [...events].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+    const availableSlots: TimeSlot[] = [];
+    let currentTime = startOfDay;
+
+    for (const event of sortedEvents) {
+        if (event.allDay) continue;
+
+        const eventStart = event.startDate;
+        const eventEnd = event.endDate;
+
+        if (currentTime < eventStart) {
+            const duration = (eventStart.getTime() - currentTime.getTime()) / (1000 * 60);
+            if (duration >= minDuration) {
+                availableSlots.push({
+                    startTime: new Date(currentTime),
+                    endTime: new Date(eventStart),
+                    duration: Math.floor(duration),
+                });
+            }
+        }
+
+        if (eventEnd > currentTime) {
+            currentTime = new Date(eventEnd);
+        }
+    }
+
+    if (currentTime < endOfDay) {
+        const duration = (endOfDay.getTime() - currentTime.getTime()) / (1000 * 60);
+        if (duration >= minDuration) {
+            availableSlots.push({
+                startTime: new Date(currentTime),
+                endTime: new Date(endOfDay),
+                duration: Math.floor(duration),
+            });
+        }
+    }
+
+    return { available: true, success: true, data: availableSlots };
 }
