@@ -31,6 +31,7 @@ interface GameState {
   settings: Settings;
   dailyProgress: DailyProgress;
   isLoading: boolean;
+  loadError: string | null;
   isPaused: boolean;
   pauseCount: number;
   favorites: string[];
@@ -45,6 +46,7 @@ interface GameState {
 
 type GameAction =
   | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_LOAD_ERROR'; payload: string | null }
   | {
       type: 'LOAD_DATA';
       payload: {
@@ -142,6 +144,7 @@ function createInitialState(overrides?: Partial<GameState>): GameState {
     settings: createDefaultSettings(),
     dailyProgress: createDefaultDailyProgress(),
     isLoading: true,
+    loadError: null,
     isPaused: false,
     pauseCount: 0,
     favorites: [],

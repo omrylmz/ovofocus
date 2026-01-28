@@ -5,6 +5,11 @@ import { Language, getDeviceLanguage } from '../i18n/translations';
 import { ReducedMotionPreference } from '../hooks/useReducedMotion';
 import { ThemeMode } from '../styles/theme';
 
+// Result type for storage operations - allows callers to distinguish success from failure
+export type StorageResult<T> =
+    | { success: true; data: T }
+    | { success: false; error: string; fallback: T };
+
 export const STORAGE_KEYS = {
     COLLECTION: '@ovofocus/collection',
     STATS: '@ovofocus/stats',
@@ -165,20 +170,37 @@ export async function getCollection(): Promise<CollectedAnimal[]> {
     }
 }
 
-export async function addToCollection(animal: Animal, sessionId: string): Promise<CollectedAnimal[]> {
+// Safe version that reports success/failure - use this when error handling matters
+export async function getCollectionSafe(): Promise<StorageResult<CollectedAnimal[]>> {
     try {
-        const collection = await getCollection();
-        const newAnimal: CollectedAnimal = {
-            ...animal,
-            collectedAt: new Date().toISOString(),
-            sessionId,
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.COLLECTION);
+        return { success: true, data: data ? JSON.parse(data) : [] };
+    } catch (error) {
+        console.error('[Storage] Failed to read collection:', error);
+        return {
+            success: false,
+            error: `Failed to load collection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: [],
         };
-        collection.push(newAnimal);
+    }
+}
+
+export async function addToCollection(animal: Animal, sessionId: string): Promise<CollectedAnimal[]> {
+    const collection = await getCollection();
+    const newAnimal: CollectedAnimal = {
+        ...animal,
+        collectedAt: new Date().toISOString(),
+        sessionId,
+    };
+    collection.push(newAnimal);
+
+    try {
         await AsyncStorage.setItem(STORAGE_KEYS.COLLECTION, JSON.stringify(collection));
         return collection;
     } catch (error) {
         console.error('[Storage] Failed to add to collection:', error);
-        return await getCollection();
+        // Re-throw so caller can handle the failure (e.g., show retry option, rollback UI)
+        throw new Error(`Failed to save animal to collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
 
@@ -212,6 +234,21 @@ export async function getStats(): Promise<Stats> {
     } catch (error) {
         console.error('[Storage] Failed to read stats:', error);
         return defaultStats;
+    }
+}
+
+// Safe version that reports success/failure
+export async function getStatsSafe(): Promise<StorageResult<Stats>> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.STATS);
+        return { success: true, data: data ? { ...defaultStats, ...JSON.parse(data) } : defaultStats };
+    } catch (error) {
+        console.error('[Storage] Failed to read stats:', error);
+        return {
+            success: false,
+            error: `Failed to load stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: defaultStats,
+        };
     }
 }
 
@@ -313,6 +350,34 @@ export async function getSettings(): Promise<Settings> {
     } catch (error) {
         console.error('[Storage] Failed to read settings:', error);
         return defaultSettings;
+    }
+}
+
+// Safe version that reports success/failure
+export async function getSettingsSafe(): Promise<StorageResult<Settings>> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
+        if (!data) {
+            return { success: true, data: defaultSettings };
+        }
+
+        const parsed = JSON.parse(data);
+        const settings = { ...defaultSettings, ...parsed };
+
+        // Validate themeMode - reset to default if invalid
+        if (!isValidThemeMode(settings.themeMode)) {
+            console.warn(`[Storage] Invalid themeMode "${settings.themeMode}", resetting to default`);
+            settings.themeMode = defaultSettings.themeMode;
+        }
+
+        return { success: true, data: settings };
+    } catch (error) {
+        console.error('[Storage] Failed to read settings:', error);
+        return {
+            success: false,
+            error: `Failed to load settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: defaultSettings,
+        };
     }
 }
 
@@ -855,11 +920,13 @@ export { INTERACTION_CONSTANTS };
 // Active Session Persistence
 // Save the current session state for recovery after app kill
 
-export async function saveActiveSession(session: PersistedSession): Promise<void> {
+export async function saveActiveSession(session: PersistedSession): Promise<boolean> {
     try {
         await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+        return true;
     } catch (error) {
         console.error('[Storage] Failed to save active session:', error);
+        return false;
     }
 }
 

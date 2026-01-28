@@ -27,11 +27,15 @@ import {
     TalkResult,
     PersistedSession,
     SessionRestoreResult,
+    StorageResult,
     getCollection,
+    getCollectionSafe,
     addToCollection,
     getStats,
+    getStatsSafe,
     incrementSession,
     getSettings,
+    getSettingsSafe,
     updateSettings,
     getFavorites,
     toggleFavorite as toggleFavoriteStorage,
@@ -82,6 +86,8 @@ interface GameState {
     settings: Settings;
     dailyProgress: DailyProgress;
     isLoading: boolean;
+    // Error state for data loading failures - null means no error
+    loadError: string | null;
     isPaused: boolean;
     pauseCount: number;
     favorites: string[];
@@ -100,6 +106,7 @@ interface GameState {
 
 type GameAction =
     | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_LOAD_ERROR'; payload: string | null }
     | { type: 'LOAD_DATA'; payload: { collection: CollectedAnimal[]; stats: Stats; settings: Settings; favorites: string[]; dailyProgress: DailyProgress; unlockedAchievements: UnlockedAchievement[] } }
     | { type: 'START_SESSION'; payload: { startTime: string; duration: number } }
     | { type: 'PAUSE_SESSION'; payload: { pausedAt: string } }
@@ -214,6 +221,7 @@ const initialState: GameState = {
         goalAchieved: false,
     },
     isLoading: true,
+    loadError: null,
     isPaused: false,
     pauseCount: 0,
     favorites: [],
@@ -235,6 +243,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         case 'SET_LOADING':
             return { ...state, isLoading: action.payload };
 
+        case 'SET_LOAD_ERROR':
+            return { ...state, loadError: action.payload, isLoading: false };
+
         case 'LOAD_DATA':
             return {
                 ...state,
@@ -245,6 +256,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 dailyProgress: action.payload.dailyProgress,
                 unlockedAchievements: action.payload.unlockedAchievements,
                 isLoading: false,
+                // Note: loadError is set separately via SET_LOAD_ERROR if there were partial failures
             };
 
         case 'START_SESSION':
@@ -418,15 +430,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function loadData() {
             try {
-                const [collection, stats, settings, favorites, dailyProgress, unlockedAchievements] = await Promise.all([
-                    getCollection(),
-                    getStats(),
-                    getSettings(),
+                // Use safe versions for critical data to track load failures
+                const [collectionResult, statsResult, settingsResult, favorites, dailyProgress, unlockedAchievements] = await Promise.all([
+                    getCollectionSafe(),
+                    getStatsSafe(),
+                    getSettingsSafe(),
                     getFavorites(),
                     getDailyProgress(),
                     getUnlockedAchievements(),
                 ]);
+
+                // Check for any critical load failures
+                const loadErrors: string[] = [];
+                if (!collectionResult.success) loadErrors.push(collectionResult.error);
+                if (!statsResult.success) loadErrors.push(statsResult.error);
+                if (!settingsResult.success) loadErrors.push(settingsResult.error);
+
+                // Extract data (using fallbacks if load failed)
+                const collection = collectionResult.success ? collectionResult.data : collectionResult.fallback;
+                const stats = statsResult.success ? statsResult.data : statsResult.fallback;
+                const settings = settingsResult.success ? settingsResult.data : settingsResult.fallback;
+
                 dispatch({ type: 'LOAD_DATA', payload: { collection, stats, settings, favorites, dailyProgress, unlockedAchievements } });
+
+                // Set error state if any critical data failed to load
+                if (loadErrors.length > 0) {
+                    console.warn('[GameContext] Some data failed to load:', loadErrors);
+                    dispatch({ type: 'SET_LOAD_ERROR', payload: loadErrors.join('; ') });
+                }
 
                 // Sync audio manager with loaded settings
                 audioManager.setEnabled(settings.soundEnabled);
@@ -455,7 +486,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 // status === 'none' means no session to restore, which is normal
             } catch (error) {
                 console.error('Failed to load data:', error);
-                dispatch({ type: 'SET_LOADING', payload: false });
+                dispatch({ type: 'SET_LOAD_ERROR', payload: `Critical error loading app data: ${error instanceof Error ? error.message : 'Unknown error'}` });
             }
         }
         loadData();
@@ -474,7 +505,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     accumulatedPauseTime: state.accumulatedPauseTime,
                     focusDuration: state.settings.focusDuration,
                 };
-                await saveActiveSession(sessionData);
+                const saved = await saveActiveSession(sessionData);
+                if (!saved) {
+                    console.warn('[GameContext] Session persistence failed - recovery may not work if app is killed');
+                }
             } else if (state.sessionState !== 'active') {
                 // Session ended (completed, failed, or reset) - clear persisted session
                 await clearActiveSession();
@@ -662,6 +696,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
+        // Guard against double completion - prevents race condition when called twice in quick succession
+        if (state.sessionState !== 'active') {
+            console.warn('[completeSession] Called when session not active, ignoring. Current state:', state.sessionState);
+            return { animal: state.currentAnimal as Animal, updatedStats: state.stats };
+        }
+
         const animal = getRandomAnimal();
         const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -746,10 +786,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const failSession = async (focusMinutes: number): Promise<void> => {
+        // Guard against calling failSession when not in active state
+        if (state.sessionState !== 'active') {
+            console.warn('[failSession] Called when session not active, ignoring. Current state:', state.sessionState);
+            return;
+        }
+
         dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes } });
 
-        const updatedStats = await incrementSession(false, focusMinutes);
-        dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+        try {
+            const updatedStats = await incrementSession(false, focusMinutes);
+            dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+        } catch (error) {
+            console.error('[failSession] Failed to persist stats:', error);
+            // Stats update failed but session state is already set to failed
+            // This is acceptable - the UI state is correct even if persistence failed
+        }
 
         // Announce session failure to screen readers
         announceSessionFailed(state.settings.language);
@@ -761,7 +813,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const updateUserSettings = async (newSettings: Partial<Settings>) => {
         dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });
-        await updateSettings(newSettings);
+        try {
+            await updateSettings(newSettings);
+        } catch (error) {
+            console.error('[updateUserSettings] Failed to persist settings:', error);
+            // Settings persistence failed - UI shows new settings but won't persist on restart
+            // This is a non-critical failure, so we don't rollback the UI state
+        }
     };
 
     const toggleFavorite = async (animalId: string) => {
@@ -779,9 +837,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
         await updateSettings({ hasCompletedOnboarding: true });
     };
 
-    const clearRestoredSession = () => {
+    const clearRestoredSession = async () => {
         dispatch({ type: 'CLEAR_RESTORED_SESSION' });
-        clearActiveSession();
+        try {
+            await clearActiveSession();
+        } catch (error) {
+            console.error('[clearRestoredSession] Failed to clear active session from storage:', error);
+            // Non-critical - UI state is cleared even if storage clear failed
+        }
     };
 
     // Animal interaction functions
