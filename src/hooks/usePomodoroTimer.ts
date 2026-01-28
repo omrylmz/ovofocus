@@ -81,11 +81,12 @@ export function usePomodoroTimer({
 
     // Refs to track if we should auto-advance
     const shouldAutoAdvanceRef = useRef(false);
-    const currentDurationRef = useRef(getPhaseDuration());
+    // Use state instead of ref for duration so useTimer can detect changes
+    const [currentDuration, setCurrentDuration] = useState(getPhaseDuration());
 
-    // Update duration ref when phase changes
+    // Update duration when phase changes
     useEffect(() => {
-        currentDurationRef.current = getPhaseDuration();
+        setCurrentDuration(getPhaseDuration());
     }, [getPhaseDuration]);
 
     // Handle phase completion
@@ -126,9 +127,10 @@ export function usePomodoroTimer({
         onCycleComplete,
     ]);
 
-    // Use the base timer hook
+    // Use the base timer hook with state-based duration (not ref)
+    // This ensures useTimer detects duration changes when phase changes
     const timer = useTimer({
-        duration: currentDurationRef.current,
+        duration: currentDuration,
         onComplete: handlePhaseComplete,
         onTick,
     });
@@ -146,16 +148,16 @@ export function usePomodoroTimer({
         }
     }, [currentPhase, timer.isRunning, timer]);
 
-    // Reset when duration settings change (but not during active session)
+    // Reset duration when settings change (but not during active session)
     useEffect(() => {
         if (!timer.isRunning) {
-            currentDurationRef.current = getPhaseDuration();
+            setCurrentDuration(getPhaseDuration());
         }
     }, [workDuration, shortBreakDuration, longBreakDuration, getPhaseDuration, timer.isRunning]);
 
     // Start the pomodoro timer
     const start = useCallback(() => {
-        currentDurationRef.current = getPhaseDuration();
+        setCurrentDuration(getPhaseDuration());
         timer.reset();
         timer.start();
     }, [timer, getPhaseDuration]);
@@ -180,7 +182,7 @@ export function usePomodoroTimer({
         setCurrentPhase('work');
         setWorkSessionsCompleted(0);
         shouldAutoAdvanceRef.current = false;
-        currentDurationRef.current = toSeconds(workDuration);
+        setCurrentDuration(toSeconds(workDuration));
         timer.reset();
     }, [timer, workDuration, toSeconds]);
 
@@ -195,7 +197,7 @@ export function usePomodoroTimer({
         if (currentPhase !== 'work') {
             shouldAutoAdvanceRef.current = false;
             setCurrentPhase('work');
-            currentDurationRef.current = toSeconds(workDuration);
+            setCurrentDuration(toSeconds(workDuration));
             timer.reset();
             timer.start();
         }

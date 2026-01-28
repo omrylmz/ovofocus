@@ -204,25 +204,32 @@ export async function addToCollection(animal: Animal, sessionId: string): Promis
     }
 }
 
-export async function clearCollection(): Promise<void> {
+export async function clearCollection(): Promise<boolean> {
     try {
         await AsyncStorage.removeItem(STORAGE_KEYS.COLLECTION);
+        return true;
     } catch (error) {
         console.error('[Storage] Failed to clear collection:', error);
+        return false;
     }
 }
 
 // Update notes for the most recently collected animal
-export async function updateLastAnimalNotes(notes: string): Promise<void> {
+// Returns true on success, false on failure or if collection is empty
+export async function updateLastAnimalNotes(notes: string): Promise<boolean> {
     try {
         const collection = await getCollection();
-        if (collection.length > 0) {
-            const lastAnimal = collection[collection.length - 1];
-            lastAnimal.notes = notes.trim();
-            await AsyncStorage.setItem(STORAGE_KEYS.COLLECTION, JSON.stringify(collection));
+        if (collection.length === 0) {
+            console.warn('[Storage] Cannot update notes: collection is empty');
+            return false;
         }
+        const lastAnimal = collection[collection.length - 1];
+        lastAnimal.notes = notes.trim();
+        await AsyncStorage.setItem(STORAGE_KEYS.COLLECTION, JSON.stringify(collection));
+        return true;
     } catch (error) {
         console.error("[Storage] Failed to update animal notes:", error);
+        return false;
     }
 }
 
@@ -447,11 +454,13 @@ export async function getFavorites(): Promise<string[]> {
     }
 }
 
-export async function setFavorites(favoriteIds: string[]): Promise<void> {
+export async function setFavorites(favoriteIds: string[]): Promise<boolean> {
     try {
         await AsyncStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favoriteIds));
+        return true;
     } catch (error) {
         console.error('[Storage] Failed to save favorites:', error);
+        return false;
     }
 }
 
@@ -951,11 +960,13 @@ export async function saveActiveSession(session: PersistedSession): Promise<bool
     }
 }
 
-export async function clearActiveSession(): Promise<void> {
+export async function clearActiveSession(): Promise<boolean> {
     try {
         await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+        return true;
     } catch (error) {
         console.error('[Storage] Failed to clear active session:', error);
+        return false;
     }
 }
 

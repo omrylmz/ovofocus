@@ -107,12 +107,15 @@ export async function getAllGoals(): Promise<Goal[]> {
 
 /**
  * Save all goals to storage
+ * @returns true on success, false on failure
  */
-async function saveAllGoals(goals: Goal[]): Promise<void> {
+async function saveAllGoals(goals: Goal[]): Promise<boolean> {
     try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+        return true;
     } catch (error) {
         console.error('[GoalTracking] Failed to save goals:', error);
+        return false;
     }
 }
 

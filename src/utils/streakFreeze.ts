@@ -42,12 +42,15 @@ export async function getStreakFreezeData(): Promise<StreakFreezeData> {
 
 /**
  * Save streak freeze data to storage
+ * @returns true on success, false on failure
  */
-async function saveStreakFreezeData(data: StreakFreezeData): Promise<void> {
+async function saveStreakFreezeData(data: StreakFreezeData): Promise<boolean> {
     try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return true;
     } catch (error) {
         console.error('[StreakFreeze] Failed to save streak freeze data:', error);
+        return false;
     }
 }
 

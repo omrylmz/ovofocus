@@ -83,12 +83,14 @@ export async function getDailyRewardsState(): Promise<DailyRewardsState> {
     }
 }
 
-// Save daily rewards state
-async function saveDailyRewardsState(state: DailyRewardsState): Promise<void> {
+// Save daily rewards state - returns true on success, false on failure
+async function saveDailyRewardsState(state: DailyRewardsState): Promise<boolean> {
     try {
         await AsyncStorage.setItem(STORAGE_KEYS.DAILY_REWARDS, JSON.stringify(state));
+        return true;
     } catch (error) {
         console.error('[DailyRewards] Failed to save state:', error);
+        return false;
     }
 }
 

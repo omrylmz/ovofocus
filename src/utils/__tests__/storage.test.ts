@@ -712,8 +712,9 @@ describe('Storage Utility', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('Remove error'));
 
-      // Should not throw
-      await expect(clearCollection()).resolves.toBeUndefined();
+      // Should return false on error (not throw)
+      const result = await clearCollection();
+      expect(result).toBe(false);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to clear collection:',
@@ -982,8 +983,9 @@ describe('Storage Utility', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('Write error'));
 
-      // Should not throw
-      await expect(setFavorites(['animal-1'])).resolves.toBeUndefined();
+      // Should return false on error (not throw)
+      const result = await setFavorites(['animal-1']);
+      expect(result).toBe(false);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to save favorites:',
@@ -1618,8 +1620,9 @@ describe('Storage Utility', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('Remove error'));
 
-      // Should not throw
-      await expect(clearActiveSession()).resolves.toBeUndefined();
+      // Should return false on error (not throw)
+      const result = await clearActiveSession();
+      expect(result).toBe(false);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to clear active session:',
