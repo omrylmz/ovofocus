@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, ScrollView } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -138,6 +138,7 @@ function AnimalDetailModalComponent({
 
     // Interaction state
     const [interaction, setInteraction] = useState<AnimalInteraction | null>(null);
+    const interactionRef = useRef<AnimalInteraction | null>(null);
     const [petCooldown, setPetCooldown] = useState(0);
     const [feedCooldown, setFeedCooldown] = useState(0);
     const [playCooldown, setPlayCooldown] = useState(0);
@@ -201,17 +202,26 @@ function AnimalDetailModalComponent({
         }
     }, [visible, animal]);
 
+    // Keep interaction ref updated for interval access
+    useEffect(() => {
+        interactionRef.current = interaction;
+    }, [interaction]);
+
     // Update cooldowns every minute
     useEffect(() => {
         if (!visible || !interaction) return;
 
         const updateCooldowns = () => {
-            setPetCooldown(getPetCooldown(interaction));
-            setFeedCooldown(getFeedCooldown(interaction));
-            setPlayCooldown(getPlayCooldown(interaction));
-            setTrainCooldown(getTrainCooldown(interaction));
-            setGroomCooldown(getGroomCooldown(interaction));
-            setTalkCooldown(getTalkCooldown(interaction));
+            // Use ref to get latest interaction value
+            const currentInteraction = interactionRef.current;
+            if (!currentInteraction) return;
+
+            setPetCooldown(getPetCooldown(currentInteraction));
+            setFeedCooldown(getFeedCooldown(currentInteraction));
+            setPlayCooldown(getPlayCooldown(currentInteraction));
+            setTrainCooldown(getTrainCooldown(currentInteraction));
+            setGroomCooldown(getGroomCooldown(currentInteraction));
+            setTalkCooldown(getTalkCooldown(currentInteraction));
         };
 
         updateCooldowns();
