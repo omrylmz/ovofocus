@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
     ACTIVE_SESSION: '@ovofocus/active_session',
     ACHIEVEMENTS: '@ovofocus/achievements',
     ANIMAL_NOTES: '@ovofocus/animal_notes',
+    ONBOARDING: '@ovofocus/onboarding',
 };
 
 export interface CollectedAnimal extends Animal {
@@ -117,6 +118,12 @@ export interface AnimalInteraction {
     trainCount: number;
     groomCount: number;
     talkCount: number;
+}
+
+export interface OnboardingState {
+    hasCompletedTutorial: boolean;
+    hasSeenGestureHints: boolean;
+    hasSeenCollectionIntro: boolean;
 }
 
 const defaultStats: Stats = {
@@ -462,6 +469,30 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
     } catch (error) {
         console.error('[Storage] Failed to update settings:', error);
         return await getSettings();
+    }
+}
+
+// Onboarding State
+const defaultOnboardingState: OnboardingState = {
+    hasCompletedTutorial: false,
+    hasSeenGestureHints: false,
+    hasSeenCollectionIntro: false,
+};
+
+export async function loadOnboardingSafe(): Promise<StorageResult<OnboardingState>> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING);
+        if (!data) {
+            return { success: true, data: defaultOnboardingState };
+        }
+        return { success: true, data: { ...defaultOnboardingState, ...JSON.parse(data) } };
+    } catch (error) {
+        console.error('[Storage] Failed to load onboarding state:', error);
+        return {
+            success: false,
+            error: `Failed to load onboarding: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: defaultOnboardingState,
+        };
     }
 }
 
