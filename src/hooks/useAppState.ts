@@ -12,6 +12,18 @@ export function useAppState(options: UseAppStateOptions = {}) {
     const [wasInBackground, setWasInBackground] = useState(false);
     const previousState = useRef<AppStateStatus>(AppState.currentState);
 
+    // Use refs to store callbacks - prevents re-subscription on callback changes
+    const onBackgroundRef = useRef(options.onBackground);
+    const onForegroundRef = useRef(options.onForeground);
+    const onInactiveRef = useRef(options.onInactive);
+
+    // Keep refs updated with latest callbacks
+    useEffect(() => {
+        onBackgroundRef.current = options.onBackground;
+        onForegroundRef.current = options.onForeground;
+        onInactiveRef.current = options.onInactive;
+    });
+
     const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
         const prevState = previousState.current;
 
@@ -19,20 +31,20 @@ export function useAppState(options: UseAppStateOptions = {}) {
         if (prevState === 'active' && (nextAppState === 'background' || nextAppState === 'inactive')) {
             setWasInBackground(true);
             if (nextAppState === 'background') {
-                options.onBackground?.();
+                onBackgroundRef.current?.();
             } else {
-                options.onInactive?.();
+                onInactiveRef.current?.();
             }
         }
 
         // Coming back to foreground
         if ((prevState === 'background' || prevState === 'inactive') && nextAppState === 'active') {
-            options.onForeground?.();
+            onForegroundRef.current?.();
         }
 
         previousState.current = nextAppState;
         setAppState(nextAppState);
-    }, [options]);
+    }, []); // Empty deps - callbacks accessed via refs
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', handleAppStateChange);
