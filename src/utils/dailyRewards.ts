@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { ServiceResult } from '../types/results';
 import { addFreezeDirectly } from './streakFreeze';
 
 const STORAGE_KEYS = {
@@ -80,6 +82,26 @@ export async function getDailyRewardsState(): Promise<DailyRewardsState> {
     } catch (error) {
         console.error('[DailyRewards] Failed to read state:', error);
         return defaultState;
+    }
+}
+
+/**
+ * Load daily rewards state with explicit success/failure
+ */
+export async function getDailyRewardsStateSafe(): Promise<ServiceResult<DailyRewardsState>> {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.DAILY_REWARDS);
+        if (!data) {
+            return { success: true, data: { ...defaultState } };
+        }
+        return { success: true, data: { ...defaultState, ...JSON.parse(data) } };
+    } catch (error) {
+        console.error('[DailyRewards] Failed to load state:', error);
+        return {
+            success: false,
+            error: `Failed to load daily rewards: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fallback: { ...defaultState },
+        };
     }
 }
 
