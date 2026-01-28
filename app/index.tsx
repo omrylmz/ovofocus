@@ -635,6 +635,11 @@ export default function HomeScreen() {
     const [activeShieldBonus, setActiveShieldBonus] = useState(0);
     const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
     const emergencyPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Refs to store latest function references for emergency pause auto-resume callback
+    // This prevents stale closures in setTimeout
+    const startTimerRef = useRef<() => void>(() => {});
+    const resumeSessionRef = useRef<() => void>(() => {});
+    const hapticsEnabledRef = useRef(state.settings.hapticsEnabled);
 
     // Daily reward states
     const [showDailyRewardModal, setShowDailyRewardModal] = useState(false);
@@ -854,6 +859,14 @@ export default function HomeScreen() {
         }
     }, [isPomodoroMode, pomodoroTimer, regularTimer]);
 
+    // Keep refs updated with latest function references for emergency pause callback
+    // This prevents stale closure issues in setTimeout
+    useEffect(() => {
+        startTimerRef.current = startTimer;
+        resumeSessionRef.current = resumeSession;
+        hapticsEnabledRef.current = state.settings.hapticsEnabled;
+    }, [startTimer, resumeSession, state.settings.hapticsEnabled]);
+
     // Sync Pomodoro phase state for UI
     useEffect(() => {
         if (isPomodoroMode) {
@@ -1066,16 +1079,20 @@ export default function HomeScreen() {
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
-        const used = await useShield(shield.animalId);
-        if (used) {
-            setActiveShieldBonus(used.durationSeconds);
+        const result = await useShield(shield.animalId);
+        if (result.status === 'used') {
+            setActiveShieldBonus(result.shield.durationSeconds);
             setShieldInventory(prev => prev.filter(s => s.animalId !== shield.animalId));
             setShowShieldSelector(false);
             audioManager.playSound('shield_equip');
             if (state.settings.hapticsEnabled) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
+        } else if (result.status === 'error') {
+            console.error('[handleActivateShield] Failed to use shield:', result.error);
+            // Could show an error toast to user here
         }
+        // status === 'not_found' is unexpected here since we're using a shield from inventory
     };
 
     const handleEmergencyPause = () => {
@@ -1090,11 +1107,12 @@ export default function HomeScreen() {
             }
 
             // Set up auto-resume after emergencyPauseDuration seconds
+            // Use refs to get latest function references to avoid stale closures
             const autoResumeDuration = state.settings.emergencyPauseDuration * 1000;
             emergencyPauseTimeoutRef.current = setTimeout(() => {
-                startTimer();
-                resumeSession();
-                if (state.settings.hapticsEnabled) {
+                startTimerRef.current();
+                resumeSessionRef.current();
+                if (hapticsEnabledRef.current) {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
             }, autoResumeDuration);

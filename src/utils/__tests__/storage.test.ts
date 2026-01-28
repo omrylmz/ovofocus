@@ -323,17 +323,20 @@ describe('Storage Utility', () => {
 
     it('should use and remove a shield', async () => {
       await addShield(mockShield);
-      const usedShield = await useShield('test-animal');
+      const result = await useShield('test-animal');
 
-      expect(usedShield).toEqual(mockShield);
+      expect(result.status).toBe('used');
+      if (result.status === 'used') {
+        expect(result.shield).toEqual(mockShield);
+      }
 
       const inventory = await getShieldInventory();
       expect(inventory).toHaveLength(0);
     });
 
-    it('should return null when using non-existent shield', async () => {
-      const usedShield = await useShield('non-existent');
-      expect(usedShield).toBeNull();
+    it('should return not_found when using non-existent shield', async () => {
+      const result = await useShield('non-existent');
+      expect(result.status).toBe('not_found');
     });
   });
 
@@ -684,7 +687,7 @@ describe('Storage Utility', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should return current collection when addToCollection fails', async () => {
+    it('should throw error when addToCollection fails', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       // First add a valid animal
@@ -693,11 +696,11 @@ describe('Storage Utility', () => {
       // Mock setItem to fail
       jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('Write error'));
 
-      const result = await addToCollection({ ...mockAnimal, id: 'animal-2' }, 'session-2');
+      // Should throw error so caller can handle it (e.g., show retry)
+      await expect(
+        addToCollection({ ...mockAnimal, id: 'animal-2' }, 'session-2')
+      ).rejects.toThrow('Failed to save animal to collection');
 
-      // Should return existing collection on error
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe('test-animal');
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to add to collection:',
         expect.any(Error)
@@ -1097,9 +1100,12 @@ describe('Storage Utility', () => {
       // Mock setItem to fail
       jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('Write error'));
 
-      const usedShield = await useShield('test-animal');
+      const result = await useShield('test-animal');
 
-      expect(usedShield).toBeNull();
+      expect(result.status).toBe('error');
+      if (result.status === 'error') {
+        expect(result.error).toContain('Failed to use shield');
+      }
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to use shield:',
         expect.any(Error)
@@ -1597,8 +1603,9 @@ describe('Storage Utility', () => {
         focusDuration: 25,
       };
 
-      // Should not throw
-      await expect(saveActiveSession(session)).resolves.toBeUndefined();
+      // Should return false on error (not throw)
+      const result = await saveActiveSession(session);
+      expect(result).toBe(false);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         '[Storage] Failed to save active session:',

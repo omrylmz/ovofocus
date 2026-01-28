@@ -306,19 +306,29 @@ export async function incrementSession(completed: boolean, focusMinutes: number)
     }
 }
 
+// Helper to get local date string (YYYY-MM-DD) without timezone issues
+function getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function isYesterday(dateStr: string): boolean {
     const date = new Date(dateStr);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    return date.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0];
+    // Use local date strings to avoid timezone issues near midnight
+    return getLocalDateString(date) === getLocalDateString(yesterday);
 }
 
 function isMoreThanOneDayAgo(dateStr: string): boolean {
     const date = new Date(dateStr);
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    // Use local date strings to avoid timezone issues near midnight
     // If the date is on or before two days ago, it's more than one day ago
-    return date.toISOString().split('T')[0] <= twoDaysAgo.toISOString().split('T')[0];
+    return getLocalDateString(date) <= getLocalDateString(twoDaysAgo);
 }
 
 // Valid theme mode values
@@ -536,19 +546,30 @@ export async function addShield(shield: ShieldItem): Promise<ShieldItem[]> {
     }
 }
 
-export async function useShield(animalId: string): Promise<ShieldItem | null> {
+// Result type for useShield - distinguishes "not found" from "error"
+export type UseShieldResult =
+    | { status: 'used'; shield: ShieldItem }
+    | { status: 'not_found' }
+    | { status: 'error'; error: string };
+
+export async function useShield(animalId: string): Promise<UseShieldResult> {
     try {
         const inventory = await getShieldInventory();
         const shieldIndex = inventory.findIndex(s => s.animalId === animalId);
-        if (shieldIndex === -1) return null;
+        if (shieldIndex === -1) {
+            return { status: 'not_found' };
+        }
 
         const shield = inventory[shieldIndex];
         inventory.splice(shieldIndex, 1);
         await AsyncStorage.setItem(STORAGE_KEYS.SHIELD_INVENTORY, JSON.stringify(inventory));
-        return shield;
+        return { status: 'used', shield };
     } catch (error) {
         console.error('[Storage] Failed to use shield:', error);
-        return null;
+        return {
+            status: 'error',
+            error: `Failed to use shield: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        };
     }
 }
 

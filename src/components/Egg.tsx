@@ -107,6 +107,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             glowOpacity.value = withTiming(0, { duration: 300 });
             crackLevel.value = withTiming(0, { duration: 300 });
             colorProgress.value = withTiming(0, { duration: 300 });
+
+            // Cleanup: cancel infinite animations when unmounting or state changes
+            return () => {
+                cancelAnimation(wobble);
+                cancelAnimation(scale);
+            };
         }
     }, [sessionState, isAppActive, wobble, scale, glowOpacity, crackLevel, colorProgress]);
 
@@ -160,6 +166,14 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
             // Crack level increases with progress
             crackLevel.value = withTiming(Math.floor(progress * 4), { duration: 300 });
+
+            // Cleanup: cancel all infinite animations when unmounting or state changes
+            return () => {
+                cancelAnimation(wobble);
+                cancelAnimation(pulseValue);
+                cancelAnimation(glowScale);
+                cancelAnimation(sparkleRotation);
+            };
         }
     }, [sessionState, progress, wobble, pulseValue, glowOpacity, glowScale, sparkleRotation, colorProgress, crackLevel]);
 
