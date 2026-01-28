@@ -144,7 +144,11 @@ export async function createGoal(type: GoalType, target: number): Promise<Goal> 
 
     const goals = await getAllGoals();
     goals.push(goal);
-    await saveAllGoals(goals);
+    const saved = await saveAllGoals(goals);
+
+    if (!saved) {
+        throw new Error('Failed to save goal');
+    }
 
     console.log(`[GoalTracking] Created ${type} goal with target ${target}`);
     return goal;
@@ -194,7 +198,10 @@ export async function updateGoalProgress(goalId: string, progress: number): Prom
     }
 
     goals[goalIndex] = goal;
-    await saveAllGoals(goals);
+    const saved = await saveAllGoals(goals);
+    if (!saved) {
+        throw new Error('Failed to save goal progress');
+    }
 
     return goal;
 }
@@ -381,7 +388,10 @@ export async function deleteGoal(goalId: string): Promise<boolean> {
         return false;
     }
 
-    await saveAllGoals(filteredGoals);
+    const saved = await saveAllGoals(filteredGoals);
+    if (!saved) {
+        throw new Error('Failed to delete goal');
+    }
     console.log(`[GoalTracking] Deleted goal: ${goalId}`);
     return true;
 }
