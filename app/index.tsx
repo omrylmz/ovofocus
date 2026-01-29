@@ -31,7 +31,7 @@ import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { Animal } from '../src/data/animals';
 import { sendSessionCompleteNotification } from '../src/services/notifications';
-import { getShieldInventory, useShield, ShieldItem, grantShieldFromAnimal, updateLastAnimalNotes } from '../src/utils/storage';
+import { getShieldInventory, consumeShield, ShieldItem, grantShieldFromAnimal, updateLastAnimalNotes } from '../src/utils/storage';
 import { calculateCollectionBonuses, calculateEffectiveDuration } from '../src/utils/levelBonuses';
 import { DailyRewardModal } from '../src/components/DailyRewardModal';
 import { checkDailyReward, claimDailyReward, RewardType } from '../src/utils/dailyRewards';
@@ -428,17 +428,17 @@ const enhancedTimerStyles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        // minHeight is now calculated from responsive progressRingSize
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden', // CRITICAL: clips the ring to prevent overlap
     },
     ringContainer: {
-        position: 'absolute',
-        // width/height are now dynamic
+        position: 'absolute', // Needed so timer text overlays the ring
         alignItems: 'center',
         justifyContent: 'center',
     },
     ringGlow: {
         position: 'absolute',
-        // width, height, borderRadius are now dynamic
     },
     svg: {
         transform: [{ rotateZ: '0deg' }],
@@ -469,8 +469,7 @@ const enhancedTimerStyles = StyleSheet.create({
         overflow: 'hidden',
     },
     completionRing: {
-        position: 'absolute',
-        // width/height are now dynamic
+        position: 'absolute', // Needed for overlay design
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -508,25 +507,33 @@ const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) =
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between', // Distribute sections evenly
         paddingHorizontal: responsive.horizontalPadding,
         paddingTop: 8,
-        paddingBottom: 16,
+        paddingBottom: 24, // Extra padding for virtual nav buttons
     },
     timerSection: {
+        height: 200, // Fixed height to contain progress ring
+        width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
+        overflow: 'hidden', // Clip any overflow
     },
     eggSection: {
         flex: 1,
+        width: '100%',
+        minHeight: 150, // Minimum height for egg
+        maxHeight: 300, // Maximum to prevent overflow
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
+        overflow: 'hidden', // Clip glow effects
     },
     controlsSection: {
-        alignItems: 'center',
+        height: 140, // Fixed height for controls
         width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingBottom: 8,
     },
     debugBadge: {
         position: 'absolute',
@@ -1079,7 +1086,7 @@ export default function HomeScreen() {
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
-        const result = await useShield(shield.animalId);
+        const result = await consumeShield(shield.animalId);
         if (result.status === 'used') {
             setActiveShieldBonus(result.shield.durationSeconds);
             setShieldInventory(prev => prev.filter(s => s.animalId !== shield.animalId));

@@ -16,7 +16,7 @@ import {
   incrementDailyProgress,
   getShieldInventory,
   addShield,
-  useShield,
+  consumeShield,
   grantShieldFromAnimal,
   getHappinessLevel,
   saveActiveSession,
@@ -323,7 +323,7 @@ describe('Storage Utility', () => {
 
     it('should use and remove a shield', async () => {
       await addShield(mockShield);
-      const result = await useShield('test-animal');
+      const result = await consumeShield('test-animal');
 
       expect(result.status).toBe('used');
       if (result.status === 'used') {
@@ -335,7 +335,7 @@ describe('Storage Utility', () => {
     });
 
     it('should return not_found when using non-existent shield', async () => {
-      const result = await useShield('non-existent');
+      const result = await consumeShield('non-existent');
       expect(result.status).toBe('not_found');
     });
   });
@@ -1087,7 +1087,7 @@ describe('Storage Utility', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should handle useShield errors gracefully', async () => {
+    it('should handle consumeShield errors gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       // Add a shield first
@@ -1102,7 +1102,7 @@ describe('Storage Utility', () => {
       // Mock setItem to fail
       jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('Write error'));
 
-      const result = await useShield('test-animal');
+      const result = await consumeShield('test-animal');
 
       expect(result.status).toBe('error');
       if (result.status === 'error') {

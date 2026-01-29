@@ -81,11 +81,11 @@ export function useResponsive(): ResponsiveValues {
     48
   );
 
-  // Progress ring - sized to not overlap with egg below
+  // Progress ring - constrained to fit within timer section (max ~180px)
   const progressRingSize = clamp(
-    Math.round(eggSize * 1.1),
-    180,
-    300
+    Math.round(eggSize * 0.9),
+    140,
+    180
   );
 
   // Grid columns based on width

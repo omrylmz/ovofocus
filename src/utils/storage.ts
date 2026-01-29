@@ -608,7 +608,7 @@ export async function addShield(shield: ShieldItem): Promise<ShieldItem[]> {
     }
 }
 
-// Result type for useShield - distinguishes "not found" from "error"
+// Result type for consumeShield - distinguishes "not found" from "error"
 export type UseShieldResult =
     | { status: 'used'; shield: ShieldItem }
     | { status: 'not_found' }
@@ -620,7 +620,7 @@ export type AnimalNotesResult =
     | { status: 'not_found' }
     | { status: 'error'; error: string };
 
-export async function useShield(animalId: string): Promise<UseShieldResult> {
+export async function consumeShield(animalId: string): Promise<UseShieldResult> {
     try {
         const inventory = await getShieldInventory();
         const shieldIndex = inventory.findIndex(s => s.animalId === animalId);

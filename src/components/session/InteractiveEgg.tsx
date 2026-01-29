@@ -577,44 +577,47 @@ export function InteractiveEgg({
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+        width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden', // CRITICAL: clips effects to prevent overlap
     },
     eggWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
-        // Explicit dimensions to ensure proper rendering on Android
-        minWidth: 200,
-        minHeight: 280,
+        minWidth: 160,
+        minHeight: 200, // Compact size
+        overflow: 'hidden', // Clip internal effects too
     },
     feedbackGlow: {
         position: 'absolute',
-        width: 180,
-        height: 180,
-        borderRadius: 90,
+        width: 120, // Smaller
+        height: 120,
+        borderRadius: 60,
         backgroundColor: theme.colors.accent,
     },
     rippleEffect: {
         position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
+        width: 110,
+        height: 110,
+        borderRadius: 55,
         borderWidth: 3,
         borderColor: theme.colors.accent,
         backgroundColor: 'transparent',
     },
     pulseRing: {
         position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         borderWidth: 4,
         borderColor: theme.colors.primary,
         backgroundColor: 'transparent',
     },
     sparkleOverlay: {
         position: 'absolute',
-        top: -30,
+        top: -20, // Closer to egg
         zIndex: theme.zIndex.floating,
     },
     sparkleText: {

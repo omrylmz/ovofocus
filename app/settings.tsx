@@ -13,7 +13,7 @@ import { ambientSoundService, AMBIENT_SOUNDS, AmbientSoundType } from '../src/se
 import { StreakFreezeIndicator } from '../src/components/StreakFreezeIndicator';
 import {
     getStreakFreezeData,
-    useStreakFreeze,
+    consumeStreakFreeze,
     canUseFreeze,
     STREAK_FREEZE_CONSTANTS,
     StreakFreezeData,
@@ -688,7 +688,7 @@ export default function SettingsScreen() {
     };
 
     const handleUseFreeze = async () => {
-        const success = await useStreakFreeze();
+        const success = await consumeStreakFreeze();
         if (success) {
             Alert.alert(i18n('freezeUsed'), i18n('freezeProtectsStreak'));
             // Refresh freeze data

@@ -58,14 +58,14 @@ export interface QuickActionsSupportStatus {
 const isExpoGo = Constants.appOwnership === 'expo';
 
 // Dynamic import for expo-quick-actions when available
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let QuickActions: any = null;
 
 /**
  * Attempt to load the expo-quick-actions module dynamically
  * Returns null if not available (Expo Go, not installed, etc.)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 async function getQuickActionsModule(): Promise<any | null> {
     if (isExpoGo) {
         console.log('[QuickActions] Not available in Expo Go');
@@ -77,6 +77,7 @@ async function getQuickActionsModule(): Promise<any | null> {
     }
 
     try {
+        // eslint-disable-next-line import/no-unresolved -- Optional dependency, handled gracefully
         QuickActions = await import('expo-quick-actions');
         return QuickActions;
     } catch (error) {

@@ -75,7 +75,7 @@ export async function wasFreezeUsedToday(): Promise<boolean> {
  * Use a streak freeze for today
  * @returns true if freeze was successfully used, false otherwise
  */
-export async function useStreakFreeze(): Promise<boolean> {
+export async function consumeStreakFreeze(): Promise<boolean> {
     const data = await getStreakFreezeData();
 
     // Check if user has freezes available

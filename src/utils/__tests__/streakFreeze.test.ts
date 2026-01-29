@@ -4,7 +4,7 @@ import {
   getStreakFreezeData,
   getAvailableFreezes,
   wasFreezeUsedToday,
-  useStreakFreeze,
+  consumeStreakFreeze,
   checkAndAwardFreeze,
   canUseFreeze,
   clearStreakFreezeData,
@@ -98,9 +98,9 @@ describe('Streak Freeze Utility', () => {
     });
   });
 
-  describe('useStreakFreeze', () => {
+  describe('consumeStreakFreeze', () => {
     it('should return false when no freezes available', async () => {
-      const result = await useStreakFreeze();
+      const result = await consumeStreakFreeze();
       expect(result).toBe(false);
     });
 
@@ -112,7 +112,7 @@ describe('Streak Freeze Utility', () => {
         lastMilestoneStreak: 0,
       }));
 
-      const result = await useStreakFreeze();
+      const result = await consumeStreakFreeze();
       expect(result).toBe(false);
     });
 
@@ -123,7 +123,7 @@ describe('Streak Freeze Utility', () => {
         lastMilestoneStreak: 0,
       }));
 
-      const result = await useStreakFreeze();
+      const result = await consumeStreakFreeze();
       expect(result).toBe(true);
 
       const data = await getStreakFreezeData();

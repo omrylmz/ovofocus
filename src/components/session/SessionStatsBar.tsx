@@ -209,7 +209,7 @@ function StatPill({
                             </Text>
                         )}
                     </View>
-                    {label && <Text style={styles.pillLabel}>{label}</Text>}
+                    {label && <Text style={styles.pillLabel} numberOfLines={1}>{label}</Text>}
                 </View>
             </View>
 
@@ -313,7 +313,7 @@ function FocusTimePill({ totalMinutes, label, onPress, hapticsEnabled = true }: 
                 <Text style={styles.focusTimeIcon}>&#9201;</Text>
                 <View style={styles.focusTimeTextContainer}>
                     <Text style={styles.focusTimeValue}>{formatTime(totalMinutes)}</Text>
-                    <Text style={styles.focusTimeLabel}>{label}</Text>
+                    <Text style={styles.focusTimeLabel} numberOfLines={1}>{label}</Text>
                 </View>
             </Animated.View>
         </Pressable>
@@ -691,6 +691,8 @@ const styles = StyleSheet.create({
         marginHorizontal: theme.spacing.lg,
         marginTop: theme.spacing.xs,
         marginBottom: theme.spacing.md,
+        zIndex: 10, // Stay above timer section
+        elevation: 10, // Android elevation
     },
     statsRow: {
         flexDirection: 'row',
@@ -727,6 +729,7 @@ const styles = StyleSheet.create({
     },
     pillTextContainer: {
         alignItems: 'flex-start',
+        flexShrink: 1, // Allow text to shrink on narrow screens
     },
     pillValueRow: {
         flexDirection: 'row',
@@ -742,6 +745,7 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: -2,
+        maxWidth: 60, // Prevent overflow on narrow screens
     },
     trendArrow: {
         fontSize: theme.fontSize.sm,
@@ -800,6 +804,7 @@ const styles = StyleSheet.create({
     },
     focusTimeTextContainer: {
         alignItems: 'flex-start',
+        flexShrink: 1,
     },
     focusTimeValue: {
         fontSize: theme.fontSize.lg,
@@ -811,6 +816,7 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: -2,
+        maxWidth: 60,
     },
 
     // Daily Progress styles

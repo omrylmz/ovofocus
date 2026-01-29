@@ -42,12 +42,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     // Get responsive sizing
     const { eggSize } = useResponsive();
 
-    // Calculate derived sizes proportionally
-    const glowSize = Math.round(eggSize * 1.4);
-    const innerGlowSize = Math.round(eggSize * 1.0);
-    const sparkleContainerSize = Math.round(eggSize * 1.25);
-    const warningGlowSize = Math.round(eggSize * 1.55);
-    const containerHeight = Math.round(eggSize * 1.9);
+    // Calculate derived sizes proportionally (minimized to prevent overflow)
+    const glowSize = Math.round(eggSize * 1.1); // Reduced from 1.2
+    const innerGlowSize = Math.round(eggSize * 0.85); // Reduced from 0.9
+    const sparkleContainerSize = Math.round(eggSize * 1.0); // Reduced from 1.1
+    const warningGlowSize = Math.round(eggSize * 1.15); // Reduced from 1.3
+    const containerHeight = Math.round(eggSize * 1.4); // Reduced from 1.6
     const styledEggSize = Math.round(eggSize * 0.5);
 
     // Get the current egg style
