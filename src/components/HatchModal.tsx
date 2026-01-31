@@ -35,7 +35,7 @@ const ConfettiParticle = React.memo(function ConfettiParticle({ delay, startX, c
     const opacity = useSharedValue(0);
     const scale = useSharedValue(1);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally mount-only animation; shared values are stable refs
+     
     useEffect(() => {
         opacity.value = withDelay(delay, withSequence(
             withTiming(1, { duration: 100 }),
@@ -99,7 +99,7 @@ function HatchModalComponent({ visible, animal, onClose, language = 'en' }: Hatc
     const buttonOpacity = useSharedValue(0);
     const buttonTranslateY = useSharedValue(20);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only animation; shared values are stable refs
+     
     useEffect(() => {
         if (visible && animal) {
             // Play celebration sound based on rarity
@@ -439,6 +439,8 @@ const styles = StyleSheet.create({
         height: 100,
         alignItems: 'center',
         overflow: 'visible',
+        zIndex: 1, // Confetti above aura
+        pointerEvents: 'none', // Don't block touches
     },
     confettiParticle: {
         position: 'absolute',
@@ -449,6 +451,8 @@ const styles = StyleSheet.create({
     particles: {
         position: 'absolute',
         top: 50,
+        zIndex: 2, // Emoji particles above confetti
+        pointerEvents: 'none',
     },
     particleText: {
         fontSize: 40,
@@ -459,9 +463,11 @@ const styles = StyleSheet.create({
         width: 240,
         height: 240,
         borderRadius: 120,
+        zIndex: 0, // Aura behind everything
     },
     animalContainer: {
         marginBottom: theme.spacing.lg,
+        zIndex: 3, // Animal above decorative elements
     },
     animalCircle: {
         width: 150,
@@ -492,6 +498,7 @@ const styles = StyleSheet.create({
     textContainer: {
         alignItems: 'center',
         marginBottom: theme.spacing.md,
+        zIndex: 4, // Text above animal
     },
     congratsText: {
         fontSize: theme.fontSize.xl,
@@ -526,6 +533,7 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 300,
         marginBottom: theme.spacing.md,
+        zIndex: 5, // Notes input above everything
     },
     notesHeader: {
         flexDirection: 'row',
@@ -561,6 +569,7 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         marginTop: theme.spacing.sm,
+        zIndex: 6, // Button always on top
     },
 });
 

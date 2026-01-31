@@ -58,12 +58,12 @@ interface SoundConfig {
         release: number;     // Release time in seconds
     };
     // For multi-tone sounds
-    tones?: Array<{
+    tones?: {
         frequency: number;
         startTime: number;
         duration: number;
         volume?: number;
-    }>;
+    }[];
 }
 
 // Sound configurations with generation parameters

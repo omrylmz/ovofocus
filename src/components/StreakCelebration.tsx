@@ -31,7 +31,7 @@ function FireParticle({ delay, startX, size }: { delay: number; startX: number; 
     const opacity = useSharedValue(0);
     const scale = useSharedValue(1);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Animation values are stable refs, only run once on mount
+     
     useEffect(() => {
         opacity.value = withDelay(delay, withSequence(
             withTiming(1, { duration: 150 }),
@@ -242,6 +242,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: '40%',
         alignItems: 'center',
+        zIndex: 0, // Particles behind content
+        pointerEvents: 'none',
     },
     fireParticle: {
         position: 'absolute',
@@ -249,6 +251,7 @@ const styles = StyleSheet.create({
     icon: {
         fontSize: 80,
         marginBottom: theme.spacing.lg,
+        zIndex: 1, // Icon above particles
     },
     title: {
         fontSize: theme.fontSize.xxl,
@@ -256,10 +259,12 @@ const styles = StyleSheet.create({
         color: theme.colors.accent,
         marginBottom: theme.spacing.md,
         textAlign: 'center',
+        zIndex: 2, // Title above icon
     },
     numberContainer: {
         alignItems: 'center',
         marginBottom: theme.spacing.lg,
+        zIndex: 3, // Number above title
     },
     number: {
         fontSize: 72,
@@ -279,5 +284,6 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.lg,
         color: theme.colors.text,
         textAlign: 'center',
+        zIndex: 4, // Subtitle above all
     },
 });

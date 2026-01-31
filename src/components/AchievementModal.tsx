@@ -40,7 +40,7 @@ function ConfettiParticle({ delay, startX, color }: { delay: number; startX: num
     const opacity = useSharedValue(0);
     const scale = useSharedValue(1);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally mount-only animation; shared values are stable refs
+     
     useEffect(() => {
         opacity.value = withDelay(delay, withSequence(
             withTiming(1, { duration: 100 }),
@@ -84,7 +84,7 @@ function StarParticle({ delay, angle, distance }: { delay: number; angle: number
     const opacity = useSharedValue(0);
     const scale = useSharedValue(0.5);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally mount-only animation; shared values are stable refs
+     
     useEffect(() => {
         const radians = (angle * Math.PI) / 180;
         const targetX = Math.cos(radians) * distance;
@@ -406,6 +406,8 @@ const styles = StyleSheet.create({
         height: 100,
         alignItems: 'center',
         overflow: 'visible',
+        zIndex: 1, // Confetti above card
+        pointerEvents: 'none',
     },
     confettiParticle: {
         position: 'absolute',
@@ -419,6 +421,7 @@ const styles = StyleSheet.create({
         padding: theme.spacing.xl,
         alignItems: 'center',
         minWidth: 280,
+        overflow: 'hidden', // Clip internal decorative elements
         ...theme.shadows.large,
     },
     starBurstContainer: {
@@ -426,6 +429,8 @@ const styles = StyleSheet.create({
         top: '35%',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 1, // Stars above glow
+        pointerEvents: 'none',
     },
     starParticle: {
         position: 'absolute',
@@ -437,9 +442,11 @@ const styles = StyleSheet.create({
         height: 160,
         borderRadius: 80,
         top: 20,
+        zIndex: 0, // Glow behind everything
     },
     badgeContainer: {
         marginBottom: theme.spacing.lg,
+        zIndex: 2, // Badge above decorative elements
     },
     badge: {
         width: 120,
@@ -456,6 +463,7 @@ const styles = StyleSheet.create({
     },
     textContainer: {
         alignItems: 'center',
+        zIndex: 3, // Text above badge
     },
     unlockedText: {
         fontSize: theme.fontSize.sm,
@@ -499,6 +507,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: theme.spacing.xl,
         gap: theme.spacing.md,
+        zIndex: 4, // Buttons always on top
     },
     buttonSpacer: {
         width: theme.spacing.md,

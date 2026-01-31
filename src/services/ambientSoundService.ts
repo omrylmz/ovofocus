@@ -36,11 +36,11 @@ export const AMBIENT_SOUNDS: AmbientSoundInfo[] = [
 // These create procedurally generated ambient sounds
 interface AmbientSoundConfig {
     // Base frequency components for the ambient sound
-    frequencies: Array<{
+    frequencies: {
         freq: number;
         amplitude: number;
         modulation?: number; // Frequency modulation rate
-    }>;
+    }[];
     // Noise component (0-1)
     noiseLevel: number;
     // Low-pass filter cutoff (Hz)

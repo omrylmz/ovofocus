@@ -54,7 +54,7 @@ const AnimatedHintItem = React.memo(function AnimatedHintItem({ icon, text, dela
     const iconRotation = useSharedValue(0);
     const glowOpacity = useSharedValue(0);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Shared values are stable refs
+     
     useEffect(() => {
         // Different animations based on gesture type
         if (animationType === 'tap') {
@@ -148,7 +148,7 @@ function GestureHintComponent({ visible, onDismiss, language, variant = 'full' }
     const titleScale = useSharedValue(0.8);
     const titleOpacity = useSharedValue(0);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Shared values are stable refs
+     
     useEffect(() => {
         if (visible) {
             titleScale.value = withSpring(1, { damping: 12, stiffness: 200 });
@@ -327,9 +327,11 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         backgroundColor: theme.colors.accent,
+        zIndex: 0, // Glow behind icon
     },
     hintIcon: {
         fontSize: 24,
+        zIndex: 1, // Icon above glow
     },
     hintText: {
         flex: 1,
