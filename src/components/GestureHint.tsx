@@ -38,7 +38,7 @@ const GESTURE_HINTS = [
         animationType: 'tap' as const,
     },
     {
-        icon: '👆👆',
+        icon: '✌️',  // Victory sign - visually suggests "two" taps (was '👆👆' which didn't fit)
         textKey: 'gestureHintDoubleTap' as TranslationKey,
         animationType: 'double' as const,
     },
@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
         backgroundColor: theme.colors.surfaceLight,
         borderRadius: theme.borderRadius.md,
+        overflow: 'visible', // Prevent emoji clipping
     },
     iconContainer: {
         width: 48,
@@ -320,6 +321,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: theme.spacing.md,
+        overflow: 'visible', // Prevent emoji clipping
     },
     iconGlow: {
         position: 'absolute',
@@ -331,6 +333,8 @@ const styles = StyleSheet.create({
     },
     hintIcon: {
         fontSize: 24,
+        lineHeight: 32, // Explicit line height to prevent clipping
+        textAlign: 'center',
         zIndex: 1, // Icon above glow
     },
     hintText: {

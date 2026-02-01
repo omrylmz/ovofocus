@@ -58,7 +58,7 @@ function FloatingParticle({ particle, isActive, color, isAppActive }: { particle
         translateY.value = withDelay(
             particle.delay,
             withRepeat(
-                withTiming(-height * 0.3, { duration: floatDuration, easing: Easing.inOut(Easing.ease) }),
+                withTiming(-height * 0.15, { duration: floatDuration, easing: Easing.inOut(Easing.ease) }), // Reduced travel to avoid timer
                 -1,
                 true
             )
@@ -121,11 +121,12 @@ export function FloatingParticles({ count = 15, isActive = false, progress = 0, 
     const particleColor = PARTICLE_COLORS[variant];
 
     // Generate particles with random positions and properties
+    // Keep particles away from top 35% of screen (timer area) to avoid overlap
     const particles = useMemo<Particle[]>(() => {
         return Array.from({ length: count }, (_, i) => ({
             id: i,
             initialX: Math.random() * width,
-            initialY: height * 0.3 + Math.random() * height * 0.6,
+            initialY: height * 0.4 + Math.random() * height * 0.55, // Start below timer area
             size: 3 + Math.random() * 5,
             duration: 6000 + Math.random() * 4000,
             delay: Math.random() * 2000,

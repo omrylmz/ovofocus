@@ -4,9 +4,29 @@
 
 **Goal:** Create consistent UI layouts across all phone sizes with no overlapping views.
 
-**Architecture:** Create a `useResponsive` hook providing screen-aware dimensions and scaling utilities. Refactor the Home screen to flex-based layout with proportional sizing. Apply same patterns to Collection and Modals.
+**Architecture:** Create a `useResponsive` hook providing screen-aware dimensions and scaling utilities. Refactor the Home screen to a **stacked vertical layout** where timer and egg are in separate sections (not overlapping). Apply same patterns to Collection and Modals.
 
 **Tech Stack:** React Native, React Native Reanimated, Expo, useWindowDimensions
+
+**CRITICAL LAYOUT CHANGE:** Timer and Egg must be **stacked vertically** (timer above, egg below), NOT layered on top of each other. This is the key fix for the overlap issue.
+
+```
+┌─────────────────────────┐
+│  Header (OvoFocus)      │  ← Fixed
+├─────────────────────────┤
+│  Stats Bar              │  ← Fixed
+├─────────────────────────┤
+│  Timer + Progress Ring  │  ← Flex section (separate from egg!)
+│      17:52 / 29%        │
+├─────────────────────────┤
+│    Egg + Glow Effects   │  ← Flex section (separate from timer!)
+│     "Keep going!"       │
+├─────────────────────────┤
+│  Pause / Give Up        │  ← Fixed
+├─────────────────────────┤
+│  Emergency / Shield     │  ← Fixed
+└─────────────────────────┘
+```
 
 ---
 
@@ -225,12 +245,14 @@ responsive values for egg, timer, grid, and modal sizing."
 
 ---
 
-## Task 2: Update Home Screen Layout Structure
+## Task 2: Update Home Screen Layout Structure (CRITICAL - Stacked Layout)
 
 **Files:**
 - Modify: `app/index.tsx`
 
-**Step 1: Import useResponsive and update styles**
+**This is the KEY task that fixes the overlap. Timer and Egg become separate stacked sections.**
+
+**Step 1: Import useResponsive**
 
 At the top of `app/index.tsx`, add the import:
 
@@ -238,7 +260,7 @@ At the top of `app/index.tsx`, add the import:
 import { useResponsive } from '../src/hooks/useResponsive';
 ```
 
-**Step 2: Update HomeScreen component to use responsive values**
+**Step 2: Add useResponsive to HomeScreen component**
 
 Inside `HomeScreen()`, after the existing hooks, add:
 
@@ -246,9 +268,9 @@ Inside `HomeScreen()`, after the existing hooks, add:
 const responsive = useResponsive();
 ```
 
-**Step 3: Update createStyles to accept responsive values**
+**Step 3: Add new styles for stacked layout**
 
-Modify the `createStyles` function signature and update the `content` style:
+Add these new styles to `createStyles`:
 
 ```typescript
 const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) => StyleSheet.create({
@@ -256,16 +278,82 @@ const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) =
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'space-between', // Changed from 'center' - key fix!
+        justifyContent: 'flex-start', // Changed - stack from top
         paddingHorizontal: responsive.horizontalPadding,
         paddingTop: 8,
         paddingBottom: 16,
+    },
+    // NEW: Separate section for timer
+    timerSection: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+    },
+    // NEW: Separate section for egg
+    eggSection: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
     },
     // ... rest of styles ...
 });
 ```
 
-**Step 4: Update styles creation in component**
+**Step 4: Update the JSX to use stacked layout**
+
+In the `{/* Main content */}` section, wrap Timer and Egg in separate Views:
+
+```tsx
+{/* Main content */}
+<View style={styles.content}>
+    {/* Timer Section - ABOVE egg, not overlapping */}
+    <View style={styles.timerSection}>
+        <EnhancedTimerDisplay
+            formattedTime={formattedTime}
+            isRunning={isRunning}
+            progress={progress}
+            sessionState={state.sessionState}
+            isPaused={state.isPaused}
+            language={state.settings.language}
+            theme={theme}
+            progressRingSize={responsive.progressRingSize}
+            timerFontSize={responsive.timerFontSize}
+        />
+    </View>
+
+    {/* Pomodoro Phase Indicator - between timer and egg */}
+    {isPomodoroMode && state.sessionState === 'active' && (
+        <View style={styles.pomodoroIndicator}>
+            {/* ... existing pomodoro indicator content ... */}
+        </View>
+    )}
+
+    {/* Egg Section - BELOW timer, not overlapping */}
+    <View style={styles.eggSection}>
+        <InteractiveEgg
+            sessionState={state.sessionState}
+            progress={progress}
+            duration={duration}
+            warningLevel={warningLevel as 0 | 1 | 2 | 3}
+            language={state.settings.language}
+            hapticsEnabled={state.settings.hapticsEnabled}
+            hasSeenGestureHints={state.settings.hasSeenGestureHints}
+            eggStyleId={state.settings.selectedEggStyle}
+            onStart={handleStart}
+            onShowGestureHints={() => setShowGestureHints(true)}
+        />
+    </View>
+
+    {/* Session Controls */}
+    <SessionControls ... />
+
+    {/* Power-up Controls */}
+    <PowerUpControls ... />
+</View>
+```
+
+**Step 5: Update styles creation in component**
 
 Change the useMemo for styles:
 
@@ -273,19 +361,19 @@ Change the useMemo for styles:
 const styles = useMemo(() => createStyles(theme, { horizontalPadding: responsive.horizontalPadding }), [theme, responsive.horizontalPadding]);
 ```
 
-**Step 5: Run tests and verify no regressions**
+**Step 6: Run tests and verify no regressions**
 
 Run: `npm test -- --watchAll=false`
 Expected: All existing tests pass
 
-**Step 6: Commit**
+**Step 7: Commit**
 
 ```bash
 git add app/index.tsx
-git commit -m "refactor: update Home screen to flex-based layout
+git commit -m "refactor: stack timer above egg to fix overlap
 
-Use space-between justification to prevent overlap between
-header, content, and controls sections."
+Timer and egg are now in separate flex sections that stack
+vertically. This prevents any overlap between them."
 ```
 
 ---
@@ -528,10 +616,12 @@ useResponsive hook. Glow effects and container scale with egg."
 
 ---
 
-## Task 5: Update EnhancedTimerDisplay with Responsive Sizing
+## Task 5: Update EnhancedTimerDisplay with Responsive Sizing (Standalone)
 
 **Files:**
 - Modify: `app/index.tsx` (EnhancedTimerDisplay component within file)
+
+**NOTE:** Since timer is now ABOVE the egg (not surrounding it), we can simplify this component. It just needs to render the progress ring and timer text, centered in its own section.
 
 **Step 1: Add responsive sizing to EnhancedTimerDisplay**
 
@@ -604,10 +694,12 @@ const enhancedTimerStyles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        // Remove fixed marginTop/marginBottom and minHeight
+        // Remove fixed marginTop/marginBottom
+        // minHeight should be based on progressRingSize
     },
     ringContainer: {
-        position: 'absolute',
+        // Change from position: 'absolute' to relative positioning
+        // since timer is now standalone (not overlaid on egg)
         alignItems: 'center',
         justifyContent: 'center',
         // width/height now come from props
@@ -616,22 +708,55 @@ const enhancedTimerStyles = StyleSheet.create({
 });
 ```
 
-**Step 5: Pass responsive values when rendering**
+**Step 5: IMPORTANT - Timer is now standalone**
 
-In HomeScreen where EnhancedTimerDisplay is used:
+The timer text and percentage should now be INSIDE the progress ring (centered), since there's no egg behind it. Update the return JSX:
 
+```tsx
+return (
+    <Animated.View style={[enhancedTimerStyles.container, containerStyle]}>
+        {/* Progress Ring */}
+        {sessionState === 'active' && (
+            <View style={[enhancedTimerStyles.ringContainer, { width: progressRingSize, height: progressRingSize }]}>
+                {/* SVG progress ring */}
+                <Svg width={progressRingSize} height={progressRingSize}>
+                    {/* ... circle elements ... */}
+                </Svg>
+
+                {/* Timer text CENTERED in the ring */}
+                <View style={enhancedTimerStyles.timerTextContainer}>
+                    <Animated.Text style={[timerStyle, timerGlowStyle]}>
+                        {formattedTime}
+                    </Animated.Text>
+                    <Text style={[enhancedTimerStyles.progressText, { color: ringColor }]}>
+                        {Math.round(progress * 100)}%
+                    </Text>
+                    {isPaused && (
+                        <Animated.Text style={[enhancedTimerStyles.pausedIndicator, pausedIndicatorStyle]}>
+                            {language === 'tr' ? 'DURAKLATILDI' : 'PAUSED'}
+                        </Animated.Text>
+                    )}
+                </View>
+            </View>
+        )}
+
+        {/* Idle state - just show timer text */}
+        {sessionState === 'idle' && (
+            <Animated.Text style={[timerStyle, timerGlowStyle]}>
+                {formattedTime}
+            </Animated.Text>
+        )}
+    </Animated.View>
+);
+```
+
+Add the new style:
 ```typescript
-<EnhancedTimerDisplay
-    formattedTime={formattedTime}
-    isRunning={isRunning}
-    progress={progress}
-    sessionState={state.sessionState}
-    isPaused={state.isPaused}
-    language={state.settings.language}
-    theme={theme}
-    progressRingSize={responsive.progressRingSize}
-    timerFontSize={responsive.timerFontSize}
-/>
+timerTextContainer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+},
 ```
 
 **Step 6: Run tests and verify**
@@ -643,9 +768,10 @@ Expected: All tests pass
 
 ```bash
 git add app/index.tsx
-git commit -m "refactor: make EnhancedTimerDisplay responsive
+git commit -m "refactor: make EnhancedTimerDisplay standalone
 
-Progress ring and timer font scale based on screen dimensions."
+Timer display is now a standalone component with progress ring
+containing the timer text centered inside. No longer overlays egg."
 ```
 
 ---
@@ -804,10 +930,21 @@ git commit -m "fix: address integration issues from responsive layout"
 After completing all tasks:
 
 1. **useResponsive hook** provides centralized responsive logic
-2. **Home screen** uses flex-based layout with space-between
-3. **Egg component** scales proportionally (150-320px)
-4. **Timer display** scales with egg
+2. **Home screen** uses **stacked vertical layout** - timer ABOVE egg, not overlapping
+3. **Timer display** is standalone with progress ring containing timer text
+4. **Egg component** scales proportionally (150-320px) in its own section
 5. **Collection grid** uses dynamic columns (2-4)
 6. **Modals** have max-width and scroll support
 
-All elements maintain proper spacing and never overlap on any screen size.
+**Key architectural change:** Timer and Egg are now in separate flex sections that stack vertically. This guarantees no overlap on any screen size.
+
+```
+Before (broken):          After (fixed):
+┌─────────────┐           ┌─────────────┐
+│  [Timer]    │           │  [Timer]    │
+│    ↓↓↓      │           │  17:52 29%  │
+│  [Egg] ←overlap!        ├─────────────┤
+│             │           │   [Egg]     │
+└─────────────┘           │   🥚        │
+                          └─────────────┘
+```

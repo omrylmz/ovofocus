@@ -626,6 +626,16 @@ export function SessionStatsBar({
         dailyGoal,
     }), [completedSessions, currentStreak, bestStreak, displayFocusMinutes, collectionCount, dailyProgress, dailyGoal]);
 
+    // Format time display for compact view
+    const formatTimeCompact = (minutes: number) => {
+        if (minutes < 60) {
+            return `${minutes}m`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    };
+
     return (
         <View style={styles.container}>
             <Pressable
@@ -636,41 +646,60 @@ export function SessionStatsBar({
                 accessibilityRole="button"
             >
                 <View style={styles.statsRow}>
-                    {/* Streak Pill */}
-                    <StatPill
-                        icon={currentStreak > 0 ? '\ud83d\udd25' : '\ud83d\udd25'}
-                        value={currentStreak}
-                        label={labels.streak}
-                        color={getStreakColor()}
-                        showBest={true}
-                        isBest={isBestStreak}
-                        accessibilityLabel={`Streak: ${currentStreak} days${isBestStreak ? ', this is your best streak' : ''}`}
-                        accessibilityHint="Tap for details"
-                        hapticsEnabled={hapticsEnabled}
-                    />
+                    {/* Streak - Compact */}
+                    <View style={styles.statItem}>
+                        <View style={styles.statIconValueRow}>
+                            <Text style={styles.statIcon}>🔥</Text>
+                            <Text style={[styles.statValue, { color: getStreakColor() }]}>
+                                {currentStreak}
+                            </Text>
+                            {isBestStreak && currentStreak > 0 && (
+                                <View style={styles.bestBadgeInline}>
+                                    <Text style={styles.bestBadgeInlineText}>BEST</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
 
                     {/* Divider */}
                     <View style={styles.divider} />
 
-                    {/* Today's Focus Time */}
-                    <FocusTimePill
-                        totalMinutes={displayFocusMinutes}
-                        label={labels.todayFocusTime || labels.dailyGoalProgress || 'Today'}
-                        onPress={handleOpenModal}
-                        hapticsEnabled={hapticsEnabled}
-                    />
+                    {/* Today's Focus Time - Compact */}
+                    <View style={styles.statItem}>
+                        <View style={styles.statIconValueRow}>
+                            <Text style={styles.statIcon}>⏱</Text>
+                            <Text style={[styles.statValue, { color: theme.colors.accent }]}>
+                                {formatTimeCompact(displayFocusMinutes)}
+                            </Text>
+                        </View>
+                    </View>
 
                     {/* Divider */}
                     <View style={styles.divider} />
 
-                    {/* Daily Goal Progress */}
-                    <DailyProgressIndicator
-                        completedSessions={dailyProgress.completedSessions}
-                        dailyGoal={dailyGoal}
-                        goalAchieved={dailyProgress.goalAchieved}
-                        onPress={handleOpenModal}
-                        hapticsEnabled={hapticsEnabled}
-                    />
+                    {/* Daily Goal Progress - Compact dots only */}
+                    <View style={styles.statItem}>
+                        <View style={styles.dailyGoalCompact}>
+                            <Text style={styles.statIcon}>
+                                {dailyProgress.goalAchieved ? '✨' : '🎯'}
+                            </Text>
+                            <View style={styles.progressDotsRow}>
+                                {Array.from({ length: Math.min(dailyGoal, 5) }, (_, i) => (
+                                    <View
+                                        key={i}
+                                        style={[
+                                            styles.progressDotCompact,
+                                            {
+                                                backgroundColor: i < dailyProgress.completedSessions
+                                                    ? (dailyProgress.goalAchieved ? theme.colors.success : theme.colors.accent)
+                                                    : theme.colors.surfaceLight,
+                                            },
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    </View>
                 </View>
             </Pressable>
 
@@ -690,29 +719,87 @@ const styles = StyleSheet.create({
     container: {
         marginHorizontal: theme.spacing.lg,
         marginTop: theme.spacing.xs,
-        marginBottom: theme.spacing.md,
-        zIndex: 10, // Stay above timer section
-        elevation: 10, // Android elevation
+        marginBottom: theme.spacing.sm,
+        zIndex: 10,
+        elevation: 10,
     },
     statsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'space-around',
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
         paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
+        paddingHorizontal: theme.spacing.sm,
         borderWidth: 1,
         borderColor: theme.colors.surfaceLight,
+        overflow: 'visible', // Prevent emoji clipping
         ...theme.shadows.small,
     },
     divider: {
         width: 1,
-        height: 32,
+        height: 24,
         backgroundColor: theme.colors.surfaceLight,
+        marginHorizontal: theme.spacing.xs,
     },
 
-    // Stat Pill styles
+    // Compact stat item styles
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 0, // Allow shrinking
+    },
+    statIconValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        overflow: 'visible', // Prevent emoji clipping
+    },
+    statIcon: {
+        fontSize: 16,
+        lineHeight: 20, // Explicit line height to prevent clipping
+        textAlign: 'center',
+    },
+    statValue: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+
+    // Inline BEST badge (compact)
+    bestBadgeInline: {
+        backgroundColor: theme.colors.legendary,
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        borderRadius: 4,
+        marginLeft: 2,
+    },
+    bestBadgeInlineText: {
+        fontSize: 8,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.background,
+        letterSpacing: 0.3,
+    },
+
+    // Daily goal compact
+    dailyGoalCompact: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    progressDotsRow: {
+        flexDirection: 'row',
+        gap: 4,
+    },
+    progressDotCompact: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+
+    // Legacy styles kept for StatPill, FocusTimePill, DailyProgressIndicator components
+    // These are still used in the detailed modal view
     pillContainer: {
         flex: 1,
         alignItems: 'center',
@@ -729,7 +816,7 @@ const styles = StyleSheet.create({
     },
     pillTextContainer: {
         alignItems: 'flex-start',
-        flexShrink: 1, // Allow text to shrink on narrow screens
+        flexShrink: 1,
     },
     pillValueRow: {
         flexDirection: 'row',
@@ -745,14 +832,14 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: -2,
-        maxWidth: 60, // Prevent overflow on narrow screens
+        maxWidth: 80,
     },
     trendArrow: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.bold,
     },
 
-    // Best badge styles
+    // Best badge styles (for detailed view)
     bestBadge: {
         position: 'absolute',
         top: -4,
@@ -780,7 +867,7 @@ const styles = StyleSheet.create({
         opacity: 0.2,
     },
 
-    // Focus Time Pill styles
+    // Focus Time Pill styles (for detailed view)
     focusTimePill: {
         flex: 1,
         flexDirection: 'row',
@@ -816,10 +903,10 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: -2,
-        maxWidth: 60,
+        maxWidth: 80,
     },
 
-    // Daily Progress styles
+    // Daily Progress styles (for detailed view)
     dailyProgressPill: {
         flex: 1,
         alignItems: 'center',

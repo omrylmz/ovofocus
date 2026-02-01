@@ -577,18 +577,16 @@ export function InteractiveEgg({
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden', // CRITICAL: clips effects to prevent overlap
+        // Don't use flex: 1 - let parent control sizing
     },
     eggWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 160,
-        minHeight: 200, // Compact size
-        overflow: 'hidden', // Clip internal effects too
+        minWidth: 140,
+        minHeight: 160,
     },
     feedbackGlow: {
         position: 'absolute',

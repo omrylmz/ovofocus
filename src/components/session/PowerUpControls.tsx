@@ -101,14 +101,14 @@ export function PowerUpControls({
 
 const styles = StyleSheet.create({
     container: {
-        // Fixed height to prevent layout shift
-        minHeight: 70,
+        // Minimal height - content determines size
+        minHeight: 50,
         alignItems: 'center',
         justifyContent: 'flex-start',
     },
     powerUpRow: {
         flexDirection: 'row',
-        marginTop: theme.spacing.md,
+        marginTop: theme.spacing.xs,
         alignItems: 'center',
     },
     buttonSpacer: {

@@ -42,13 +42,15 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     // Get responsive sizing
     const { eggSize } = useResponsive();
 
-    // Calculate derived sizes proportionally (minimized to prevent overflow)
-    const glowSize = Math.round(eggSize * 1.1); // Reduced from 1.2
-    const innerGlowSize = Math.round(eggSize * 0.85); // Reduced from 0.9
-    const sparkleContainerSize = Math.round(eggSize * 1.0); // Reduced from 1.1
-    const warningGlowSize = Math.round(eggSize * 1.15); // Reduced from 1.3
-    const containerHeight = Math.round(eggSize * 1.4); // Reduced from 1.6
-    const styledEggSize = Math.round(eggSize * 0.5);
+    // Calculate derived sizes proportionally
+    // The egg should be prominent, glow should be subtle backdrop
+    const styledEggSize = Math.round(eggSize * 0.85); // Egg is the main element
+    const glowSize = Math.round(styledEggSize * 1.3); // Glow slightly larger than egg
+    const innerGlowSize = Math.round(styledEggSize * 0.9);
+    const sparkleContainerSize = Math.round(styledEggSize * 1.1);
+    const warningGlowSize = Math.round(styledEggSize * 1.4);
+    // Container just fits the egg - text is handled by parent (InteractiveEgg)
+    const containerHeight = Math.round(styledEggSize * 1.25);
 
     // Get the current egg style
     const currentEggStyle = useMemo(() => {
@@ -360,20 +362,23 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 busy: sessionState === 'active',
             }}
         >
-            {/* Outer glow effect */}
-            <Animated.View
-                style={[
-                    styles.glow,
-                    glowStyle,
-                    {
-                        width: glowSize,
-                        height: glowSize,
-                        borderRadius: glowSize / 2,
-                        backgroundColor: currentEggStyle.primaryColor
-                    }
-                ]}
-                importantForAccessibility="no"
-            />
+            {/* Outer glow effect - only visible during active session with progress */}
+            {sessionState === 'active' && progress > 0.1 && (
+                <Animated.View
+                    style={[
+                        styles.glow,
+                        glowStyle,
+                        {
+                            width: glowSize,
+                            height: glowSize,
+                            borderRadius: glowSize / 2,
+                            backgroundColor: currentEggStyle.primaryColor
+                        }
+                    ]}
+                    importantForAccessibility="no"
+                    pointerEvents="none"
+                />
+            )}
 
             {/* Warning glow overlay */}
             {warningLevel > 0 && (
@@ -389,6 +394,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         }
                     ]}
                     importantForAccessibility="no"
+                    pointerEvents="none"
                 />
             )}
 
@@ -401,6 +407,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         { width: sparkleContainerSize, height: sparkleContainerSize }
                     ]}
                     importantForAccessibility="no"
+                    pointerEvents="none"
                 >
                     <Text style={[styles.sparkle, { color: currentEggStyle.primaryColor }]}>✦</Text>
                     <Text style={[styles.sparkle, styles.sparkle2, { color: currentEggStyle.primaryColor }]}>✦</Text>
@@ -409,20 +416,23 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 </Animated.View>
             )}
 
-            {/* Inner glow */}
-            <Animated.View
-                style={[
-                    styles.innerGlow,
-                    innerGlowStyle,
-                    {
-                        width: innerGlowSize,
-                        height: innerGlowSize,
-                        borderRadius: innerGlowSize / 2,
-                        backgroundColor: currentEggStyle.primaryColor
-                    }
-                ]}
-                importantForAccessibility="no"
-            />
+            {/* Inner glow - only during active session */}
+            {sessionState === 'active' && (
+                <Animated.View
+                    style={[
+                        styles.innerGlow,
+                        innerGlowStyle,
+                        {
+                            width: innerGlowSize,
+                            height: innerGlowSize,
+                            borderRadius: innerGlowSize / 2,
+                            backgroundColor: currentEggStyle.primaryColor
+                        }
+                    ]}
+                    importantForAccessibility="no"
+                    pointerEvents="none"
+                />
+            )}
 
             {/* Egg */}
             <Animated.View style={[styles.eggContainer, animatedStyle]} importantForAccessibility="no">
@@ -463,18 +473,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 </Animated.Text>
             )}
 
-            {sessionState === 'active' && (
-                <Text
-                    style={[styles.progressText, { color: currentEggStyle.primaryColor }]}
-                    accessible={true}
-                    accessibilityLiveRegion="polite"
-                >
-                    {progress < 0.25 && t('focus', language)}
-                    {progress >= 0.25 && progress < 0.5 && t('keepGoing', language)}
-                    {progress >= 0.5 && progress < 0.75 && t('doingGreat', language)}
-                    {progress >= 0.75 && t('almostThere', language)}
-                </Text>
-            )}
+            {/* Progress text removed - InteractiveEgg handles encouragement messages */}
         </View>
     );
 }
@@ -483,6 +482,8 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
+        // Note: overflow is NOT set to 'hidden' to allow glow effects to extend naturally
+        // The parent container (eggSection in index.tsx) handles clipping if needed
         // height is now dynamic
     },
     glow: {
@@ -523,7 +524,7 @@ const styles = StyleSheet.create({
     eggContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: theme.spacing.md,
+        // No margin - egg should be centered with the glow circle behind it
     },
     egg: {
         fontSize: 70,
@@ -537,15 +538,8 @@ const styles = StyleSheet.create({
     crackText: {
         fontSize: 36,
     },
-    progressText: {
-        marginTop: theme.spacing.md,
-        marginBottom: theme.spacing.lg,
-        fontSize: theme.fontSize.md,
-        color: theme.colors.accent,
-        fontWeight: theme.fontWeight.medium,
-    },
     failedText: {
-        marginTop: theme.spacing.md,
+        marginTop: theme.spacing.sm,
         fontSize: theme.fontSize.lg,
         color: theme.colors.error,
         fontWeight: theme.fontWeight.bold,

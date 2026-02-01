@@ -18,30 +18,36 @@ A responsive layout system with three principles:
 
 ## Home Screen Layout
 
-The Home screen uses a vertical flex layout with fixed header/footer and flexible center:
+The Home screen uses a **stacked vertical layout** where timer and egg are in SEPARATE sections (not overlapping):
 
 ```
 ┌─────────────────────────┐
-│     Stats Bar           │  ← Fixed height (~60px)
+│  Header (OvoFocus)      │  ← Fixed
 ├─────────────────────────┤
-│                         │
-│     Egg + Timer Area    │  ← flex: 1 (takes remaining space)
-│     (centered, scales)  │     Egg sizes to 40-50% of this area
-│                         │
+│  Stats Bar              │  ← Fixed (~60px)
 ├─────────────────────────┤
-│     Session Controls    │  ← Fixed height (~120px)
-│     (Start/Pause/etc)   │     Safe area padding at bottom
+│  Timer + Progress Ring  │  ← Separate section
+│      17:52 / 29%        │     Timer text inside ring
+├─────────────────────────┤
+│    Egg + Glow Effects   │  ← Separate section (flex: 1)
+│     "Keep going!"       │     Takes remaining space
+├─────────────────────────┤
+│  Pause / Give Up        │  ← Fixed
+├─────────────────────────┤
+│  Emergency / Shield     │  ← Fixed
 └─────────────────────────┘
 ```
 
-### Egg Container
-- Uses `flex: 1` to fill available vertical space
-- Egg scales proportionally within container (max 70% of container width)
-- Centered both horizontally and vertically
+### Timer Section
+- Contains progress ring with timer text centered INSIDE
+- Fixed height based on progressRingSize
+- No longer overlays the egg
 
-### Timer Circle
-- Sized relative to egg, not fixed pixels
-- Positioned around egg, scales together
+### Egg Section
+- Uses `flex: 1` to fill remaining vertical space
+- Egg scales proportionally within container
+- Centered both horizontally and vertically
+- Glow effects contained within section bounds
 
 ### Controls
 - Anchored to bottom with consistent padding

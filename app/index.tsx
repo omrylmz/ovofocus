@@ -44,7 +44,6 @@ import {
     SessionHeader,
     SessionStatsBar,
     SessionControls,
-    PowerUpControls,
     InteractiveEgg,
 } from '../src/components/session';
 import { GestureHint } from '../src/components/GestureHint';
@@ -272,7 +271,12 @@ function EnhancedTimerDisplay({
 
     return (
         <Animated.View
-            style={[enhancedTimerStyles.container, containerStyle]}
+            style={[
+                enhancedTimerStyles.container,
+                containerStyle,
+                // Explicit size to contain the absolutely-positioned ring
+                { width: progressRingSize, height: progressRingSize }
+            ]}
             accessible={true}
             accessibilityRole="timer"
             accessibilityLabel={`${timerLabel}: ${formattedTime}. ${progressLabel}`}
@@ -428,9 +432,9 @@ const enhancedTimerStyles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden', // CRITICAL: clips the ring to prevent overlap
+        // The ring is absolutely positioned, so we need to explicitly set
+        // a min height to prevent the ring from overlapping elements above/below.
+        // The actual height will be set dynamically based on progressRingSize prop.
     },
     ringContainer: {
         position: 'absolute', // Needed so timer text overlays the ring
@@ -482,7 +486,16 @@ const enhancedTimerStyles = StyleSheet.create({
 });
 
 // Create dynamic styles based on current theme
-const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) => StyleSheet.create({
+// Responsive type for createStyles
+interface ResponsiveStyleProps {
+    horizontalPadding: number;
+    timerSectionHeight: number;
+    eggSectionHeight: number;
+    controlsSectionHeight: number;
+    safeAreaBottom: number;
+}
+
+const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -501,39 +514,43 @@ const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) =
         flex: 1,
         zIndex: theme.zIndex.base,
         elevation: theme.zIndex.base,
-        // Ensure this layer is not affected by background
         backgroundColor: 'transparent',
     },
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'space-between', // Distribute sections evenly
+        // NO justifyContent - sections have explicit heights
         paddingHorizontal: responsive.horizontalPadding,
-        paddingTop: 8,
-        paddingBottom: 24, // Extra padding for virtual nav buttons
     },
+    // ==========================================================================
+    // PROPORTIONAL SECTION HEIGHTS
+    // Each section gets a percentage of available screen height.
+    // This eliminates gaps and ensures consistent layout across all devices.
+    // ==========================================================================
     timerSection: {
-        height: 200, // Fixed height to contain progress ring
+        height: responsive.timerSectionHeight,  // 18% of available
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden', // Clip any overflow
+        zIndex: 10,
+        elevation: 10,
     },
     eggSection: {
-        flex: 1,
+        height: responsive.eggSectionHeight,    // 60% of available
         width: '100%',
-        minHeight: 150, // Minimum height for egg
-        maxHeight: 300, // Maximum to prevent overflow
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden', // Clip glow effects
+        zIndex: 5,
+        elevation: 5,
     },
     controlsSection: {
-        height: 140, // Fixed height for controls
+        height: responsive.controlsSectionHeight, // 22% of available
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingBottom: 8,
+        zIndex: 10,
+        elevation: 10,
+        paddingBottom: responsive.safeAreaBottom, // Safe area for Android nav bar
     },
     debugBadge: {
         position: 'absolute',
@@ -557,11 +574,11 @@ const createStyles = (theme: Theme, responsive: { horizontalPadding: number }) =
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: theme.colors.surface,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.round,
-        marginBottom: theme.spacing.md,
-        gap: theme.spacing.md,
+        marginTop: theme.spacing.xs,
+        gap: theme.spacing.sm,
     },
     pomodoroPhaseContainer: {
         flexDirection: 'row',
@@ -611,8 +628,21 @@ export default function HomeScreen() {
     const { theme } = useTheme();
     const responsive = useResponsive();
 
-    // Create dynamic styles based on current theme
-    const styles = useMemo(() => createStyles(theme, { horizontalPadding: responsive.horizontalPadding }), [theme, responsive.horizontalPadding]);
+    // Create dynamic styles based on current theme and proportional layout
+    const styles = useMemo(() => createStyles(theme, {
+        horizontalPadding: responsive.horizontalPadding,
+        timerSectionHeight: responsive.timerSectionHeight,
+        eggSectionHeight: responsive.eggSectionHeight,
+        controlsSectionHeight: responsive.controlsSectionHeight,
+        safeAreaBottom: responsive.safeAreaBottom,
+    }), [
+        theme,
+        responsive.horizontalPadding,
+        responsive.timerSectionHeight,
+        responsive.eggSectionHeight,
+        responsive.controlsSectionHeight,
+        responsive.safeAreaBottom,
+    ]);
 
     // Modal states
     const [showHatchModal, setShowHatchModal] = useState(false);
@@ -1375,45 +1405,40 @@ export default function HomeScreen() {
                         />
                     </View>
 
-                    {/* Session Controls */}
-                    <SessionControls
-                        sessionState={state.sessionState}
-                        isPaused={state.isPaused}
-                        pauseCount={state.pauseCount}
-                        maxPauses={state.settings.maxPausesPerSession}
-                        onStart={handleStart}
-                        onPause={handlePause}
-                        onResume={handleResume}
-                        onGiveUp={handleGiveUp}
-                        onReset={handleReset}
-                        labels={{
-                            startFocus: i18n('startFocus'),
-                            pause: i18n('pause'),
-                            giveUp: i18n('giveUp'),
-                            paused: i18n('paused'),
-                            pausesRemaining: i18n('pausesRemaining'),
-                            resume: i18n('resume'),
-                            tryAgain: i18n('tryAgain'),
-                        }}
-                        language={state.settings.language}
-                    />
-
-                    {/* Power-up Controls */}
-                    <PowerUpControls
-                        sessionState={state.sessionState}
-                        isPaused={state.isPaused}
-                        emergencyPauseUsed={emergencyPauseUsed}
-                        activeShieldBonus={activeShieldBonus}
-                        shieldCount={shieldInventory.length}
-                        onEmergencyPause={handleEmergencyPause}
-                        onOpenShieldSelector={() => setShowShieldSelector(true)}
-                        labels={{
-                            emergencyPause: i18n('emergencyPause'),
-                            activateShield: i18n('activateShield'),
-                            shieldActive: i18n('shieldActive'),
-                        }}
-                        language={state.settings.language}
-                    />
+                    {/* Controls Section - 22% of available height + safe area padding */}
+                    <View style={styles.controlsSection}>
+                        <SessionControls
+                            sessionState={state.sessionState}
+                            isPaused={state.isPaused}
+                            pauseCount={state.pauseCount}
+                            maxPauses={state.settings.maxPausesPerSession}
+                            onStart={handleStart}
+                            onPause={handlePause}
+                            onResume={handleResume}
+                            onGiveUp={handleGiveUp}
+                            onReset={handleReset}
+                            // Power-up props (consolidated)
+                            emergencyPauseUsed={emergencyPauseUsed}
+                            activeShieldBonus={activeShieldBonus}
+                            shieldCount={shieldInventory.length}
+                            onEmergencyPause={handleEmergencyPause}
+                            onOpenShieldSelector={() => setShowShieldSelector(true)}
+                            labels={{
+                                startFocus: i18n('startFocus'),
+                                pause: i18n('pause'),
+                                giveUp: i18n('giveUp'),
+                                paused: i18n('paused'),
+                                pausesRemaining: i18n('pausesRemaining'),
+                                resume: i18n('resume'),
+                                tryAgain: i18n('tryAgain'),
+                                // Power-up labels
+                                emergencyPause: i18n('emergencyPause'),
+                                activateShield: i18n('activateShield'),
+                                shieldActive: i18n('shieldActive'),
+                            }}
+                            language={state.settings.language}
+                        />
+                    </View>
                 </View>
             </View>
 
