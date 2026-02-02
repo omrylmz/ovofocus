@@ -503,6 +503,28 @@ export function InteractiveEgg({
 
     return (
         <View style={styles.container}>
+            {/* Encouragement text - ABOVE egg, positioned absolutely */}
+            {encouragementText && (
+                <Animated.View
+                    entering={ZoomIn.duration(200).springify()}
+                    exiting={FadeOut.duration(150)}
+                    style={[
+                        styles.encouragementContainer,
+                        { borderColor: getFeedbackColor() }
+                    ]}
+                    pointerEvents="none"
+                >
+                    <Text
+                        style={[styles.encouragementText, { color: getFeedbackColor() }]}
+                        accessible={true}
+                        accessibilityRole="alert"
+                        accessibilityLiveRegion="polite"
+                    >
+                        {encouragementText}
+                    </Text>
+                </Animated.View>
+            )}
+
             {/* Interactive Egg with Gestures */}
             <GestureDetector gesture={composedGesture}>
                 <Animated.View
@@ -550,27 +572,6 @@ export function InteractiveEgg({
                     />
                 </Animated.View>
             </GestureDetector>
-
-            {/* Encouragement text with enhanced styling */}
-            {encouragementText && (
-                <Animated.View
-                    entering={ZoomIn.duration(200).springify()}
-                    exiting={FadeOut.duration(150)}
-                    style={[
-                        styles.encouragementContainer,
-                        { borderColor: getFeedbackColor() }
-                    ]}
-                >
-                    <Text
-                        style={[styles.encouragementText, { color: getFeedbackColor() }]}
-                        accessible={true}
-                        accessibilityRole="alert"
-                        accessibilityLiveRegion="polite"
-                    >
-                        {encouragementText}
-                    </Text>
-                </Animated.View>
-            )}
         </View>
     );
 }
@@ -622,13 +623,15 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     encouragementContainer: {
-        marginTop: theme.spacing.md,
+        position: 'absolute',
+        top: -50,  // Position above the egg
         backgroundColor: theme.colors.surface,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.sm,
         borderRadius: theme.borderRadius.round,
         borderWidth: 2,
         zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
         ...theme.shadows.medium,
     },
     encouragementText: {

@@ -528,15 +528,15 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
     // This eliminates gaps and ensures consistent layout across all devices.
     // ==========================================================================
     timerSection: {
-        height: responsive.timerSectionHeight,  // 18% of available
+        height: responsive.timerSectionHeight,  // 19% of available
         width: '100%',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-end',  // Push timer DOWN toward egg
         zIndex: 10,
         elevation: 10,
     },
     eggSection: {
-        height: responsive.eggSectionHeight,    // 60% of available
+        height: responsive.eggSectionHeight,    // 58% of available
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
@@ -544,13 +544,13 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
         elevation: 5,
     },
     controlsSection: {
-        height: responsive.controlsSectionHeight, // 22% of available
+        height: responsive.controlsSectionHeight, // 23% of available
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
+        paddingBottom: responsive.safeAreaBottom + 20, // Extra padding for virtual buttons
         zIndex: 10,
         elevation: 10,
-        paddingBottom: responsive.safeAreaBottom, // Safe area for Android nav bar
     },
     debugBadge: {
         position: 'absolute',
@@ -1174,19 +1174,8 @@ export default function HomeScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
 
-        // Show gesture hints for first-time users or periodically
-        const totalSessions = state.stats.completedSessions;
-        const lastHintSession = state.settings.lastGestureHintSession || 0;
-        const hintInterval = state.settings.gestureHintIntervalSessions || 5;
-        const sessionsSinceLastHint = totalSessions - lastHintSession;
-
-        // Show hints if: never seen before, OR interval has passed (and interval > 0)
-        const shouldShowHints = !state.settings.hasSeenGestureHints ||
-            (hintInterval > 0 && sessionsSinceLastHint >= hintInterval);
-
-        if (shouldShowHints) {
-            setTimeout(() => setShowGestureHints(true), 1000);
-        }
+        // GestureHint is now only triggered manually via egg interaction
+        // Removed auto-showing to avoid interrupting the main flow
     };
 
     const handlePause = () => {

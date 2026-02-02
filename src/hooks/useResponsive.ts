@@ -14,20 +14,20 @@ const HEADER_HEIGHT = 56;
 const STATS_BAR_HEIGHT = 60;
 
 // Proportional section ratios (must sum to 1.0)
-const TIMER_SECTION_RATIO = 0.18;   // 18% - progress ring + time
-const EGG_SECTION_RATIO = 0.60;     // 60% - main focal point
-const CONTROLS_SECTION_RATIO = 0.22; // 22% - buttons + padding
+const TIMER_SECTION_RATIO = 0.19;   // 19% - breathing room above ring
+const EGG_SECTION_RATIO = 0.58;     // 58% - egg itself is bigger
+const CONTROLS_SECTION_RATIO = 0.23; // 23% - comfortable controls
 
 // Egg sizing bounds
 const EGG_MIN_SIZE = 150;
-const EGG_MAX_SIZE = 320;
+const EGG_MAX_SIZE = 340;
 
 // Grid column breakpoints
 const GRID_2_COL_MAX = 360;
 const GRID_4_COL_MIN = 500;
 
 // Minimum safe area for Android virtual nav bar
-const MIN_BOTTOM_SAFE_AREA = 24;
+const MIN_BOTTOM_SAFE_AREA = 48;
 
 export interface ResponsiveValues {
   // Screen dimensions
@@ -130,10 +130,10 @@ export function useResponsive(): ResponsiveValues {
     48
   );
 
-  // Egg size: 65% of egg section height, clamped
-  // Also consider width constraint (45% of screen width)
-  const eggByHeight = Math.round(eggSectionHeight * 0.65);
-  const eggByWidth = Math.round(screenWidth * 0.45);
+  // Egg size: 70% of egg section height, clamped
+  // Also consider width constraint (48% of screen width)
+  const eggByHeight = Math.round(eggSectionHeight * 0.70);
+  const eggByWidth = Math.round(screenWidth * 0.48);
   const eggSize = clamp(
     Math.min(eggByHeight, eggByWidth),
     EGG_MIN_SIZE,
