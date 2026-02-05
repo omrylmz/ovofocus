@@ -268,7 +268,7 @@ export const InlineHint = React.memo(InlineHintComponent);
 const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: theme.colors.semantic.overlayHeavy,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: theme.zIndex.modal,
@@ -327,15 +327,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.colors.accent,
         zIndex: 0, // Glow behind icon
+        elevation: 0,
     },
     hintIcon: {
         fontSize: 24,
         lineHeight: 32, // Explicit line height to prevent clipping
         textAlign: 'center',
         zIndex: 1, // Icon above glow
+        elevation: 1,
     },
     hintText: {
         flex: 1,

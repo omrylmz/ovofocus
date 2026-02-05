@@ -174,7 +174,16 @@ export const theme = {
       overlay: 'rgba(0, 0, 0, 0.6)',
       overlayLight: 'rgba(0, 0, 0, 0.4)',
       overlayDark: 'rgba(0, 0, 0, 0.8)',
+      overlayHeavy: 'rgba(0, 0, 0, 0.85)',    // Standard modal backdrops
+      overlayUltra: 'rgba(0, 0, 0, 0.92)',     // Celebration/hatch modals
     },
+  },
+
+  opacity: {
+    disabled: 0.5,
+    hint: 0.7,
+    subtle: 0.15,
+    medium: 0.3,
   },
 
   spacing: {
@@ -187,6 +196,8 @@ export const theme = {
   },
 
   borderRadius: {
+    xxs: 2,
+    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
@@ -413,6 +424,8 @@ export const lightTheme = {
       overlay: 'rgba(0, 0, 0, 0.5)',
       overlayLight: 'rgba(0, 0, 0, 0.3)',
       overlayDark: 'rgba(0, 0, 0, 0.7)',
+      overlayHeavy: 'rgba(0, 0, 0, 0.75)',
+      overlayUltra: 'rgba(0, 0, 0, 0.85)',
     },
   },
   shadows: {

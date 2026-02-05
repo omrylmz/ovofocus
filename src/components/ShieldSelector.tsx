@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: theme.colors.semantic.overlayHeavy,
     },
     overlayPressable: {
         flex: 1,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     rarityIndicator: {
         width: 8,
         height: '100%',
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         marginRight: theme.spacing.md,
     },
     shieldInfo: {

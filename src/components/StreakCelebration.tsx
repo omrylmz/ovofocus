@@ -230,7 +230,7 @@ export function StreakCelebration({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backgroundColor: theme.colors.semantic.overlayUltra,
         justifyContent: 'center',
         alignItems: 'center',
     },

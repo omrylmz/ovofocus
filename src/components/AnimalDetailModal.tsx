@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: theme.colors.semantic.overlayHeavy,
     },
     backdropPressable: {
         flex: 1,
@@ -1176,11 +1176,12 @@ const styles = StyleSheet.create({
         right: theme.spacing.md,
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.colors.surfaceLight,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10,
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     closeText: {
         fontSize: 16,
@@ -1194,13 +1195,14 @@ const styles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10,
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     heartGlow: {
         position: 'absolute',
         width: 50,
         height: 50,
-        borderRadius: 25,
+        borderRadius: theme.borderRadius.xl,
     },
     favoriteText: {
         fontSize: 28,
@@ -1211,7 +1213,7 @@ const styles = StyleSheet.create({
     animalCircle: {
         width: 120,
         height: 120,
-        borderRadius: 60,
+        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.background,
         borderWidth: 3,
         justifyContent: 'center',
@@ -1238,7 +1240,7 @@ const styles = StyleSheet.create({
     rarityText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
     },
     description: {
         fontSize: theme.fontSize.md,
@@ -1293,7 +1295,7 @@ const styles = StyleSheet.create({
     historyDot: {
         width: 8,
         height: 8,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
     historyDate: {
         fontSize: theme.fontSize.sm,
@@ -1308,7 +1310,7 @@ const styles = StyleSheet.create({
     latestBadgeText: {
         fontSize: 10,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
     },
     historyMore: {
         fontSize: theme.fontSize.xs,
@@ -1323,13 +1325,13 @@ const styles = StyleSheet.create({
     progressBar: {
         height: 8,
         backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         overflow: 'hidden',
         marginBottom: theme.spacing.xs,
     },
     progressFill: {
         height: '100%',
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
     progressText: {
         fontSize: theme.fontSize.xs,
@@ -1495,7 +1497,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-        zIndex: 10,
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     floatingIcon: {
         fontSize: 24,

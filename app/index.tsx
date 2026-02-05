@@ -2,18 +2,8 @@ import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, laz
 import { View, Text, StyleSheet, SafeAreaView, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    useAnimatedProps,
-    withTiming,
-    withRepeat,
-    withSequence,
-    withSpring,
-    Easing,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { theme as darkTheme, Theme } from '../src/styles/theme';
+import { TimerProgressBar } from '../src/components/TimerProgressBar';
 import { useGame } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
 import { useTimer } from '../src/hooks/useTimer';
@@ -59,431 +49,6 @@ const AchievementModal = lazy(() =>
 const OnboardingFlow = lazy(() =>
     import('../src/components/OnboardingFlow').then(module => ({ default: module.OnboardingFlow }))
 );
-
-// Create animated SVG components
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-// Enhanced Timer Display with Progress Ring
-interface EnhancedTimerDisplayProps {
-    formattedTime: string;
-    isRunning: boolean;
-    progress: number;
-    sessionState: 'idle' | 'active' | 'completed' | 'failed';
-    isPaused: boolean;
-    language?: 'en' | 'tr' | 'es';
-    theme: Theme;
-    progressRingSize: number;
-    timerFontSize: number;
-}
-
-function EnhancedTimerDisplay({
-    formattedTime,
-    isRunning,
-    progress,
-    sessionState,
-    isPaused,
-    language = 'en',
-    theme,
-    progressRingSize,
-    timerFontSize,
-}: EnhancedTimerDisplayProps) {
-    // Calculate ring geometry from props
-    const STROKE_WIDTH = Math.round(progressRingSize * 0.043); // ~12 at 280
-    const RADIUS = (progressRingSize - STROKE_WIDTH) / 2;
-    const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-    // Accessibility labels
-    const timerLabel = language === 'tr' ? 'Odaklanma zamanlayıcısı' :
-                       language === 'es' ? 'Temporizador de enfoque' : 'Focus timer';
-    const progressLabel = language === 'tr'
-        ? `Seans ilerlemesi: yüzde ${Math.round(progress * 100)} tamamlandı`
-        : language === 'es'
-        ? `Progreso de la sesion: ${Math.round(progress * 100)} por ciento completado`
-        : `Session progress: ${Math.round(progress * 100)} percent complete`;
-
-    // Animated values
-    const progressAnim = useSharedValue(0);
-    const timerGlow = useSharedValue(0);
-    const pulseScale = useSharedValue(1);
-    const pausePulse = useSharedValue(1);
-    const completionBurst = useSharedValue(0);
-    const ringRotation = useSharedValue(0);
-
-    // Smooth progress animation
-    useEffect(() => {
-        progressAnim.value = withTiming(progress, {
-            duration: 300,
-            easing: Easing.out(Easing.cubic),
-        });
-    }, [progress]);
-
-    // Timer glow animation when running
-    useEffect(() => {
-        if (isRunning && !isPaused) {
-            timerGlow.value = withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-        } else {
-            timerGlow.value = withTiming(0, { duration: 300 });
-        }
-    }, [isRunning, isPaused]);
-
-    // Pulse animation for active state
-    useEffect(() => {
-        if (isRunning && !isPaused) {
-            pulseScale.value = withRepeat(
-                withSequence(
-                    withTiming(1.02, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-        } else {
-            pulseScale.value = withTiming(1, { duration: 300 });
-        }
-    }, [isRunning, isPaused]);
-
-    // Pause pulsing animation
-    useEffect(() => {
-        if (isPaused) {
-            pausePulse.value = withRepeat(
-                withSequence(
-                    withTiming(0.6, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-        } else {
-            pausePulse.value = withTiming(1, { duration: 200 });
-        }
-    }, [isPaused]);
-
-    // Completion burst animation
-    useEffect(() => {
-        if (sessionState === 'completed') {
-            completionBurst.value = 0;
-            completionBurst.value = withSequence(
-                withSpring(1.2, { damping: 8, stiffness: 200 }),
-                withSpring(1, { damping: 15, stiffness: 300 })
-            );
-        } else {
-            completionBurst.value = withTiming(0, { duration: 300 });
-        }
-    }, [sessionState]);
-
-    // Slow ring rotation for visual interest
-    useEffect(() => {
-        if (sessionState === 'active' && !isPaused) {
-            ringRotation.value = withRepeat(
-                withTiming(360, { duration: 60000, easing: Easing.linear }),
-                -1,
-                false
-            );
-        }
-    }, [sessionState, isPaused]);
-
-    // Animated props for the progress circle
-    const animatedProgressProps = useAnimatedProps(() => {
-        const strokeDashoffset = CIRCUMFERENCE * (1 - progressAnim.value);
-        return {
-            strokeDashoffset,
-        };
-    });
-
-    // Timer text glow style
-    const timerGlowStyle = useAnimatedStyle(() => {
-        const glowIntensity = isPaused ? 0 : timerGlow.value * 20;
-        return {
-            textShadowColor: isPaused ? theme.colors.warning : theme.colors.accent,
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: glowIntensity,
-            transform: [{ scale: pulseScale.value }],
-        };
-    });
-
-    // Container style with pause opacity
-    const containerStyle = useAnimatedStyle(() => {
-        return {
-            opacity: isPaused ? pausePulse.value : 1,
-        };
-    });
-
-    // Ring container style with completion burst
-    const ringContainerStyle = useAnimatedStyle(() => {
-        const scale = sessionState === 'completed'
-            ? completionBurst.value || 1
-            : pulseScale.value;
-        return {
-            transform: [
-                { scale: scale },
-                { rotate: `${ringRotation.value}deg` },
-            ] as const,
-        };
-    });
-
-    // Background ring glow for active state
-    const ringGlowStyle = useAnimatedStyle(() => {
-        const glowOpacity = isRunning && !isPaused ? timerGlow.value * 0.3 : 0;
-        return {
-            opacity: glowOpacity,
-        };
-    });
-
-    // Paused indicator animated style
-    const pausedIndicatorStyle = useAnimatedStyle(() => {
-        return {
-            opacity: pausePulse.value,
-        };
-    });
-
-    // Completion text animated style
-    const completionTextStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: completionBurst.value || 1 }],
-        };
-    });
-
-    // Get ring color based on state
-    const getRingColor = () => {
-        if (sessionState === 'completed') return theme.colors.success;
-        if (sessionState === 'failed') return theme.colors.error;
-        if (isPaused) return theme.colors.warning;
-        return theme.colors.accent;
-    };
-
-    // Get timer text color based on state
-    const getTimerColor = () => {
-        if (sessionState === 'completed') return theme.colors.success;
-        if (sessionState === 'failed') return theme.colors.error;
-        if (isPaused) return theme.colors.warning;
-        return theme.colors.text;
-    };
-
-    const ringColor = getRingColor();
-    const timerColor = getTimerColor();
-
-    return (
-        <Animated.View
-            style={[
-                enhancedTimerStyles.container,
-                containerStyle,
-                // Explicit size to contain the absolutely-positioned ring
-                { width: progressRingSize, height: progressRingSize }
-            ]}
-            accessible={true}
-            accessibilityRole="timer"
-            accessibilityLabel={`${timerLabel}: ${formattedTime}. ${progressLabel}`}
-            accessibilityLiveRegion={isRunning ? 'polite' : 'none'}
-        >
-            {/* Progress Ring */}
-            {sessionState === 'active' && (
-                <Animated.View style={[
-                    enhancedTimerStyles.ringContainer,
-                    ringContainerStyle,
-                    { width: progressRingSize, height: progressRingSize }
-                ]}>
-                    {/* Glow effect behind the ring */}
-                    <Animated.View style={[
-                        enhancedTimerStyles.ringGlow,
-                        ringGlowStyle,
-                        {
-                            width: progressRingSize + 20,
-                            height: progressRingSize + 20,
-                            borderRadius: (progressRingSize + 20) / 2,
-                            backgroundColor: ringColor
-                        }
-                    ]} />
-
-                    <Svg
-                        width={progressRingSize}
-                        height={progressRingSize}
-                        style={enhancedTimerStyles.svg}
-                    >
-                        <Defs>
-                            <LinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <Stop offset="0%" stopColor={ringColor} stopOpacity="1" />
-                                <Stop offset="100%" stopColor={isPaused ? theme.colors.warning : theme.colors.primary} stopOpacity="0.8" />
-                            </LinearGradient>
-                        </Defs>
-
-                        {/* Background circle */}
-                        <Circle
-                            cx={progressRingSize / 2}
-                            cy={progressRingSize / 2}
-                            r={RADIUS}
-                            stroke={theme.colors.surface}
-                            strokeWidth={STROKE_WIDTH}
-                            fill="transparent"
-                            opacity={0.3}
-                        />
-
-                        {/* Progress circle */}
-                        <AnimatedCircle
-                            cx={progressRingSize / 2}
-                            cy={progressRingSize / 2}
-                            r={RADIUS}
-                            stroke="url(#progressGradient)"
-                            strokeWidth={STROKE_WIDTH}
-                            fill="transparent"
-                            strokeLinecap="round"
-                            strokeDasharray={CIRCUMFERENCE}
-                            animatedProps={animatedProgressProps}
-                            transform={`rotate(-90 ${progressRingSize / 2} ${progressRingSize / 2})`}
-                        />
-
-                        {/* Progress end cap glow */}
-                        {progress > 0.01 && (
-                            <Circle
-                                cx={progressRingSize / 2 + RADIUS * Math.cos((progress * 360 - 90) * Math.PI / 180)}
-                                cy={progressRingSize / 2 + RADIUS * Math.sin((progress * 360 - 90) * Math.PI / 180)}
-                                r={STROKE_WIDTH / 2 + 4}
-                                fill={ringColor}
-                                opacity={0.5}
-                            />
-                        )}
-                    </Svg>
-                </Animated.View>
-            )}
-
-            {/* Completion Ring Effect */}
-            {sessionState === 'completed' && (
-                <Animated.View style={[
-                    enhancedTimerStyles.completionRing,
-                    ringContainerStyle,
-                    { width: progressRingSize, height: progressRingSize }
-                ]}>
-                    <Svg
-                        width={progressRingSize}
-                        height={progressRingSize}
-                        style={enhancedTimerStyles.svg}
-                    >
-                        <Circle
-                            cx={progressRingSize / 2}
-                            cy={progressRingSize / 2}
-                            r={RADIUS}
-                            stroke={theme.colors.success}
-                            strokeWidth={STROKE_WIDTH}
-                            fill="transparent"
-                            opacity={0.8}
-                        />
-                    </Svg>
-                </Animated.View>
-            )}
-
-            {/* Timer Text */}
-            <Animated.Text
-                style={[
-                    enhancedTimerStyles.timer,
-                    { color: timerColor, fontSize: timerFontSize },
-                    timerGlowStyle,
-                ]}
-            >
-                {formattedTime}
-            </Animated.Text>
-
-            {/* Progress percentage (only during active session) */}
-            {sessionState === 'active' && (
-                <Animated.View style={enhancedTimerStyles.progressInfo}>
-                    <Text style={[
-                        enhancedTimerStyles.progressText,
-                        { color: ringColor }
-                    ]}>
-                        {Math.round(progress * 100)}%
-                    </Text>
-                    {isPaused && (
-                        <Animated.Text
-                            style={[
-                                enhancedTimerStyles.pausedIndicator,
-                                pausedIndicatorStyle
-                            ]}
-                        >
-                            {language === 'tr' ? 'DURAKLATILDI' :
-                             language === 'es' ? 'PAUSADO' : 'PAUSED'}
-                        </Animated.Text>
-                    )}
-                </Animated.View>
-            )}
-
-            {/* Completion celebration text */}
-            {sessionState === 'completed' && (
-                <Animated.Text
-                    style={[
-                        enhancedTimerStyles.completionText,
-                        completionTextStyle
-                    ]}
-                >
-                    {language === 'tr' ? 'TAMAMLANDI!' :
-                     language === 'es' ? 'COMPLETADO!' : 'COMPLETED!'}
-                </Animated.Text>
-            )}
-        </Animated.View>
-    );
-}
-
-// Styles for enhanced timer
-const enhancedTimerStyles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        // The ring is absolutely positioned, so we need to explicitly set
-        // a min height to prevent the ring from overlapping elements above/below.
-        // The actual height will be set dynamically based on progressRingSize prop.
-    },
-    ringContainer: {
-        position: 'absolute', // Needed so timer text overlays the ring
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    ringGlow: {
-        position: 'absolute',
-    },
-    svg: {
-        transform: [{ rotateZ: '0deg' }],
-    },
-    timer: {
-        // fontSize is now dynamic
-        fontWeight: darkTheme.fontWeight.bold,
-        fontVariant: ['tabular-nums'],
-    },
-    progressInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: darkTheme.spacing.sm,
-        gap: darkTheme.spacing.md,
-    },
-    progressText: {
-        fontSize: darkTheme.fontSize.lg,
-        fontWeight: darkTheme.fontWeight.semibold,
-    },
-    pausedIndicator: {
-        fontSize: darkTheme.fontSize.sm,
-        fontWeight: darkTheme.fontWeight.bold,
-        color: darkTheme.colors.warning,
-        backgroundColor: 'rgba(255, 193, 7, 0.2)',
-        paddingHorizontal: darkTheme.spacing.md,
-        paddingVertical: darkTheme.spacing.xs,
-        borderRadius: darkTheme.borderRadius.round,
-        overflow: 'hidden',
-    },
-    completionRing: {
-        position: 'absolute', // Needed for overlay design
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    completionText: {
-        fontSize: darkTheme.fontSize.lg,
-        fontWeight: darkTheme.fontWeight.bold,
-        color: darkTheme.colors.success,
-        marginTop: darkTheme.spacing.sm,
-    },
-});
 
 // Create dynamic styles based on current theme
 // Responsive type for createStyles
@@ -722,7 +287,7 @@ export default function HomeScreen() {
                     title: i18n('milestone_first_animal' as any) || 'Welcome to Ovo Focus!',
                     subtitle: i18n('milestone_first_animal_subtitle' as any) || 'Your focus journey begins!',
                     icon: achievement.icon,
-                    color: '#FFD700', // Gold for first animal
+                    color: theme.colors.legendary, // Gold for first animal
                 };
             case 'collection_count':
                 return {
@@ -731,7 +296,7 @@ export default function HomeScreen() {
                     subtitle: `${achievement.threshold} ${i18n('milestoneCollectionSubtitle' as any) || 'animals hatched!'}`,
                     icon: achievement.icon,
                     value: achievement.threshold,
-                    color: '#4FC3F7', // Light blue
+                    color: theme.colors.rare, // Light blue
                 };
             case 'streak':
                 return {
@@ -740,7 +305,7 @@ export default function HomeScreen() {
                     subtitle: `${achievement.threshold} ${i18n('milestoneStreakSubtitle' as any) || 'days in a row!'}`,
                     icon: achievement.icon,
                     value: achievement.threshold,
-                    color: '#FF6B6B', // Orange-red for fire
+                    color: theme.colors.primary, // Orange-red for fire
                 };
             case 'rarity':
                 return {
@@ -748,9 +313,9 @@ export default function HomeScreen() {
                     title: i18n('milestoneRarityTitle' as any) || 'New Discovery!',
                     subtitle: i18n(`achievement_${achievement.id}_desc` as any) || `First ${achievement.rarityRequired} animal!`,
                     icon: achievement.icon,
-                    color: achievement.rarityRequired === 'legendary' ? '#FFD700' :
-                           achievement.rarityRequired === 'epic' ? '#BA68C8' :
-                           achievement.rarityRequired === 'rare' ? '#4FC3F7' : '#A5D6A7',
+                    color: achievement.rarityRequired === 'legendary' ? theme.colors.legendary :
+                           achievement.rarityRequired === 'epic' ? theme.colors.epic :
+                           achievement.rarityRequired === 'rare' ? theme.colors.rare : theme.colors.semantic.successLight,
                 };
             default:
                 return null;
@@ -1325,9 +890,9 @@ export default function HomeScreen() {
 
                 {/* Main content */}
                 <View style={styles.content}>
-                    {/* Timer Section - separate from egg */}
+                    {/* Timer Section - horizontal progress bar */}
                     <View style={styles.timerSection}>
-                        <EnhancedTimerDisplay
+                        <TimerProgressBar
                             formattedTime={formattedTime}
                             isRunning={isRunning}
                             progress={progress}
@@ -1335,7 +900,8 @@ export default function HomeScreen() {
                             isPaused={state.isPaused}
                             language={state.settings.language}
                             theme={theme}
-                            progressRingSize={responsive.progressRingSize}
+                            barWidth={responsive.timerBarWidth}
+                            barHeight={responsive.timerBarHeight}
                             timerFontSize={responsive.timerFontSize}
                         />
 

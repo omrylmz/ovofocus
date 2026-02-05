@@ -300,7 +300,7 @@ const createStyles = (theme: Theme) =>
             height: 40,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 20,
+            borderRadius: theme.borderRadius.xl,
             backgroundColor: theme.colors.surface,
         },
         closeButtonText: {
@@ -389,14 +389,14 @@ const createCardStyles = (theme: Theme) =>
             right: theme.spacing.xs,
             width: 20,
             height: 20,
-            borderRadius: 10,
+            borderRadius: theme.borderRadius.sm,
             backgroundColor: theme.colors.success,
             alignItems: 'center',
             justifyContent: 'center',
         },
         selectedBadgeText: {
             fontSize: 12,
-            color: '#FFFFFF',
+            color: theme.colors.text,
             fontWeight: theme.fontWeight.bold,
         },
         progressContainer: {
@@ -406,13 +406,13 @@ const createCardStyles = (theme: Theme) =>
         progressBarBg: {
             height: 4,
             backgroundColor: theme.colors.semantic.border,
-            borderRadius: 2,
+            borderRadius: theme.borderRadius.xxs,
             overflow: 'hidden',
         },
         progressBarFill: {
             height: '100%',
             backgroundColor: theme.colors.accent,
-            borderRadius: 2,
+            borderRadius: theme.borderRadius.xxs,
         },
         unlockText: {
             fontSize: 9,

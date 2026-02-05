@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
     shieldButtonText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.semibold,
-        color: '#fff',
+        color: theme.colors.text,
     },
     buttonDisabled: {
-        opacity: 0.4,
+        opacity: theme.opacity.disabled,
     },
     shieldActiveIndicator: {
         backgroundColor: theme.colors.success,
@@ -149,6 +149,6 @@ const styles = StyleSheet.create({
     shieldActiveText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.semibold,
-        color: '#fff',
+        color: theme.colors.text,
     },
 });

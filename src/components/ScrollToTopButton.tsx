@@ -31,7 +31,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     button: {
         width: 48,
         height: 48,
-        borderRadius: 24,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.colors.accent,
         alignItems: 'center',
         justifyContent: 'center',

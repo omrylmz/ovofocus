@@ -52,7 +52,7 @@ type ViewState = 'loading' | 'permission_required' | 'unavailable' | 'ready' | '
 const createStyles = (theme: Theme) => StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: theme.colors.semantic.overlayHeavy,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -84,7 +84,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     closeButton: {
         width: 32,
         height: 32,
-        borderRadius: theme.borderRadius.sm,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.colors.surfaceLight,
         justifyContent: 'center',
         alignItems: 'center',
@@ -200,7 +200,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         width: 4,
         height: '100%',
         backgroundColor: theme.colors.primary,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
         marginRight: theme.spacing.sm,
     },
     // Available slot card

@@ -233,14 +233,14 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     progressBar: {
         height: 12,
         backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
         overflow: 'hidden',
         marginBottom: theme.spacing.sm,
     },
     progressFill: {
         height: '100%',
         backgroundColor: theme.colors.accent,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
     },
     progressText: {
         fontSize: theme.fontSize.sm,
@@ -285,7 +285,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     sectionDot: {
         width: 12,
         height: 12,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
         marginRight: theme.spacing.sm,
     },
     sectionTitle: {

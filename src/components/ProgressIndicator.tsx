@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     },
     gridSegment: {
         flex: 1,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
     },
     fill: {
         height: '100%',

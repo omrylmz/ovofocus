@@ -195,13 +195,13 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xl,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
-        letterSpacing: -0.5,
+        letterSpacing: theme.typographyConfig.letterSpacing.tight,
     },
     logoSubtitle: {
         fontSize: theme.fontSize.xl,
         fontWeight: theme.fontWeight.medium,
         color: theme.colors.accent,
-        letterSpacing: -0.5,
+        letterSpacing: theme.typographyConfig.letterSpacing.tight,
     },
     // Action icons
     headerActions: {

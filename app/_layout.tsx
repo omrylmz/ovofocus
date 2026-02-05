@@ -53,7 +53,7 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
                     },
                     headerTintColor: theme.colors.text,
                     headerTitleStyle: {
-                        fontWeight: '600',
+                        fontWeight: theme.fontWeight.semibold,
                     },
                     contentStyle: {
                         backgroundColor: theme.colors.background,

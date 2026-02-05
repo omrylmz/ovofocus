@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -764,9 +764,9 @@ export function OnboardingFlow({
                 {/* Header with skip button */}
                 <View style={styles.header}>
                     {!isLastStep ? (
-                        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                        <Pressable onPress={handleSkip} style={styles.skipButton}>
                             <Text style={styles.skipText}>{t('skip', language)}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     ) : (
                         <View style={styles.skipButton} />
                     )}
@@ -814,9 +814,9 @@ export function OnboardingFlow({
                 {/* Navigation buttons */}
                 <View style={styles.buttonRow}>
                     {!isFirstStep && (
-                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                        <Pressable onPress={handleBack} style={styles.backButton}>
                             <Text style={styles.backButtonText}>{'←'}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     )}
                     <View style={[styles.mainButtonContainer, isFirstStep && styles.mainButtonContainerCentered]}>
                         <PixelButton

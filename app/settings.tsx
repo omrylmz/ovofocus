@@ -468,7 +468,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     // Delete confirmation modal styles
     deleteModalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: theme.colors.semantic.overlayDark,
         justifyContent: 'center',
         alignItems: 'center',
         padding: theme.spacing.lg,

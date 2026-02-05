@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     },
     dot: {
         backgroundColor: theme.colors.secondary,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
     },
     message: {
         marginTop: theme.spacing.sm,

@@ -686,12 +686,12 @@ const styles = StyleSheet.create({
     xpBarBackground: {
         height: 4,
         backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
         overflow: 'hidden',
     },
     xpBarFill: {
         height: '100%',
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
     },
     xpText: {
         fontSize: 8,
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     rarityText: {
         fontSize: 8,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
         textShadowColor: 'rgba(255, 255, 255, 0.3)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 1,
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
     levelDot: {
         width: 5,
         height: 5,
-        borderRadius: 2.5,
+        borderRadius: theme.borderRadius.xxs,
     },
 });
 

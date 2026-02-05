@@ -245,19 +245,19 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
     },
     primaryText: {
-        color: '#FFFFFF',
+        color: theme.colors.text,
     },
     secondaryContainer: {
         backgroundColor: theme.colors.secondary,
     },
     secondaryText: {
-        color: '#FFFFFF',
+        color: theme.colors.text,
     },
     dangerContainer: {
         backgroundColor: theme.colors.error,
     },
     dangerText: {
-        color: '#FFFFFF',
+        color: theme.colors.text,
     },
     ghostContainer: {
         backgroundColor: 'transparent',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
 
     // States
     disabled: {
-        opacity: 0.5,
+        opacity: theme.opacity.disabled,
     },
     disabledText: {
         opacity: 0.8,

@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     iconButton: {
         width: 48,
         height: 48,
-        borderRadius: 24,
+        borderRadius: theme.borderRadius.xl,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: theme.colors.surface,
@@ -334,13 +334,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 82, 82, 0.1)',
     },
     iconButtonDisabled: {
-        opacity: 0.4,
+        opacity: theme.opacity.disabled,
     },
     iconButtonText: {
         fontSize: 20,
     },
     iconButtonTextDisabled: {
-        opacity: 0.6,
+        opacity: theme.opacity.hint,
     },
     // Shield badge
     shieldContainer: {
@@ -353,14 +353,14 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.epic,
         width: 18,
         height: 18,
-        borderRadius: 9,
+        borderRadius: theme.borderRadius.sm,
         alignItems: 'center',
         justifyContent: 'center',
     },
     shieldBadgeText: {
         fontSize: 10,
         fontWeight: theme.fontWeight.bold,
-        color: '#fff',
+        color: theme.colors.text,
     },
     // Shield active indicator
     shieldActiveIndicator: {
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     shieldActiveText: {
         fontSize: theme.fontSize.xs,
         fontWeight: theme.fontWeight.semibold,
-        color: '#fff',
+        color: theme.colors.text,
     },
     // Paused state
     pausedContainer: {

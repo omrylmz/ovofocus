@@ -390,7 +390,7 @@ export function AchievementModal({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backgroundColor: theme.colors.semantic.overlayUltra,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 10,
         height: 10,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
     },
     shareableCard: {
         backgroundColor: theme.colors.surface,
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 160,
         height: 160,
-        borderRadius: 80,
+        borderRadius: theme.borderRadius.round,
         top: 20,
         zIndex: 0, // Glow behind everything
     },
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     badge: {
         width: 120,
         height: 120,
-        borderRadius: 60,
+        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.background,
         borderWidth: 4,
         justifyContent: 'center',
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.medium,
         color: theme.colors.accent,
-        letterSpacing: 2,
+        letterSpacing: theme.typographyConfig.letterSpacing.extraWide,
         textTransform: 'uppercase',
         marginBottom: theme.spacing.xs,
     },
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     tierText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
     },
     description: {
         fontSize: theme.fontSize.sm,

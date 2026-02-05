@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: theme.fontSize.md,
         fontWeight: theme.fontWeight.bold,
-        color: '#fff',
+        color: theme.colors.text,
     },
     subtitle: {
         fontSize: theme.fontSize.sm,
-        color: 'rgba(255, 255, 255, 0.9)',
+        color: theme.colors.text,
         marginTop: 2,
     },
     sparkle: {

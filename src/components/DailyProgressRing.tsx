@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     segment: {
         width: 5,
         height: 5,
-        borderRadius: 3,
+        borderRadius: theme.borderRadius.xxs,
     },
     centerText: {
         position: 'absolute',
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         paddingHorizontal: 4,
         paddingVertical: 1,
-        borderRadius: 8,
+        borderRadius: theme.borderRadius.sm,
     },
     badgeComplete: {
         backgroundColor: theme.colors.success,
@@ -133,6 +133,6 @@ const styles = StyleSheet.create({
         color: theme.colors.textSecondary,
     },
     badgeTextComplete: {
-        color: '#fff',
+        color: theme.colors.text,
     },
 });

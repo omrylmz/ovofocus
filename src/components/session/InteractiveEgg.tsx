@@ -618,6 +618,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -20, // Closer to egg
         zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     sparkleText: {
         fontSize: 24,
@@ -630,9 +631,9 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.sm,
         borderRadius: theme.borderRadius.round,
         borderWidth: 2,
+        ...theme.shadows.medium,
         zIndex: theme.zIndex.floating,
         elevation: theme.zIndex.floating,
-        ...theme.shadows.medium,
     },
     encouragementText: {
         fontSize: theme.fontSize.md,

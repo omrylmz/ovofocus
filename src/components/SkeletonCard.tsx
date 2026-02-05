@@ -362,7 +362,7 @@ export const SkeletonProgressCard = React.memo(function SkeletonProgressCard({
                     styles.progressTitlePlaceholder,
                     {
                         backgroundColor: activeTheme.colors.surfaceLight,
-                        borderRadius: 6,
+                        borderRadius: activeTheme.borderRadius.sm,
                     },
                 ]}
             />
@@ -372,7 +372,7 @@ export const SkeletonProgressCard = React.memo(function SkeletonProgressCard({
                     styles.progressBarPlaceholder,
                     {
                         backgroundColor: activeTheme.colors.surfaceLight,
-                        borderRadius: 6,
+                        borderRadius: activeTheme.borderRadius.sm,
                     },
                 ]}
             />
@@ -382,7 +382,7 @@ export const SkeletonProgressCard = React.memo(function SkeletonProgressCard({
                     styles.progressTextPlaceholder,
                     {
                         backgroundColor: activeTheme.colors.surfaceLight,
-                        borderRadius: 4,
+                        borderRadius: activeTheme.borderRadius.xs,
                     },
                 ]}
             />
@@ -458,7 +458,7 @@ export const SkeletonStatsGrid = React.memo(function SkeletonStatsGrid({
                             styles.statValuePlaceholder,
                             {
                                 backgroundColor: activeTheme.colors.surfaceLight,
-                                borderRadius: 4,
+                                borderRadius: activeTheme.borderRadius.xs,
                             },
                         ]}
                     />
@@ -468,7 +468,7 @@ export const SkeletonStatsGrid = React.memo(function SkeletonStatsGrid({
                             styles.statLabelPlaceholder,
                             {
                                 backgroundColor: activeTheme.colors.surfaceLight,
-                                borderRadius: 3,
+                                borderRadius: activeTheme.borderRadius.xxs,
                             },
                         ]}
                     />
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     statEmojiPlaceholder: {
         width: 24,
         height: 24,
-        borderRadius: 12,
+        borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.xs,
     },
     statValuePlaceholder: {

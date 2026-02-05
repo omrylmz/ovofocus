@@ -32,7 +32,7 @@ export function StreakBadge({ streak, size = 'medium' }: StreakBadgeProps) {
     const getFlameColor = () => {
         if (streak >= 30) return theme.colors.legendary;
         if (streak >= 14) return theme.colors.epic;
-        if (streak >= 7) return '#FF6B6B';
+        if (streak >= 7) return theme.colors.primary;
         if (streak >= 3) return theme.colors.warning;
         return theme.colors.textSecondary;
     };
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     },
     glow: {
         position: 'absolute',
-        borderRadius: 999,
+        borderRadius: theme.borderRadius.round,
     },
     flame: {
         textAlign: 'center',
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         bottom: -2,
         right: -2,
         backgroundColor: theme.colors.surface,
-        borderRadius: 10,
+        borderRadius: theme.borderRadius.sm,
         paddingHorizontal: 4,
         paddingVertical: 1,
     },

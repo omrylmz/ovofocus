@@ -720,8 +720,8 @@ const styles = StyleSheet.create({
         marginHorizontal: theme.spacing.lg,
         marginTop: theme.spacing.xs,
         marginBottom: theme.spacing.sm,
-        zIndex: 10,
-        elevation: 10,
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     statsRow: {
         flexDirection: 'row',
@@ -772,14 +772,14 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.legendary,
         paddingHorizontal: 4,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         marginLeft: 2,
     },
     bestBadgeInlineText: {
         fontSize: 8,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
-        letterSpacing: 0.3,
+        letterSpacing: theme.typographyConfig.letterSpacing.wide,
     },
 
     // Daily goal compact
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     progressDotCompact: {
         width: 8,
         height: 8,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
 
     // Legacy styles kept for StatPill, FocusTimePill, DailyProgressIndicator components
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
         fontSize: 8,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
-        letterSpacing: 0.5,
+        letterSpacing: theme.typographyConfig.letterSpacing.wide,
     },
     bestGlow: {
         position: 'absolute',
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
     progressSegment: {
         width: 12,
         height: 12,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
     },
     dailyProgressValue: {
         fontSize: theme.fontSize.xs,
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
     modalCloseButton: {
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.colors.surfaceLight,
         alignItems: 'center',
         justifyContent: 'center',
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.semibold,
         color: theme.colors.textSecondary,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: theme.typographyConfig.letterSpacing.wide,
         marginBottom: theme.spacing.sm,
     },
     statsGrid: {
@@ -1038,6 +1038,6 @@ const styles = StyleSheet.create({
         fontSize: 8,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
-        letterSpacing: 0.5,
+        letterSpacing: theme.typographyConfig.letterSpacing.wide,
     },
 });

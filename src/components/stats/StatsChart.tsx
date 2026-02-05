@@ -166,14 +166,14 @@ const barStyles = StyleSheet.create({
         width: 20,
         height: 80,
         backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         overflow: 'hidden',
         justifyContent: 'flex-end',
     },
     barFill: {
         width: '100%',
         backgroundColor: theme.colors.secondary,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         minHeight: 2,
     },
     barFillToday: {
@@ -324,7 +324,7 @@ const ringStyles = StyleSheet.create({
         position: 'absolute',
         width: 8,
         height: 12,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
     centerContent: {
         justifyContent: 'center',
@@ -348,7 +348,7 @@ const ringStyles = StyleSheet.create({
     legendDot: {
         width: 12,
         height: 12,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
     },
     legendText: {
         fontSize: theme.fontSize.sm,
@@ -504,7 +504,7 @@ const trendStyles = StyleSheet.create({
     },
     pointBar: {
         width: 40,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         minHeight: 4,
     },
     pointLabel: {

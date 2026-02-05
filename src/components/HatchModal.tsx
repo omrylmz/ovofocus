@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backgroundColor: theme.colors.semantic.overlayUltra,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 10,
         height: 10,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
     },
     particles: {
         position: 'absolute',
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 240,
         height: 240,
-        borderRadius: 120,
+        borderRadius: theme.borderRadius.round,
         zIndex: 0, // Aura behind everything
     },
     animalContainer: {
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     animalCircle: {
         width: 150,
         height: 150,
-        borderRadius: 75,
+        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.surface,
         borderWidth: 4,
         justifyContent: 'center',
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     rarityText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
     },
     description: {
         fontSize: theme.fontSize.sm,

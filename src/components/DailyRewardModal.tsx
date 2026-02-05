@@ -344,7 +344,7 @@ export function DailyRewardModal({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backgroundColor: theme.colors.semantic.overlayUltra,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 180,
         height: 180,
-        borderRadius: 90,
+        borderRadius: theme.borderRadius.round,
         top: '20%',
         zIndex: 0, // Glow behind everything
     },
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     bonusText: {
         fontSize: theme.fontSize.sm,
         fontWeight: theme.fontWeight.bold,
-        color: '#000',
+        color: theme.colors.background,
     },
     dayBar: {
         alignItems: 'center',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     dayDot: {
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.colors.surface,
         borderWidth: 2,
         borderColor: theme.colors.textSecondary,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     },
     dayDotCheck: {
         fontSize: 14,
-        color: '#FFFFFF',
+        color: theme.colors.text,
     },
     dayDotNumber: {
         fontSize: 12,

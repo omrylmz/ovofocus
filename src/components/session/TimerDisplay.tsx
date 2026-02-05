@@ -119,14 +119,14 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 8,
         backgroundColor: theme.colors.surface,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
         overflow: 'hidden',
         marginRight: theme.spacing.sm,
     },
     progressFill: {
         height: '100%',
         backgroundColor: theme.colors.accent,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
     progressText: {
         fontSize: theme.fontSize.sm,

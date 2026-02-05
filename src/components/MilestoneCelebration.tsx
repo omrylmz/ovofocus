@@ -563,7 +563,7 @@ export function MilestoneCelebration({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backgroundColor: theme.colors.semantic.overlayUltra,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 12,
         height: 24,
-        borderRadius: 4,
+        borderRadius: theme.borderRadius.xs,
     },
     sparkleContainer: {
         position: 'absolute',
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 180,
         height: 180,
-        borderRadius: 90,
+        borderRadius: theme.borderRadius.round,
         top: 40,
     },
     iconContainer: {
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     iconCircle: {
         width: 140,
         height: 140,
-        borderRadius: 70,
+        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.surface,
         borderWidth: 5,
         justifyContent: 'center',
