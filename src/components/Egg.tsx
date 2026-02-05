@@ -82,8 +82,11 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     // Pauses when app is backgrounded to save battery
     useEffect(() => {
         if (sessionState === 'idle') {
+            // Reset opacity (important after failed state where it drops to 0.3)
+            opacity.value = withTiming(1, { duration: 300 });
+
             if (isAppActive) {
-                // Start/resume idle animations
+                // Start idle animations
                 wobble.value = withRepeat(
                     withSequence(
                         withTiming(-3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
@@ -92,18 +95,24 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                     -1,
                     true
                 );
-                scale.value = withRepeat(
-                    withSequence(
-                        withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                        withTiming(0.98, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-                    ),
-                    -1,
-                    true
+                // Reset scale to 1 first, then start breathing animation
+                // Using withSequence ensures the reset completes before the repeat begins
+                scale.value = withSequence(
+                    withTiming(1, { duration: 200 }),
+                    withRepeat(
+                        withSequence(
+                            withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                            withTiming(0.98, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                        ),
+                        -1,
+                        true
+                    )
                 );
             } else {
                 // Pause idle animations when backgrounded
+                // Still reset scale even when backgrounded
+                scale.value = withTiming(1, { duration: 200 });
                 cancelAnimation(wobble);
-                cancelAnimation(scale);
             }
             // Reset values
             glowOpacity.value = withTiming(0, { duration: 300 });
@@ -116,7 +125,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 cancelAnimation(scale);
             };
         }
-    }, [sessionState, isAppActive, wobble, scale, glowOpacity, crackLevel, colorProgress]);
+    }, [sessionState, isAppActive, wobble, scale, opacity, glowOpacity, crackLevel, colorProgress]);
 
     // Active session - more wobble as progress increases with pulse effect
     useEffect(() => {
