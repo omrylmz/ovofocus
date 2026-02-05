@@ -367,7 +367,7 @@ const createCardStyles = (theme: Theme) =>
             bottom: 0,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backgroundColor: theme.colors.semantic.overlayLight,
             borderRadius: theme.borderRadius.sm,
         },
         lockIcon: {
@@ -418,6 +418,6 @@ const createCardStyles = (theme: Theme) =>
             fontSize: 9,
             color: theme.colors.textSecondary,
             textAlign: 'center',
-            marginTop: 2,
+            marginTop: theme.spacing.xxs,
         },
     });

@@ -84,13 +84,13 @@ const cardStyles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         textAlign: 'center',
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     subtitle: {
         fontSize: 10,
         color: theme.colors.secondary,
         textAlign: 'center',
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
 });
 

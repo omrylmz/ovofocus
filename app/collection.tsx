@@ -143,7 +143,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         marginLeft: theme.spacing.sm,
         backgroundColor: theme.colors.accent,
         paddingHorizontal: theme.spacing.sm,
-        paddingVertical: 2,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.round,
     },
     activeFilterBadgeText: {
@@ -310,7 +310,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     },
     // Animal grid styles
     animalCardWrapper: {
-        padding: 2,
+        padding: theme.spacing.xxs,
     },
     // Expand/Collapse all button
     expandAllContainer: {

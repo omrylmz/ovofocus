@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     optionDesc: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     loadingContainer: {
         flexDirection: 'row',

@@ -62,13 +62,13 @@ function getXPProgress(count: number): { current: number; max: number; percentag
 // Helper to get level badge style based on level
 function getLevelBadgeColors(level: number, rarityColor: string): { bg: string; text: string } {
     if (level >= 5) {
-        return { bg: rarityColor, text: '#000' };
+        return { bg: rarityColor, text: theme.colors.background };
     }
     if (level >= 4) {
-        return { bg: theme.colors.accent, text: '#000' };
+        return { bg: theme.colors.accent, text: theme.colors.background };
     }
     if (level >= 3) {
-        return { bg: theme.colors.secondary, text: '#000' };
+        return { bg: theme.colors.secondary, text: theme.colors.background };
     }
     return { bg: theme.colors.surfaceLight, text: theme.colors.textSecondary };
 }
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         flex: 1,
-        margin: 2,
+        margin: theme.spacing.xxs,
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg - 2,
         alignItems: 'center',
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
         fontSize: 8,
         color: theme.colors.textSecondary,
         textAlign: 'center',
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
         fontWeight: theme.fontWeight.medium,
     },
     // Rarity badge with gradient

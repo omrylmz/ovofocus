@@ -179,7 +179,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     settingDescriptionSmall: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     // Setting row styles
     settingRow: {

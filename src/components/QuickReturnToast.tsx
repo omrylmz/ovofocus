@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: theme.fontSize.sm,
         color: theme.colors.text,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     sparkle: {
         fontSize: 24,

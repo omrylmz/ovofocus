@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     },
     rarityLabel: {
         fontSize: theme.fontSize.sm,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     durationContainer: {
         alignItems: 'flex-end',

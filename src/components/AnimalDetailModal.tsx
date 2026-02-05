@@ -1304,7 +1304,7 @@ const styles = StyleSheet.create({
     },
     latestBadge: {
         paddingHorizontal: theme.spacing.xs,
-        paddingVertical: 2,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
     },
     latestBadgeText: {
@@ -1458,11 +1458,11 @@ const styles = StyleSheet.create({
     },
     interactionIcon: {
         fontSize: 22,
-        marginBottom: 2,
+        marginBottom: theme.spacing.xxs,
     },
     interactionIconSmall: {
         fontSize: 18,
-        marginBottom: 2,
+        marginBottom: theme.spacing.xxs,
     },
     interactionLabel: {
         fontSize: theme.fontSize.xs,

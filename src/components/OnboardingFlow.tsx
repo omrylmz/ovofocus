@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 180,
         height: 180,
-        borderRadius: 90,
+        borderRadius: theme.borderRadius.round,
         opacity: 0.3,
     },
     iconContainer: {
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
     dot: {
         width: 10,
         height: 10,
-        borderRadius: 5,
+        borderRadius: theme.borderRadius.xs,
         backgroundColor: theme.colors.surfaceLight,
         marginHorizontal: 6,
     },
@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
     backButton: {
         width: 50,
         height: 50,
-        borderRadius: 25,
+        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.surfaceLight,
         justifyContent: 'center',
         alignItems: 'center',
@@ -985,14 +985,14 @@ const styles = StyleSheet.create({
         width: '80%',
         height: 6,
         backgroundColor: theme.colors.surfaceLight,
-        borderRadius: 3,
+        borderRadius: theme.borderRadius.xxs,
         marginTop: theme.spacing.md,
         overflow: 'hidden',
     },
     timerProgressFill: {
         height: '100%',
         backgroundColor: theme.colors.primary,
-        borderRadius: 3,
+        borderRadius: theme.borderRadius.xxs,
     },
     gesturePreview: {
         backgroundColor: theme.colors.surface,
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 60,
         height: 60,
-        borderRadius: 30,
+        borderRadius: theme.borderRadius.round,
         borderWidth: 2,
         borderColor: theme.colors.secondary,
     },
@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
     rarityIndicator: {
         width: '60%',
         height: 4,
-        borderRadius: 2,
+        borderRadius: theme.borderRadius.xxs,
         marginTop: theme.spacing.xs,
     },
     settingsPreview: {

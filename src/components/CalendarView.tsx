@@ -194,7 +194,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     eventLocation: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     eventIndicator: {
         width: 4,
