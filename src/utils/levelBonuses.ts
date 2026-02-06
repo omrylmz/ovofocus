@@ -132,29 +132,34 @@ export function calculateCollectionBonuses(collection: CollectedAnimalForBonus[]
 export function getLevelBonusDescription(level: number, language: Language): string {
     const { focusBonus, shieldBonus } = getLevelBonusValues(level);
     
-    const bonuses: Record<number, { en: string; tr: string }> = {
-        1: { 
-            en: 'No bonus yet', 
-            tr: 'Henüz bonus yok' 
+    const bonuses: Record<number, Record<Language, string>> = {
+        1: {
+            en: 'No bonus yet',
+            tr: 'Henüz bonus yok',
+            es: 'Sin bonificación aún',
         },
-        2: { 
-            en: 'Enhanced animations', 
-            tr: 'Gelişmiş animasyonlar' 
+        2: {
+            en: 'Enhanced animations',
+            tr: 'Gelişmiş animasyonlar',
+            es: 'Animaciones mejoradas',
         },
-        3: { 
-            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s`, 
-            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn` 
+        3: {
+            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s`,
+            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn`,
+            es: `Enfoque -${focusBonus}%, Escudo +${shieldBonus}s`,
         },
-        4: { 
-            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s + Aura`, 
-            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn + Aura` 
+        4: {
+            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s + Aura`,
+            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn + Aura`,
+            es: `Enfoque -${focusBonus}%, Escudo +${shieldBonus}s + Aura`,
         },
-        5: { 
-            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s + Master`, 
-            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn + Usta` 
+        5: {
+            en: `Focus -${focusBonus}%, Shield +${shieldBonus}s + Master`,
+            tr: `Odaklanma -%${focusBonus}, Kalkan +${shieldBonus}sn + Usta`,
+            es: `Enfoque -${focusBonus}%, Escudo +${shieldBonus}s + Maestro`,
         },
     };
-    
+
     return bonuses[level]?.[language] || bonuses[1][language];
 }
 

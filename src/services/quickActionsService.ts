@@ -293,7 +293,7 @@ class QuickActionsService {
             }
 
             // Subscribe to action events (warm start)
-            const subscription = module.addListener((action) => {
+            const subscription = module.addListener((action: { id: string; params?: Record<string, unknown> } | null) => {
                 if (action) {
                     console.log('[QuickActions] Action received:', action.id);
                     this.dispatchAction(action.id as QuickActionId, action.params);

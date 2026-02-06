@@ -2,7 +2,7 @@
 // Enables social sharing of achievements to promote user engagement and app discovery
 // Uses React Native's built-in Share API for cross-platform compatibility
 
-import { Share, Platform, ShareAction } from 'react-native';
+import { Share, Platform } from 'react-native';
 import { Rarity } from '../data/animals';
 import { Language, t, getAnimalName, getRarityLabelI18n } from '../i18n/translations';
 
@@ -67,7 +67,7 @@ export type ShareData =
  */
 export interface ShareResult {
     success: boolean;
-    action: ShareAction | 'unavailable' | 'error';
+    action: 'sharedAction' | 'dismissedAction' | 'unavailable' | 'error';
     error?: string;
 }
 

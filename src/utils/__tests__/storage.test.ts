@@ -777,11 +777,12 @@ describe('Storage Utility', () => {
   });
 
   describe('Stats - Streak Logic', () => {
-    let dateNowSpy: jest.SpyInstance;
+    let dateNowSpy: jest.SpyInstance | undefined;
 
     afterEach(() => {
       if (dateNowSpy) {
         dateNowSpy.mockRestore();
+        dateNowSpy = undefined;
       }
     });
 

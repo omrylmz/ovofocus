@@ -1828,25 +1828,28 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.en;
 
+// Helper to safely index a translation set (avoids TS union-type indexing errors
+// when not all locales have every key, e.g. 'es' is missing some animal names)
+function tr(language: Language, key: string): string | undefined {
+    return (translations[language] as Record<string, string>)[key];
+}
+
 // Get translation function
 export function t(key: TranslationKey, language: Language): string {
-    return translations[language][key] || translations.en[key] || key;
+    return tr(language, key) || tr('en', key) || key;
 }
 
 // Get animal name
 export function getAnimalName(animalId: string, language: Language): string {
-    const key = animalId as TranslationKey;
-    return translations[language][key] || animalId;
+    return tr(language, animalId) || animalId;
 }
 
 // Get animal description
 export function getAnimalDescription(animalId: string, language: Language): string {
-    const key = `${animalId}_desc` as TranslationKey;
-    return translations[language][key] || '';
+    return tr(language, `${animalId}_desc`) || '';
 }
 
 // Get rarity label
 export function getRarityLabelI18n(rarity: string, language: Language): string {
-    const key = rarity as TranslationKey;
-    return translations[language][key] || rarity;
+    return tr(language, rarity) || rarity;
 }
