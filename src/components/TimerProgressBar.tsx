@@ -261,33 +261,36 @@ export function TimerProgressBar({
                     {formattedTime}
                 </Animated.Text>
 
-                {/* Progress percentage */}
-                {sessionState === 'active' && (
-                    <View style={styles.progressInfoRow}>
-                        <Text style={[styles.progressText, { color: barColor }]}>
-                            {Math.round(progress * 100)}%
-                        </Text>
-                        {isPaused && (
-                            <Animated.Text
-                                style={[
-                                    styles.pausedIndicator,
-                                    { backgroundColor: `${theme.colors.warning}33` },
-                                    pausedIndicatorStyle
-                                ]}
-                            >
-                                {language === 'tr' ? 'DURAKLATILDI' :
-                                 language === 'es' ? 'PAUSADO' : 'PAUSED'}
-                            </Animated.Text>
-                        )}
-                    </View>
-                )}
-
-                {/* Completion text */}
-                {sessionState === 'completed' && (
-                    <Text style={[styles.completionText, { color: theme.colors.success }]}>
-                        {language === 'tr' ? 'TAMAMLANDI!' :
-                         language === 'es' ? 'COMPLETADO!' : 'COMPLETED!'}
+                {/* Progress percentage - always rendered to reserve space, hidden via opacity */}
+                <View style={[
+                    styles.progressInfoRow,
+                    { opacity: sessionState === 'active' ? 1 : 0 }
+                ]}>
+                    <Text style={[styles.progressText, { color: barColor }]}>
+                        {sessionState === 'active' ? `${Math.round(progress * 100)}%` : '0%'}
                     </Text>
+                    {isPaused && (
+                        <Animated.Text
+                            style={[
+                                styles.pausedIndicator,
+                                { backgroundColor: `${theme.colors.warning}33` },
+                                pausedIndicatorStyle
+                            ]}
+                        >
+                            {language === 'tr' ? 'DURAKLATILDI' :
+                             language === 'es' ? 'PAUSADO' : 'PAUSED'}
+                        </Animated.Text>
+                    )}
+                </View>
+
+                {/* Completion text - positioned over the progress row */}
+                {sessionState === 'completed' && (
+                    <View style={styles.completionOverlay}>
+                        <Text style={[styles.completionText, { color: theme.colors.success }]}>
+                            {language === 'tr' ? 'TAMAMLANDI!' :
+                             language === 'es' ? 'COMPLETADO!' : 'COMPLETED!'}
+                        </Text>
+                    </View>
                 )}
             </View>
 
@@ -438,6 +441,7 @@ const styles = StyleSheet.create({
     timerRow: {
         alignItems: 'center',
         marginBottom: 12,
+        position: 'relative',
     },
     timer: {
         fontWeight: defaultTheme.fontWeight.bold,
@@ -463,10 +467,16 @@ const styles = StyleSheet.create({
         borderRadius: defaultTheme.borderRadius.round,
         overflow: 'hidden',
     },
+    completionOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
     completionText: {
         fontSize: 14,
         fontWeight: defaultTheme.fontWeight.bold,
-        marginTop: 4,
         letterSpacing: defaultTheme.typographyConfig.letterSpacing.extraWide,
     },
     barContainer: {

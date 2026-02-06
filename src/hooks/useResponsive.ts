@@ -28,7 +28,8 @@ const GRID_2_COL_MAX = 360;
 const GRID_4_COL_MIN = 500;
 
 // Minimum safe area for Android virtual nav bar
-const MIN_BOTTOM_SAFE_AREA = 48;
+// SafeAreaProvider reports real insets; this is a small fallback for edge cases
+const MIN_BOTTOM_SAFE_AREA = 16;
 
 export interface ResponsiveValues {
   // Screen dimensions

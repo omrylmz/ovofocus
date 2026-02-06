@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { GameProvider, useGame } from '../src/context/GameContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
@@ -138,11 +139,13 @@ function AppContent() {
 
 export default function RootLayout() {
     return (
-        <GestureHandlerRootView style={styles.container}>
-            <GameProvider>
-                <AppContent />
-            </GameProvider>
-        </GestureHandlerRootView>
+        <SafeAreaProvider>
+            <GestureHandlerRootView style={styles.container}>
+                <GameProvider>
+                    <AppContent />
+                </GameProvider>
+            </GestureHandlerRootView>
+        </SafeAreaProvider>
     );
 }
 

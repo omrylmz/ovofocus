@@ -93,10 +93,11 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
     // This eliminates gaps and ensures consistent layout across all devices.
     // ==========================================================================
     timerSection: {
-        height: responsive.timerSectionHeight,  // 19% of available
+        height: responsive.timerSectionHeight,  // 16% of available
         width: '100%',
         alignItems: 'center',
         justifyContent: 'flex-end',  // Push timer DOWN toward egg
+        overflow: 'visible',  // Allow Pomodoro indicator to extend below
         zIndex: 10,
         elevation: 10,
     },
@@ -113,7 +114,7 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingBottom: responsive.safeAreaBottom + 20, // Extra padding for virtual buttons
+        paddingBottom: responsive.safeAreaBottom, // Safe area accounts for virtual nav bar
         zIndex: 10,
         elevation: 10,
     },
@@ -135,6 +136,10 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
     },
     // Pomodoro indicator styles
     pomodoroIndicator: {
+        position: 'absolute',
+        bottom: -28,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -142,8 +147,9 @@ const createStyles = (theme: Theme, responsive: ResponsiveStyleProps) => StyleSh
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.round,
-        marginTop: theme.spacing.xs,
         gap: theme.spacing.sm,
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     pomodoroPhaseContainer: {
         flexDirection: 'row',
