@@ -19,6 +19,7 @@ import Animated, {
 import { theme } from '../../styles/theme';
 import { Egg } from '../Egg';
 import { audioManager } from '../../services/audioManager';
+import { useResponsive } from '../../hooks/useResponsive';
 
 type SessionState = 'idle' | 'active' | 'completed' | 'failed';
 type Language = 'en' | 'tr' | 'es';
@@ -173,22 +174,28 @@ export function InteractiveEgg({
     onStart,
     onShowGestureHints,
 }: InteractiveEggProps) {
+    const { eggSize } = useResponsive();
     const [encouragementText, setEncouragementText] = useState<string | null>(null);
     const [feedbackType, setFeedbackType] = useState<'tap' | 'doubleTap' | 'longPress' | null>(null);
     const lastMessageIndex = useRef<number>(-1);
 
+    // Dynamic sizes based on actual egg
+    const feedbackSize = Math.round(eggSize * 0.65);
+
     // Egg interaction animations
     const eggScale = useSharedValue(1);
     const eggRotation = useSharedValue(0);
-    const sparkleOpacity = useSharedValue(0);
-
-    // New visual feedback animations
+    // Visual feedback animations
     const glowOpacity = useSharedValue(0);
     const glowScale = useSharedValue(1);
     const rippleOpacity = useSharedValue(0);
     const rippleScale = useSharedValue(1);
     const pulseRingOpacity = useSharedValue(0);
     const pulseRingScale = useSharedValue(1);
+
+    // Star burst particles (6 stars that radiate outward on double-tap)
+    const starBurstProgress = useSharedValue(0);
+    const starBurstOpacity = useSharedValue(0);
 
     // Get random message avoiding repetition
     const getRandomMessage = useCallback((messages: string[]): string => {
@@ -237,6 +244,12 @@ export function InteractiveEgg({
             withSpring(1.2, { damping: 10 }),
             withSpring(1, { damping: 15 })
         );
+
+        // Star burst — particles radiate outward
+        starBurstProgress.value = 0;
+        starBurstOpacity.value = 1;
+        starBurstProgress.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) });
+        starBurstOpacity.value = withDelay(200, withTiming(0, { duration: 400 }));
     }, []);
 
     // Visual feedback for long press gesture
@@ -370,10 +383,6 @@ export function InteractiveEgg({
                 withSpring(1.1, { damping: 8 }),
                 withSpring(1, { damping: 10 })
             );
-            sparkleOpacity.value = withSequence(
-                withTiming(1, { duration: 200 }),
-                withTiming(0, { duration: 500 })
-            );
             triggerDoubleTapFeedback();
             runOnJS(handleEggDoubleTap)();
         });
@@ -427,10 +436,6 @@ export function InteractiveEgg({
         ],
     }));
 
-    const sparkleStyle = useAnimatedStyle(() => ({
-        opacity: sparkleOpacity.value,
-    }));
-
     const glowStyle = useAnimatedStyle(() => ({
         opacity: glowOpacity.value,
         transform: [{ scale: glowScale.value }],
@@ -445,6 +450,26 @@ export function InteractiveEgg({
         opacity: pulseRingOpacity.value,
         transform: [{ scale: pulseRingScale.value }],
     }));
+
+    // Create 6 star burst animated styles, evenly spaced at 60-degree intervals
+    const STAR_ANGLES = [0, 60, 120, 180, 240, 300];
+    const starRadius = feedbackSize * 0.7;
+    const starStyles = STAR_ANGLES.map((angleDeg) => {
+        const angleRad = (angleDeg * Math.PI) / 180;
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return useAnimatedStyle(() => {
+            const dist = starBurstProgress.value * starRadius;
+            return {
+                transform: [
+                    { translateX: Math.cos(angleRad) * dist },
+                    { translateY: Math.sin(angleRad) * dist },
+                    { scale: 1 - starBurstProgress.value * 0.5 },
+                    { rotate: `${starBurstProgress.value * 180}deg` },
+                ],
+                opacity: starBurstOpacity.value,
+            };
+        });
+    });
 
     // Get feedback container color based on type
     const getFeedbackColor = () => {
@@ -537,31 +562,70 @@ export function InteractiveEgg({
                         disabled: sessionState === 'completed' || sessionState === 'failed',
                     }}
                 >
-                    {/* Gesture feedback glow (behind egg) */}
+                    {/* Gesture feedback glow (behind egg) — scales with egg */}
                     <Animated.View
-                        style={[styles.feedbackGlow, glowStyle]}
+                        style={[
+                            styles.feedbackGlow,
+                            {
+                                width: feedbackSize,
+                                height: feedbackSize,
+                                borderRadius: feedbackSize / 2,
+                            },
+                            glowStyle,
+                        ]}
                         importantForAccessibility="no"
                         pointerEvents="none"
                     />
 
-                    {/* Ripple effect (behind egg) */}
+                    {/* Ripple effect (behind egg) — scales with egg */}
                     <Animated.View
-                        style={[styles.rippleEffect, rippleStyle]}
+                        style={[
+                            styles.rippleEffect,
+                            {
+                                width: feedbackSize * 0.9,
+                                height: feedbackSize * 0.9,
+                                borderRadius: feedbackSize / 2,
+                            },
+                            rippleStyle,
+                        ]}
                         importantForAccessibility="no"
                         pointerEvents="none"
                     />
 
-                    {/* Pulse ring effect for long press */}
+                    {/* Pulse ring effect for long press — scales with egg */}
                     <Animated.View
-                        style={[styles.pulseRing, pulseRingStyle]}
+                        style={[
+                            styles.pulseRing,
+                            {
+                                width: feedbackSize * 0.85,
+                                height: feedbackSize * 0.85,
+                                borderRadius: feedbackSize / 2,
+                            },
+                            pulseRingStyle,
+                        ]}
                         importantForAccessibility="no"
                         pointerEvents="none"
                     />
 
-                    {/* Sparkle overlay for double tap */}
-                    <Animated.View style={[styles.sparkleOverlay, sparkleStyle]} importantForAccessibility="no">
-                        <Text style={styles.sparkleText}>✨ 💫 ⭐ 💫 ✨</Text>
-                    </Animated.View>
+                    {/* Star burst particles for double-tap */}
+                    <View style={styles.starBurstContainer} pointerEvents="none">
+                        {starStyles.map((style, i) => (
+                            <Animated.View
+                                key={i}
+                                style={[styles.starParticle, style]}
+                                importantForAccessibility="no"
+                            >
+                                <View style={[
+                                    styles.starDot,
+                                    { backgroundColor: theme.colors.accent },
+                                ]} />
+                                <View style={[
+                                    styles.starHalo,
+                                    { backgroundColor: theme.colors.accent },
+                                ]} />
+                            </Animated.View>
+                        ))}
+                    </View>
 
                     <Egg
                         sessionState={sessionState}
@@ -591,37 +655,46 @@ const styles = StyleSheet.create({
     },
     feedbackGlow: {
         position: 'absolute',
-        width: 120, // Smaller
-        height: 120,
-        borderRadius: theme.borderRadius.round,
         backgroundColor: theme.colors.accent,
     },
     rippleEffect: {
         position: 'absolute',
-        width: 110,
-        height: 110,
-        borderRadius: theme.borderRadius.round,
         borderWidth: 3,
         borderColor: theme.colors.accent,
         backgroundColor: 'transparent',
     },
     pulseRing: {
         position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: theme.borderRadius.round,
         borderWidth: 4,
         borderColor: theme.colors.primary,
         backgroundColor: 'transparent',
     },
-    sparkleOverlay: {
+    starBurstContainer: {
         position: 'absolute',
-        top: -20, // Closer to egg
-        zIndex: theme.zIndex.floating,
-        elevation: theme.zIndex.floating,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 0,
+        height: 0,
     },
-    sparkleText: {
-        fontSize: 24,
+    starParticle: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 12,
+        height: 12,
+    },
+    starDot: {
+        position: 'absolute',
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+    },
+    starHalo: {
+        position: 'absolute',
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        opacity: 0.25,
     },
     encouragementContainer: {
         position: 'absolute',

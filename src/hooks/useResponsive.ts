@@ -14,8 +14,9 @@ const HEADER_HEIGHT = 56;
 const STATS_BAR_HEIGHT = 60;
 
 // Proportional section ratios (must sum to 1.0)
-const TIMER_SECTION_RATIO = 0.19;   // 19% - breathing room above ring
-const EGG_SECTION_RATIO = 0.58;     // 58% - egg itself is bigger
+// With bar layout, timer needs less height than circular ring
+const TIMER_SECTION_RATIO = 0.16;   // 16% - bar layout is more compact
+const EGG_SECTION_RATIO = 0.61;     // 61% - egg gets more space
 const CONTROLS_SECTION_RATIO = 0.23; // 23% - comfortable controls
 
 // Egg sizing bounds
@@ -59,6 +60,10 @@ export interface ResponsiveValues {
   progressRingSize: number;
   gridColumns: number;
   modalMaxWidth: number;
+
+  // Timer bar dimensions
+  timerBarWidth: number;
+  timerBarHeight: number;
 
   // Layout helpers
   horizontalPadding: number;
@@ -117,17 +122,19 @@ export function useResponsive(): ResponsiveValues {
   // ==========================================================================
 
   // Progress ring: 85% of timer section height, clamped
+  // (kept for backwards compatibility if ring is re-enabled)
   const progressRingSize = clamp(
     Math.round(timerSectionHeight * 0.85),
     120,
     200
   );
 
-  // Timer font: 35% of progress ring size
+  // Timer font: scales with screen width for bar layout
+  // Larger and more prominent since it's the main visual element
   const timerFontSize = clamp(
-    Math.round(progressRingSize * 0.35),
-    24,
-    48
+    Math.round(screenWidth * 0.12),
+    36,
+    56
   );
 
   // Egg size: 70% of egg section height, clamped
@@ -149,6 +156,20 @@ export function useResponsive(): ResponsiveValues {
 
   // Modal max width for tablets
   const modalMaxWidth = Math.min(screenWidth - 32, 400);
+
+  // Timer bar dimensions
+  // Width: 85% of screen width, clamped between 280-400px
+  const timerBarWidth = clamp(
+    Math.round(screenWidth * 0.85),
+    280,
+    400
+  );
+  // Height: proportional to timer section, clamped between 20-32px
+  const timerBarHeight = clamp(
+    Math.round(timerSectionHeight * 0.18),
+    20,
+    32
+  );
 
   // Layout helpers
   const horizontalPadding = isSmallScreen ? 12 : 16;
@@ -173,6 +194,8 @@ export function useResponsive(): ResponsiveValues {
     progressRingSize,
     gridColumns,
     modalMaxWidth,
+    timerBarWidth,
+    timerBarHeight,
     horizontalPadding,
     contentMaxWidth,
   };

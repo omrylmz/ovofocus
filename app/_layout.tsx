@@ -75,8 +75,9 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
                         animation: 'slide_from_bottom',
                         gestureEnabled: true,
                         gestureDirection: 'vertical',
-                        // Sheet presentation options for natural modal feel
-                        sheetAllowedDetents: 'fitToContents',
+                        // Use full-height detent — fitToContents breaks with flex:1 layouts
+                        // (sheet opens at zero height on Android)
+                        sheetAllowedDetents: [1.0],
                         sheetGrabberVisible: true,
                         sheetCornerRadius: 20,
                         sheetExpandsWhenScrolledToEdge: true,
@@ -91,8 +92,7 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
                         animation: 'slide_from_bottom',
                         gestureEnabled: true,
                         gestureDirection: 'vertical',
-                        // Sheet presentation options for natural modal feel
-                        sheetAllowedDetents: 'fitToContents',
+                        sheetAllowedDetents: [1.0],
                         sheetGrabberVisible: true,
                         sheetCornerRadius: 20,
                         sheetExpandsWhenScrolledToEdge: true,
@@ -107,8 +107,7 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
                         animation: 'slide_from_bottom',
                         gestureEnabled: true,
                         gestureDirection: 'vertical',
-                        // Sheet presentation options for natural modal feel
-                        sheetAllowedDetents: 'fitToContents',
+                        sheetAllowedDetents: [1.0],
                         sheetGrabberVisible: true,
                         sheetCornerRadius: 20,
                         sheetExpandsWhenScrolledToEdge: true,

@@ -10,6 +10,7 @@ import Animated, {
     withDelay,
     Easing,
     cancelAnimation,
+    SharedValue,
 } from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 import { SessionState } from '../context/GameContext';
@@ -35,21 +36,476 @@ const WARNING_COLORS = {
     3: '#FF4444', // Red
 };
 
-export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0, eggStyleId }: EggProps) {
-    // Track app state for animation pausing (battery optimization)
-    const isAppActive = useAppStateAnimation();
+// ==========================================================================
+// ORBITING PARTICLE
+// ==========================================================================
+// A single luminous orb that orbits around the egg in an elliptical path.
+// Each particle has its own phase offset, speed, and size for variety.
+// ==========================================================================
 
-    // Get responsive sizing
+interface OrbitParticleProps {
+    /** Reanimated shared value driving the orbit angle (0-360, repeating) */
+    driver: SharedValue<number>;
+    /** Phase offset in degrees so particles don't bunch together */
+    phaseOffset: number;
+    /** Horizontal radius of the orbit ellipse */
+    orbitRx: number;
+    /** Vertical radius of the orbit ellipse */
+    orbitRy: number;
+    /** Size of the particle dot */
+    size: number;
+    /** Particle color */
+    color: string;
+    /** Opacity shared value from parent (controls fade in/out) */
+    opacityDriver: SharedValue<number>;
+    /** Center X of the orbit */
+    cx: number;
+    /** Center Y of the orbit */
+    cy: number;
+}
+
+function OrbitParticle({
+    driver,
+    phaseOffset,
+    orbitRx,
+    orbitRy,
+    size,
+    color,
+    opacityDriver,
+    cx,
+    cy,
+}: OrbitParticleProps) {
+    const haloSize = size * 3;
+    const animatedStyle = useAnimatedStyle(() => {
+        const angle = ((driver.value + phaseOffset) % 360) * (Math.PI / 180);
+        const x = cx + Math.cos(angle) * orbitRx - haloSize / 2;
+        const y = cy + Math.sin(angle) * orbitRy - haloSize / 2;
+        // Particles behind the egg (sin > 0 = bottom half) are dimmer
+        const depthFade = Math.sin(angle) > 0 ? 0.25 : 1.0;
+        // Subtle size pulse based on depth
+        const depthScale = 0.8 + Math.cos(angle) * 0.2;
+        return {
+            transform: [
+                { translateX: x },
+                { translateY: y },
+                { scale: depthScale },
+            ],
+            opacity: opacityDriver.value * depthFade,
+        };
+    });
+
+    return (
+        <Animated.View
+            style={[
+                styles.orbitParticle,
+                { width: haloSize, height: haloSize },
+                animatedStyle,
+            ]}
+            pointerEvents="none"
+        >
+            {/* Soft outer glow halo */}
+            <View style={[
+                styles.particleHalo,
+                {
+                    width: haloSize,
+                    height: haloSize,
+                    borderRadius: haloSize / 2,
+                    backgroundColor: color,
+                    opacity: 0.2,
+                },
+            ]} />
+            {/* Bright core */}
+            <View style={[
+                styles.particleCore,
+                {
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: color,
+                },
+            ]} />
+        </Animated.View>
+    );
+}
+
+// ==========================================================================
+// RISING PARTICLE
+// ==========================================================================
+// A luminous mote that rises upward from the egg surface, drifting slightly
+// sideways, then fading out. Creates a "magical energy" emanation effect.
+// ==========================================================================
+
+interface RisingParticleProps {
+    /** Shared value 0→1 driving the rise cycle */
+    driver: SharedValue<number>;
+    /** Delay phase (0-1) so particles stagger */
+    phase: number;
+    /** Starting X offset from center */
+    startX: number;
+    /** Starting Y position (bottom of egg area) */
+    startY: number;
+    /** How far up the particle travels */
+    riseHeight: number;
+    /** Horizontal drift during rise */
+    drift: number;
+    /** Particle size */
+    size: number;
+    /** Color */
+    color: string;
+    /** Overall opacity multiplier */
+    opacityDriver: SharedValue<number>;
+}
+
+function RisingParticle({
+    driver,
+    phase,
+    startX,
+    startY,
+    riseHeight,
+    drift,
+    size,
+    color,
+    opacityDriver,
+}: RisingParticleProps) {
+    const haloSize = size * 3.5;
+    const animatedStyle = useAnimatedStyle(() => {
+        // Each particle loops through its own lifecycle offset by phase
+        const t = (driver.value + phase) % 1;
+        const y = startY - t * riseHeight;
+        const x = startX + Math.sin(t * Math.PI * 2) * drift;
+        // Fade in quickly, hold, fade out at the end
+        const fade = t < 0.1 ? t / 0.1 : t > 0.7 ? (1 - t) / 0.3 : 1;
+        const particleScale = 0.5 + fade * 0.5;
+        return {
+            transform: [
+                { translateX: x - haloSize / 2 },
+                { translateY: y - haloSize / 2 },
+                { scale: particleScale },
+            ],
+            opacity: opacityDriver.value * fade * 0.8,
+        };
+    });
+
+    // Trail: a secondary particle that lags slightly behind
+    const trailStyle = useAnimatedStyle(() => {
+        const t = (driver.value + phase) % 1;
+        const tTrail = Math.max(0, t - 0.08); // Slight lag
+        const y = startY - tTrail * riseHeight;
+        const x = startX + Math.sin(tTrail * Math.PI * 2) * drift;
+        const fade = t < 0.15 ? 0 : t > 0.7 ? (1 - t) / 0.3 : 0.5;
+        return {
+            transform: [
+                { translateX: x - size / 2 },
+                { translateY: y - size / 2 },
+            ],
+            opacity: opacityDriver.value * fade * 0.3,
+        };
+    });
+
+    return (
+        <>
+            {/* Luminous trail */}
+            <Animated.View
+                style={[
+                    styles.risingParticle,
+                    {
+                        width: size * 1.5,
+                        height: size * 1.5,
+                        borderRadius: size,
+                        backgroundColor: color,
+                    },
+                    trailStyle,
+                ]}
+                pointerEvents="none"
+            />
+            {/* Main particle with halo */}
+            <Animated.View
+                style={[
+                    styles.risingParticle,
+                    { width: haloSize, height: haloSize },
+                    animatedStyle,
+                ]}
+                pointerEvents="none"
+            >
+                {/* Glow halo */}
+                <View style={[
+                    styles.particleHalo,
+                    {
+                        width: haloSize,
+                        height: haloSize,
+                        borderRadius: haloSize / 2,
+                        backgroundColor: color,
+                        opacity: 0.15,
+                    },
+                ]} />
+                {/* Core */}
+                <View style={[
+                    styles.particleCore,
+                    {
+                        width: size,
+                        height: size,
+                        borderRadius: size / 2,
+                        backgroundColor: color,
+                    },
+                ]} />
+            </Animated.View>
+        </>
+    );
+}
+
+// ==========================================================================
+// AURA RING
+// ==========================================================================
+// An expanding, fading ring that pulses outward from the egg center.
+// Multiple rings at different phases create a "heartbeat" energy effect.
+// ==========================================================================
+
+interface AuraRingProps {
+    /** Shared value 0→1 driving expansion */
+    driver: SharedValue<number>;
+    /** Phase offset (0-1) for staggering */
+    phase: number;
+    /** Maximum ring size */
+    maxSize: number;
+    /** Ring color */
+    color: string;
+    /** Overall visibility */
+    opacityDriver: SharedValue<number>;
+    /** Ring thickness */
+    thickness: number;
+}
+
+function AuraRing({
+    driver,
+    phase,
+    maxSize,
+    color,
+    opacityDriver,
+    thickness,
+}: AuraRingProps) {
+    // Outer soft halo ring
+    const outerStyle = useAnimatedStyle(() => {
+        const t = (driver.value + phase) % 1;
+        const ringSize = maxSize * (0.4 + t * 0.6);
+        const fade = 1 - t;
+        return {
+            width: ringSize,
+            height: ringSize * 0.85,
+            borderRadius: ringSize / 2,
+            opacity: opacityDriver.value * fade * fade * 0.2,
+        };
+    });
+
+    // Bright core ring (the visible edge)
+    const coreStyle = useAnimatedStyle(() => {
+        const t = (driver.value + phase) % 1;
+        const ringSize = maxSize * (0.4 + t * 0.6);
+        const fade = 1 - t;
+        return {
+            width: ringSize,
+            height: ringSize * 0.85,
+            borderRadius: ringSize / 2,
+            borderWidth: thickness * (1 - t * 0.5),
+            borderColor: color,
+            opacity: opacityDriver.value * fade * fade * 0.6,
+        };
+    });
+
+    // Inner glow that fills the ring with a faint wash
+    const innerStyle = useAnimatedStyle(() => {
+        const t = (driver.value + phase) % 1;
+        const ringSize = maxSize * (0.4 + t * 0.6) * 0.85;
+        const fade = 1 - t;
+        return {
+            width: ringSize,
+            height: ringSize * 0.85,
+            borderRadius: ringSize / 2,
+            opacity: opacityDriver.value * fade * fade * fade * 0.1,
+        };
+    });
+
+    return (
+        <View style={styles.auraRingWrapper} pointerEvents="none">
+            {/* Outer soft halo (wide, dim) */}
+            <Animated.View
+                style={[styles.auraRing, { backgroundColor: color }, outerStyle]}
+                pointerEvents="none"
+            />
+            {/* Core ring edge (bright border) */}
+            <Animated.View
+                style={[styles.auraRing, { backgroundColor: 'transparent' }, coreStyle]}
+                pointerEvents="none"
+            />
+            {/* Inner faint fill */}
+            <Animated.View
+                style={[styles.auraRing, { backgroundColor: color }, innerStyle]}
+                pointerEvents="none"
+            />
+        </View>
+    );
+}
+
+// ==========================================================================
+// SHIMMER SWEEP
+// ==========================================================================
+// A diagonal light sweep that travels across the egg surface periodically.
+// Creates a "shine" effect like light glancing off a polished surface.
+// ==========================================================================
+
+interface ShimmerSweepProps {
+    driver: SharedValue<number>;
+    eggWidth: number;
+    eggHeight: number;
+    color: string;
+}
+
+function ShimmerSweep({ driver, eggWidth, eggHeight, color }: ShimmerSweepProps) {
+    const shimmerWidth = eggWidth * 0.22;
+
+    // Bright core band
+    const coreStyle = useAnimatedStyle(() => {
+        const totalTravel = eggWidth + shimmerWidth * 2;
+        const x = -shimmerWidth + driver.value * totalTravel;
+        const normalizedPos = driver.value;
+        const fade = normalizedPos < 0.3
+            ? normalizedPos / 0.3
+            : normalizedPos > 0.7
+            ? (1 - normalizedPos) / 0.3
+            : 1;
+
+        return {
+            transform: [
+                { translateX: x },
+                { rotate: '-20deg' },
+            ],
+            opacity: fade * 0.35,
+        };
+    });
+
+    // Soft outer halo (wider, dimmer, offset slightly)
+    const haloStyle = useAnimatedStyle(() => {
+        const totalTravel = eggWidth + shimmerWidth * 2;
+        const x = -shimmerWidth * 1.5 + driver.value * totalTravel;
+        const normalizedPos = driver.value;
+        const fade = normalizedPos < 0.3
+            ? normalizedPos / 0.3
+            : normalizedPos > 0.7
+            ? (1 - normalizedPos) / 0.3
+            : 1;
+
+        return {
+            transform: [
+                { translateX: x },
+                { rotate: '-20deg' },
+            ],
+            opacity: fade * 0.12,
+        };
+    });
+
+    return (
+        <>
+            {/* Soft wide halo sweep */}
+            <Animated.View
+                style={[
+                    styles.shimmerSweep,
+                    {
+                        width: shimmerWidth * 2.5,
+                        height: eggHeight * 1.2,
+                        backgroundColor: color,
+                    },
+                    haloStyle,
+                ]}
+                pointerEvents="none"
+            />
+            {/* Bright core band */}
+            <Animated.View
+                style={[
+                    styles.shimmerSweep,
+                    {
+                        width: shimmerWidth,
+                        height: eggHeight * 1.2,
+                        backgroundColor: color,
+                    },
+                    coreStyle,
+                ]}
+                pointerEvents="none"
+            />
+        </>
+    );
+}
+
+// ==========================================================================
+// DUST MOTE
+// ==========================================================================
+// A tiny, barely-visible particle that drifts lazily in the idle state.
+// Creates a dreamy, magical atmosphere even when nothing is happening.
+// Reuses the orbit driver to avoid extra animation timers.
+// ==========================================================================
+
+interface DustMoteProps {
+    driver: SharedValue<number>;
+    opacityDriver: SharedValue<number>;
+    /** Unique phase offset in degrees */
+    phase: number;
+    /** Orbit radii — larger than regular orbit for ambient feel */
+    rx: number;
+    ry: number;
+    /** Mote size (very small) */
+    size: number;
+    color: string;
+    cx: number;
+    cy: number;
+}
+
+function DustMote({ driver, opacityDriver, phase, rx, ry, size, color, cx, cy }: DustMoteProps) {
+    const animatedStyle = useAnimatedStyle(() => {
+        // Slower movement — divide driver by a factor for lazy drift
+        const angle = ((driver.value * 0.6 + phase) % 360) * (Math.PI / 180);
+        // Figure-8-ish drift path
+        const x = cx + Math.cos(angle) * rx + Math.sin(angle * 2) * rx * 0.15;
+        const y = cy + Math.sin(angle) * ry + Math.cos(angle * 1.5) * ry * 0.1;
+        // Gentle twinkle
+        const twinkle = 0.6 + Math.sin(angle * 3) * 0.4;
+        return {
+            transform: [
+                { translateX: x - size / 2 },
+                { translateY: y - size / 2 },
+            ],
+            opacity: opacityDriver.value * twinkle,
+        };
+    });
+
+    return (
+        <Animated.View
+            style={[
+                styles.dustMote,
+                {
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: color,
+                },
+                animatedStyle,
+            ]}
+            pointerEvents="none"
+        />
+    );
+}
+
+// ==========================================================================
+// MAIN EGG COMPONENT
+// ==========================================================================
+
+export function Egg({ sessionState, progress = 0, language = 'en', warningLevel = 0, eggStyleId }: EggProps) {
+    const isAppActive = useAppStateAnimation();
     const { eggSize } = useResponsive();
 
-    // Calculate derived sizes proportionally
-    // The egg should be prominent, glow should be subtle backdrop
-    const styledEggSize = Math.round(eggSize * 0.85); // Egg is the main element
-    const glowSize = Math.round(styledEggSize * 1.3); // Glow slightly larger than egg
-    const innerGlowSize = Math.round(styledEggSize * 0.9);
-    const sparkleContainerSize = Math.round(styledEggSize * 1.1);
-    const warningGlowSize = Math.round(styledEggSize * 1.4);
-    // Container just fits the egg - text is handled by parent (InteractiveEgg)
+    // Size calculations
+    const styledEggSize = Math.round(eggSize * 0.85);
+    const glowSize = Math.round(styledEggSize * 1.4);
+    const innerGlowSize = Math.round(styledEggSize * 1.0);
+    const warningGlowSize = Math.round(styledEggSize * 1.5);
+    const auraMaxSize = Math.round(styledEggSize * 1.8);
     const containerHeight = Math.round(styledEggSize * 1.25);
 
     // Get the current egg style
@@ -65,7 +521,9 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
         return getDefaultEggStyle();
     }, [eggStyleId]);
 
-    // Stable initial values - prevents blank flash on Android
+    // ======================================================================
+    // SHARED VALUES — Core egg animations
+    // ======================================================================
     const wobble = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
@@ -73,20 +531,32 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     const glowOpacity = useSharedValue(0);
     const glowScale = useSharedValue(1);
     const pulseValue = useSharedValue(0);
-    const sparkleRotation = useSharedValue(0);
     const colorProgress = useSharedValue(0);
     const warningPulse = useSharedValue(0);
     const anxiousShake = useSharedValue(0);
 
-    // Idle animation - gentle wobble with breathing effect
-    // Pauses when app is backgrounded to save battery
+    // ======================================================================
+    // SHARED VALUES — Particle & effect animations
+    // ======================================================================
+    const orbitAngle = useSharedValue(0);          // Drives orbiting particles
+    const orbitOpacity = useSharedValue(0);         // Fade in/out orbit particles
+    const risingCycle = useSharedValue(0);          // Drives rising particles
+    const risingOpacity = useSharedValue(0);        // Fade in/out rising particles
+    const auraCycle = useSharedValue(0);            // Drives aura ring expansion
+    const auraOpacity = useSharedValue(0);          // Fade in/out aura rings
+    const shimmerCycle = useSharedValue(0);         // Drives shimmer sweep
+    const idleShimmer = useSharedValue(0);          // Idle state shimmer
+    const idleParticleOpacity = useSharedValue(0);  // Idle floating particles
+
+    // ======================================================================
+    // IDLE STATE — Gentle breathing + subtle shimmer
+    // ======================================================================
     useEffect(() => {
         if (sessionState === 'idle') {
-            // Reset opacity (important after failed state where it drops to 0.3)
             opacity.value = withTiming(1, { duration: 300 });
 
             if (isAppActive) {
-                // Start idle animations
+                // Gentle wobble
                 wobble.value = withRepeat(
                     withSequence(
                         withTiming(-3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
@@ -95,8 +565,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                     -1,
                     true
                 );
-                // Reset scale to 1 first, then start breathing animation
-                // Using withSequence ensures the reset completes before the repeat begins
+                // Breathing scale
                 scale.value = withSequence(
                     withTiming(1, { duration: 200 }),
                     withRepeat(
@@ -108,32 +577,81 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         true
                     )
                 );
+
+                // Subtle idle shimmer — slow sweep every 4 seconds
+                idleShimmer.value = withRepeat(
+                    withSequence(
+                        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withDelay(2500, withTiming(0, { duration: 0 }))
+                    ),
+                    -1,
+                    false
+                );
+
+                // Faint ambient particles in idle
+                idleParticleOpacity.value = withTiming(0.25, { duration: 800 });
+                orbitAngle.value = withRepeat(
+                    withTiming(360, { duration: 12000, easing: Easing.linear }),
+                    -1,
+                    false
+                );
             } else {
-                // Pause idle animations when backgrounded
-                // Still reset scale even when backgrounded
                 scale.value = withTiming(1, { duration: 200 });
                 cancelAnimation(wobble);
+                idleShimmer.value = 0;
+                idleParticleOpacity.value = withTiming(0, { duration: 300 });
             }
-            // Reset values
-            glowOpacity.value = withTiming(0, { duration: 300 });
+
+            // Ambient warm glow that breathes in sync with the egg
+            if (isAppActive) {
+                glowOpacity.value = withRepeat(
+                    withSequence(
+                        withTiming(0.12, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0.04, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+                glowScale.value = withRepeat(
+                    withSequence(
+                        withTiming(1.05, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0.95, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+            } else {
+                glowOpacity.value = withTiming(0, { duration: 300 });
+                glowScale.value = withTiming(1, { duration: 300 });
+            }
+
+            // Reset active-session effects
             crackLevel.value = withTiming(0, { duration: 300 });
             colorProgress.value = withTiming(0, { duration: 300 });
+            orbitOpacity.value = withTiming(0, { duration: 400 });
+            risingOpacity.value = withTiming(0, { duration: 400 });
+            auraOpacity.value = withTiming(0, { duration: 400 });
 
-            // Cleanup: cancel infinite animations when unmounting or state changes
             return () => {
                 cancelAnimation(wobble);
                 cancelAnimation(scale);
+                cancelAnimation(idleShimmer);
+                cancelAnimation(orbitAngle);
+                cancelAnimation(glowOpacity);
+                cancelAnimation(glowScale);
             };
         }
-    }, [sessionState, isAppActive, wobble, scale, opacity, glowOpacity, crackLevel, colorProgress]);
+    }, [sessionState, isAppActive]);
 
-    // Active session - more wobble as progress increases with pulse effect
+    // ======================================================================
+    // ACTIVE SESSION — Full spectacle
+    // ======================================================================
     useEffect(() => {
         if (sessionState === 'active') {
             const intensity = 2 + progress * 10;
             const speed = Math.max(200, 800 - progress * 600);
 
-            // Wobble animation - intensifies with progress
+            // Intensifying wobble
             wobble.value = withRepeat(
                 withSequence(
                     withTiming(-intensity, { duration: speed, easing: Easing.inOut(Easing.ease) }),
@@ -143,7 +661,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 true
             );
 
-            // Pulse effect - heartbeat-like pulsing
+            // Heartbeat pulse
             const pulseSpeed = Math.max(400, 1000 - progress * 600);
             pulseValue.value = withRepeat(
                 withSequence(
@@ -154,44 +672,90 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 false
             );
 
-            // Glow effect - increases with progress
-            glowOpacity.value = withTiming(progress * 0.8, { duration: 500 });
+            // Multi-layer glow
+            glowOpacity.value = withTiming(progress * 0.85, { duration: 500 });
             glowScale.value = withRepeat(
                 withSequence(
-                    withTiming(1.1, { duration: 1000 }),
-                    withTiming(1, { duration: 1000 })
+                    withTiming(1.1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1.0, { duration: 1200, easing: Easing.inOut(Easing.ease) })
                 ),
                 -1,
                 true
             );
 
-            // Sparkle rotation
-            sparkleRotation.value = withRepeat(
-                withTiming(360, { duration: 3000, easing: Easing.linear }),
+            // Color warming
+            colorProgress.value = withTiming(progress, { duration: 500 });
+            crackLevel.value = withTiming(Math.floor(progress * 4), { duration: 300 });
+
+            // === PARTICLE EFFECTS ===
+
+            // Orbiting particles — speed increases with progress
+            const orbitSpeed = Math.max(3000, 8000 - progress * 5000);
+            orbitAngle.value = withRepeat(
+                withTiming(360, { duration: orbitSpeed, easing: Easing.linear }),
+                -1,
+                false
+            );
+            orbitOpacity.value = withTiming(
+                progress > 0.15 ? Math.min(1, progress * 1.2) : 0,
+                { duration: 600 }
+            );
+
+            // Rising particles — appear after 20% progress
+            if (progress > 0.2) {
+                risingCycle.value = withRepeat(
+                    withTiming(1, { duration: Math.max(2000, 4000 - progress * 2500), easing: Easing.linear }),
+                    -1,
+                    false
+                );
+                risingOpacity.value = withTiming(Math.min(1, (progress - 0.2) * 2), { duration: 500 });
+            } else {
+                risingOpacity.value = withTiming(0, { duration: 300 });
+            }
+
+            // Aura rings — appear after 40% progress
+            if (progress > 0.4) {
+                auraCycle.value = withRepeat(
+                    withTiming(1, { duration: Math.max(1500, 3000 - progress * 1500), easing: Easing.linear }),
+                    -1,
+                    false
+                );
+                auraOpacity.value = withTiming(Math.min(0.8, (progress - 0.4) * 2), { duration: 500 });
+            } else {
+                auraOpacity.value = withTiming(0, { duration: 300 });
+            }
+
+            // Shimmer sweep — periodic shimmer during active session
+            shimmerCycle.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
+                    withDelay(2000 - progress * 1200, withTiming(0, { duration: 0 }))
+                ),
                 -1,
                 false
             );
 
-            // Color transition (egg gets warmer/more golden as it progresses)
-            colorProgress.value = withTiming(progress, { duration: 500 });
+            // Kill idle effects
+            idleShimmer.value = 0;
+            idleParticleOpacity.value = withTiming(0, { duration: 200 });
 
-            // Crack level increases with progress
-            crackLevel.value = withTiming(Math.floor(progress * 4), { duration: 300 });
-
-            // Cleanup: cancel all infinite animations when unmounting or state changes
             return () => {
                 cancelAnimation(wobble);
                 cancelAnimation(pulseValue);
                 cancelAnimation(glowScale);
-                cancelAnimation(sparkleRotation);
+                cancelAnimation(orbitAngle);
+                cancelAnimation(risingCycle);
+                cancelAnimation(auraCycle);
+                cancelAnimation(shimmerCycle);
             };
         }
-    }, [sessionState, progress, wobble, pulseValue, glowOpacity, glowScale, sparkleRotation, colorProgress, crackLevel]);
+    }, [sessionState, progress]);
 
-    // Warning level animations - urgent feedback when backgrounded too long
+    // ======================================================================
+    // WARNING ANIMATIONS
+    // ======================================================================
     useEffect(() => {
         if (warningLevel > 0 && sessionState === 'active') {
-            // Anxious shake intensity based on warning level
             const shakeIntensity = warningLevel * 4;
             const shakeSpeed = 150 - warningLevel * 30;
 
@@ -204,12 +768,11 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 true
             );
 
-            // Warning pulse for glow
-            const pulseSpeed = 500 - warningLevel * 100;
+            const wPulseSpeed = 500 - warningLevel * 100;
             warningPulse.value = withRepeat(
                 withSequence(
-                    withTiming(1, { duration: pulseSpeed }),
-                    withTiming(0.3, { duration: pulseSpeed })
+                    withTiming(1, { duration: wPulseSpeed }),
+                    withTiming(0.3, { duration: wPulseSpeed })
                 ),
                 -1,
                 true
@@ -220,16 +783,19 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             anxiousShake.value = withTiming(0, { duration: 200 });
             warningPulse.value = withTiming(0, { duration: 200 });
         }
-    }, [warningLevel, sessionState, anxiousShake, warningPulse]);
+    }, [warningLevel, sessionState]);
 
-    // Hatching animation - dramatic climax
+    // ======================================================================
+    // HATCHING — Dramatic burst with particle explosion
+    // ======================================================================
     useEffect(() => {
         if (sessionState === 'completed') {
             cancelAnimation(wobble);
             cancelAnimation(scale);
             cancelAnimation(pulseValue);
+            cancelAnimation(shimmerCycle);
 
-            // Intense shaking with increasing speed
+            // Intense shaking
             wobble.value = withRepeat(
                 withSequence(
                     withTiming(-20, { duration: 40 }),
@@ -246,7 +812,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 withSpring(0, { damping: 15 })
             );
 
-            // Fade out with explosion effect
+            // Fade out
             opacity.value = withDelay(300, withTiming(0, { duration: 400 }));
 
             // Full glow burst
@@ -256,12 +822,31 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             );
             glowScale.value = withSequence(
                 withTiming(1.5, { duration: 300 }),
-                withTiming(2, { duration: 200 })
+                withTiming(2.2, { duration: 200 })
             );
-        }
-    }, [sessionState, wobble, scale, pulseValue, opacity, glowOpacity, glowScale]);
 
-    // Breaking animation (failed session)
+            // Explode particles outward
+            orbitOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withDelay(300, withTiming(0, { duration: 400 }))
+            );
+            risingOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withDelay(200, withTiming(0, { duration: 300 }))
+            );
+
+            // Aura burst
+            auraOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 500 })
+            );
+            auraCycle.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) });
+        }
+    }, [sessionState]);
+
+    // ======================================================================
+    // FAILED SESSION — Collapse with particle dissipation
+    // ======================================================================
     useEffect(() => {
         if (sessionState === 'failed') {
             cancelAnimation(wobble);
@@ -285,21 +870,24 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             );
 
             opacity.value = withTiming(0.3, { duration: 600 });
-
-            // Crack fully
             crackLevel.value = withTiming(4, { duration: 150 });
-
-            // Red tint
             colorProgress.value = withTiming(-1, { duration: 300 });
+
+            // Kill all particle effects
+            orbitOpacity.value = withTiming(0, { duration: 300 });
+            risingOpacity.value = withTiming(0, { duration: 300 });
+            auraOpacity.value = withTiming(0, { duration: 300 });
+            idleParticleOpacity.value = withTiming(0, { duration: 200 });
         }
-    }, [sessionState, wobble, scale, pulseValue, opacity, crackLevel, colorProgress]);
+    }, [sessionState]);
 
-    const animatedStyle = useAnimatedStyle(() => {
-        // Ensure minimum opacity of 0.01 to prevent complete invisibility issues on Android
+    // ======================================================================
+    // ANIMATED STYLES
+    // ======================================================================
+
+    const animatedEggStyle = useAnimatedStyle(() => {
         const safeOpacity = Math.max(0.01, opacity.value);
-        // Ensure scale is always positive and non-zero
         const safeScale = Math.max(0.1, scale.value * (1 + pulseValue.value * 0.05));
-
         return {
             transform: [
                 { rotate: `${wobble.value + anxiousShake.value}deg` },
@@ -314,36 +902,18 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
         transform: [{ scale: glowScale.value }],
     }));
 
-    const sparkleStyle = useAnimatedStyle(() => ({
-        transform: [{ rotate: `${sparkleRotation.value}deg` }],
-        opacity: glowOpacity.value * 0.8,
-    }));
-
     const innerGlowStyle = useAnimatedStyle(() => ({
-        opacity: pulseValue.value * 0.5 + colorProgress.value * 0.3,
+        opacity: pulseValue.value * 0.4 + colorProgress.value * 0.25,
     }));
 
     const warningGlowStyle = useAnimatedStyle(() => ({
         opacity: warningPulse.value * 0.8,
     }));
 
-    const getCrackEmoji = () => {
-        if (sessionState === 'failed') return '💔';
-        const level = Math.floor(progress * 4);
-        if (level >= 3) return '🐣'; // About to hatch!
-        if (level >= 2) return '🥚'; // More cracks
-        return '🥚'; // Egg
-    };
+    // ======================================================================
+    // HELPER FUNCTIONS
+    // ======================================================================
 
-    const getProgressEmoji = () => {
-        if (progress >= 0.9) return '✨💫✨';
-        if (progress >= 0.75) return '✨';
-        if (progress >= 0.5) return '💫';
-        if (progress >= 0.3) return '⭐';
-        return '';
-    };
-
-    // Accessibility: Get status text for screen readers
     const getStatusText = () => {
         if (sessionState === 'failed') return t('eggBroken', language);
         if (sessionState === 'active') {
@@ -355,6 +925,48 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
         return '';
     };
 
+    // ======================================================================
+    // PARTICLE CONFIGURATION
+    // ======================================================================
+    // Orbit particles — positioned around the egg in an elliptical ring
+    const eggColor = currentEggStyle.primaryColor;
+    const eggSecondary = currentEggStyle.secondaryColor || '#FFFFFF';
+    const centerX = 0;
+    const centerY = 0;
+    const orbitRx = styledEggSize * 0.55;
+    const orbitRy = styledEggSize * 0.45;
+
+    const orbitParticles = useMemo(() => [
+        { phase: 0, size: 6, color: eggColor },
+        { phase: 60, size: 4, color: eggSecondary },
+        { phase: 120, size: 5, color: eggColor },
+        { phase: 180, size: 4, color: eggSecondary },
+        { phase: 240, size: 6, color: eggColor },
+        { phase: 300, size: 3, color: eggSecondary },
+    ], [eggColor, eggSecondary]);
+
+    // Rising particles — emanate from the egg surface
+    const risingParticles = useMemo(() => [
+        { phase: 0.0, startX: -styledEggSize * 0.15, drift: 8, size: 4, color: eggColor },
+        { phase: 0.2, startX: styledEggSize * 0.10, drift: -6, size: 3, color: eggSecondary },
+        { phase: 0.4, startX: -styledEggSize * 0.05, drift: 10, size: 5, color: eggColor },
+        { phase: 0.55, startX: styledEggSize * 0.20, drift: -8, size: 3, color: eggSecondary },
+        { phase: 0.7, startX: -styledEggSize * 0.22, drift: 5, size: 4, color: eggColor },
+        { phase: 0.85, startX: styledEggSize * 0.08, drift: -12, size: 3, color: eggSecondary },
+    ], [styledEggSize, eggColor, eggSecondary]);
+
+    // Ambient dust motes — lazy drifters for idle state atmosphere
+    const dustMotes = useMemo(() => [
+        { phase: 30, rx: styledEggSize * 0.65, ry: styledEggSize * 0.55, size: 3, color: eggColor },
+        { phase: 140, rx: styledEggSize * 0.50, ry: styledEggSize * 0.60, size: 2.5, color: eggSecondary },
+        { phase: 220, rx: styledEggSize * 0.72, ry: styledEggSize * 0.48, size: 2, color: eggColor },
+        { phase: 310, rx: styledEggSize * 0.58, ry: styledEggSize * 0.52, size: 3, color: eggSecondary },
+    ], [styledEggSize, eggColor, eggSecondary]);
+
+    // ======================================================================
+    // RENDER
+    // ======================================================================
+
     return (
         <View
             style={[styles.container, { height: containerHeight }]}
@@ -362,17 +974,45 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             accessibilityRole="image"
             accessibilityLabel={
                 sessionState === 'failed'
-                    ? (language === 'tr' ? 'Kırık yumurta' : 'Broken egg')
+                    ? (language === 'tr' ? 'Kırık yumurta' : language === 'es' ? 'Huevo roto' : 'Broken egg')
                     : sessionState === 'completed'
-                    ? (language === 'tr' ? 'Çatlayan yumurta' : 'Hatching egg')
-                    : (language === 'tr' ? 'Odaklanma yumurtası' : 'Focus egg')
+                    ? (language === 'tr' ? 'Çatlayan yumurta' : language === 'es' ? 'Huevo eclosionando' : 'Hatching egg')
+                    : (language === 'tr' ? 'Odaklanma yumurtası' : language === 'es' ? 'Huevo de enfoque' : 'Focus egg')
             }
-            accessibilityState={{
-                busy: sessionState === 'active',
-            }}
+            accessibilityState={{ busy: sessionState === 'active' }}
         >
-            {/* Outer glow effect - only visible during active session with progress */}
-            {sessionState === 'active' && progress > 0.1 && (
+            {/* === LAYER 1: Aura rings (behind everything) === */}
+            {(sessionState === 'active' || sessionState === 'completed') && (
+                <View style={styles.auraContainer} pointerEvents="none">
+                    <AuraRing
+                        driver={auraCycle}
+                        phase={0}
+                        maxSize={auraMaxSize}
+                        color={eggColor}
+                        opacityDriver={auraOpacity}
+                        thickness={2}
+                    />
+                    <AuraRing
+                        driver={auraCycle}
+                        phase={0.33}
+                        maxSize={auraMaxSize}
+                        color={eggSecondary}
+                        opacityDriver={auraOpacity}
+                        thickness={1.5}
+                    />
+                    <AuraRing
+                        driver={auraCycle}
+                        phase={0.66}
+                        maxSize={auraMaxSize}
+                        color={eggColor}
+                        opacityDriver={auraOpacity}
+                        thickness={1}
+                    />
+                </View>
+            )}
+
+            {/* === LAYER 2: Outer glow (active: bright, idle: soft ambient) === */}
+            {(sessionState === 'idle' || sessionState === 'active' || sessionState === 'completed') && (
                 <Animated.View
                     style={[
                         styles.glow,
@@ -381,51 +1021,14 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                             width: glowSize,
                             height: glowSize,
                             borderRadius: glowSize / 2,
-                            backgroundColor: currentEggStyle.primaryColor
+                            backgroundColor: eggColor,
                         }
                     ]}
-                    importantForAccessibility="no"
                     pointerEvents="none"
                 />
             )}
 
-            {/* Warning glow overlay */}
-            {warningLevel > 0 && (
-                <Animated.View
-                    style={[
-                        styles.warningGlow,
-                        warningGlowStyle,
-                        {
-                            width: warningGlowSize,
-                            height: warningGlowSize,
-                            borderRadius: warningGlowSize / 2,
-                            backgroundColor: WARNING_COLORS[warningLevel]
-                        }
-                    ]}
-                    importantForAccessibility="no"
-                    pointerEvents="none"
-                />
-            )}
-
-            {/* Rotating sparkles */}
-            {sessionState === 'active' && progress > 0.3 && (
-                <Animated.View
-                    style={[
-                        styles.sparkleContainer,
-                        sparkleStyle,
-                        { width: sparkleContainerSize, height: sparkleContainerSize }
-                    ]}
-                    importantForAccessibility="no"
-                    pointerEvents="none"
-                >
-                    <Text style={[styles.sparkle, { color: currentEggStyle.primaryColor }]}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle2, { color: currentEggStyle.primaryColor }]}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle3, { color: currentEggStyle.primaryColor }]}>✦</Text>
-                    <Text style={[styles.sparkle, styles.sparkle4, { color: currentEggStyle.primaryColor }]}>✦</Text>
-                </Animated.View>
-            )}
-
-            {/* Inner glow - only during active session */}
+            {/* === LAYER 3: Inner glow === */}
             {sessionState === 'active' && (
                 <Animated.View
                     style={[
@@ -435,42 +1038,144 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                             width: innerGlowSize,
                             height: innerGlowSize,
                             borderRadius: innerGlowSize / 2,
-                            backgroundColor: currentEggStyle.primaryColor
+                            backgroundColor: eggColor,
                         }
                     ]}
-                    importantForAccessibility="no"
                     pointerEvents="none"
                 />
             )}
 
-            {/* Egg */}
-            <Animated.View style={[styles.eggContainer, animatedStyle]} importantForAccessibility="no">
-                {/* Styled SVG Egg - only show when not broken or hatching */}
-                {sessionState !== 'failed' && sessionState !== 'completed' && (
+            {/* === LAYER 4: Warning glow === */}
+            {warningLevel > 0 && (
+                <Animated.View
+                    style={[
+                        styles.warningGlow,
+                        warningGlowStyle,
+                        {
+                            width: warningGlowSize,
+                            height: warningGlowSize,
+                            borderRadius: warningGlowSize / 2,
+                            backgroundColor: WARNING_COLORS[warningLevel],
+                        }
+                    ]}
+                    pointerEvents="none"
+                />
+            )}
+
+            {/* === LAYER 5: Orbiting particles === */}
+            <View style={styles.particleLayer} pointerEvents="none">
+                {orbitParticles.map((p, i) => (
+                    <OrbitParticle
+                        key={`orbit-${i}`}
+                        driver={orbitAngle}
+                        phaseOffset={p.phase}
+                        orbitRx={orbitRx}
+                        orbitRy={orbitRy}
+                        size={p.size}
+                        color={p.color}
+                        opacityDriver={
+                            sessionState === 'active' || sessionState === 'completed'
+                                ? orbitOpacity
+                                : idleParticleOpacity
+                        }
+                        cx={centerX}
+                        cy={centerY}
+                    />
+                ))}
+            </View>
+
+            {/* === LAYER 5b: Ambient dust motes (idle state) === */}
+            {sessionState === 'idle' && (
+                <View style={styles.particleLayer} pointerEvents="none">
+                    {dustMotes.map((m, i) => (
+                        <DustMote
+                            key={`dust-${i}`}
+                            driver={orbitAngle}
+                            opacityDriver={idleParticleOpacity}
+                            phase={m.phase}
+                            rx={m.rx}
+                            ry={m.ry}
+                            size={m.size}
+                            color={m.color}
+                            cx={centerX}
+                            cy={centerY}
+                        />
+                    ))}
+                </View>
+            )}
+
+            {/* === LAYER 6: Rising particles === */}
+            {(sessionState === 'active' || sessionState === 'completed') && (
+                <View style={styles.particleLayer} pointerEvents="none">
+                    {risingParticles.map((p, i) => (
+                        <RisingParticle
+                            key={`rise-${i}`}
+                            driver={risingCycle}
+                            phase={p.phase}
+                            startX={p.startX}
+                            startY={styledEggSize * 0.2}
+                            riseHeight={styledEggSize * 0.9}
+                            drift={p.drift}
+                            size={p.size}
+                            color={p.color}
+                            opacityDriver={risingOpacity}
+                        />
+                    ))}
+                </View>
+            )}
+
+            {/* === LAYER 7: The Egg itself === */}
+            <Animated.View style={[styles.eggContainer, animatedEggStyle]}>
+                <View style={styles.eggSvgContainer}>
                     <StyledEgg
                         eggStyle={currentEggStyle}
                         size={styledEggSize}
                         showPattern={true}
-                        glowColor={currentEggStyle.primaryColor}
-                        glowIntensity={progress * 0.5}
+                        glowColor={eggColor}
+                        glowIntensity={
+                            sessionState === 'completed' ? 0.8
+                            : sessionState === 'failed' ? 0
+                            : progress * 0.5
+                        }
+                        crackProgress={
+                            sessionState === 'completed' ? 1.0
+                            : sessionState === 'failed' ? 0.85
+                            : sessionState === 'active' ? progress
+                            : 0
+                        }
                     />
-                )}
-                {/* Show emoji for special states */}
-                {(sessionState === 'failed' || sessionState === 'completed') && (
-                    <Text style={styles.egg} allowFontScaling={false}>{getCrackEmoji()}</Text>
-                )}
-
-                {/* Progress sparkle overlay */}
-                {sessionState === 'active' && progress > 0.25 && (
-                    <View style={styles.crackOverlay}>
-                        <Text style={styles.crackText}>
-                            {getProgressEmoji()}
-                        </Text>
-                    </View>
-                )}
+                    {/* Shimmer sweep overlay (clipped to egg bounds) */}
+                    {sessionState !== 'failed' && (
+                        <View style={[
+                            styles.shimmerClip,
+                            {
+                                width: styledEggSize,
+                                height: styledEggSize * 1.2,
+                            }
+                        ]}>
+                            <ShimmerSweep
+                                driver={sessionState === 'active' ? shimmerCycle : idleShimmer}
+                                eggWidth={styledEggSize}
+                                eggHeight={styledEggSize * 1.2}
+                                color="#FFFFFF"
+                            />
+                        </View>
+                    )}
+                    {/* Dim overlay for failed state */}
+                    {sessionState === 'failed' && (
+                        <View style={[
+                            styles.failedOverlay,
+                            {
+                                width: styledEggSize,
+                                height: styledEggSize * 1.2,
+                                borderRadius: styledEggSize / 2,
+                            },
+                        ]} />
+                    )}
+                </View>
             </Animated.View>
 
-            {/* Status text */}
+            {/* === LAYER 8: Status text === */}
             {sessionState === 'failed' && (
                 <Animated.Text
                     style={styles.failedText}
@@ -481,80 +1186,89 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                     {t('eggBroken', language)}
                 </Animated.Text>
             )}
-
-            {/* Progress text removed - InteractiveEgg handles encouragement messages */}
         </View>
     );
 }
+
+// ==========================================================================
+// STYLES
+// ==========================================================================
 
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        // Note: overflow is NOT set to 'hidden' to allow glow effects to extend naturally
-        // The parent container (eggSection in index.tsx) handles clipping if needed
-        // height is now dynamic
     },
     glow: {
         position: 'absolute',
-        // width, height, borderRadius are now dynamic
     },
     innerGlow: {
         position: 'absolute',
-        // width, height, borderRadius are now dynamic
     },
-    sparkleContainer: {
+    warningGlow: {
         position: 'absolute',
-        // width, height are now dynamic
+    },
+    auraContainer: {
+        ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    sparkle: {
+    auraRingWrapper: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    auraRing: {
         position: 'absolute',
-        fontSize: 20,
-        color: theme.colors.accent,
-        top: 0,
     },
-    sparkle2: {
-        top: undefined,
-        bottom: 0,
+    particleLayer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    sparkle3: {
-        top: undefined,
-        left: 0,
-        bottom: undefined,
+    orbitParticle: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    sparkle4: {
-        top: undefined,
-        right: 0,
-        left: undefined,
-        bottom: undefined,
+    risingParticle: {
+        position: 'absolute',
+    },
+    dustMote: {
+        position: 'absolute',
+    },
+    particleHalo: {
+        position: 'absolute',
+    },
+    particleCore: {
+        position: 'absolute',
     },
     eggContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        // No margin - egg should be centered with the glow circle behind it
     },
-    egg: {
-        fontSize: 70,
-        color: theme.colors.accent,
+    eggSvgContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    crackOverlay: {
+    shimmerClip: {
         position: 'absolute',
-        top: -15,
-        right: -15,
+        overflow: 'hidden',
+        borderRadius: 999,
     },
-    crackText: {
-        fontSize: 36,
+    shimmerSweep: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+    },
+    failedOverlay: {
+        position: 'absolute',
+        backgroundColor: 'rgba(0, 0, 0, 0.35)',
     },
     failedText: {
         marginTop: theme.spacing.sm,
         fontSize: theme.fontSize.lg,
         color: theme.colors.error,
         fontWeight: theme.fontWeight.bold,
-    },
-    warningGlow: {
-        position: 'absolute',
-        // width, height, borderRadius are now dynamic
     },
 });
