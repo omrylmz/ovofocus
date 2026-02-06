@@ -158,12 +158,18 @@ export const SettingsSchema = z.object({
 // Daily Progress Schema
 // ============================================================================
 
-/** Default daily progress (uses current date at runtime) */
-export const getDefaultDailyProgress = () => ({
-    date: new Date().toISOString().split('T')[0],
-    completedSessions: 0,
-    goalAchieved: false,
-});
+/** Default daily progress (uses current local date at runtime) */
+export const getDefaultDailyProgress = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return {
+        date: `${year}-${month}-${day}`,
+        completedSessions: 0,
+        goalAchieved: false,
+    };
+};
 
 /** Daily progress schema */
 export const DailyProgressSchema = z.object({

@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, Dimensions, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, SafeAreaView, Pressable, useWindowDimensions, Modal, TextInput } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { theme as darkTheme, ThemeMode, Theme } from '../src/styles/theme';
@@ -24,23 +24,20 @@ import { getEggStyleById, getDefaultEggStyle, UnlockCheckParams } from '../src/d
 import { StyledEgg } from '../src/components/StyledEgg';
 import { CalendarView } from '../src/components/CalendarView';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Calculate button width based on screen size (3 per row with gaps)
-// Using darkTheme for static layout values (spacing doesn't change between themes)
+// Button grid constants (spacing doesn't change between themes)
 const BUTTON_GAP = darkTheme.spacing.sm;
 const CONTAINER_PADDING = darkTheme.spacing.lg * 2;
 const BUTTONS_PER_ROW = 3;
-const BUTTON_WIDTH = (SCREEN_WIDTH - CONTAINER_PADDING - (BUTTON_GAP * (BUTTONS_PER_ROW - 1))) / BUTTONS_PER_ROW;
 
-// Create dynamic styles based on current theme
-const createStyles = (theme: Theme) => StyleSheet.create({
+// Create dynamic styles based on current theme and screen width
+const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
     },
     scrollContent: {
         padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xxl,
     },
     // Main Section Container with visual separation
     sectionContainer: {
@@ -168,7 +165,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         gap: BUTTON_GAP,
     },
     buttonWrapper: {
-        width: BUTTON_WIDTH,
+        width: (screenWidth - CONTAINER_PADDING - (BUTTON_GAP * (BUTTONS_PER_ROW - 1))) / BUTTONS_PER_ROW,
     },
     // Setting description
     settingDescription: {
@@ -616,9 +613,10 @@ export default function SettingsScreen() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [showCalendarView, setShowCalendarView] = useState(false);
+    const { width: screenWidth } = useWindowDimensions();
 
-    // Create dynamic styles based on current theme
-    const styles = useMemo(() => createStyles(theme), [theme]);
+    // Create dynamic styles based on current theme and screen width
+    const styles = useMemo(() => createStyles(theme, screenWidth), [theme, screenWidth]);
 
     // Check if audio system is functional
     useEffect(() => {

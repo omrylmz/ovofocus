@@ -55,7 +55,7 @@ function getXPProgress(count: number): { current: number; max: number; percentag
     return {
         current: progress,
         max: required,
-        percentage: Math.min((progress / required) * 100, 100),
+        percentage: required > 0 ? Math.min((progress / required) * 100, 100) : 100,
     };
 }
 
@@ -703,14 +703,14 @@ const styles = StyleSheet.create({
     // Rarity badge with gradient
     rarityBadgeContainer: {
         position: 'absolute',
-        top: 4,
-        right: 4,
+        top: theme.spacing.xs,
+        right: theme.spacing.xs,
         borderRadius: theme.borderRadius.sm,
         overflow: 'hidden',
     },
     rarityBadgeGradient: {
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xxs,
     },
     rarityText: {
         fontSize: 8,
@@ -723,10 +723,10 @@ const styles = StyleSheet.create({
     // Rarity hint for uncollected
     rarityHintBadge: {
         position: 'absolute',
-        top: 4,
-        right: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        top: theme.spacing.xs,
+        right: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
         borderWidth: 1,
         backgroundColor: 'transparent',
@@ -738,10 +738,10 @@ const styles = StyleSheet.create({
     // Level badge
     levelBadge: {
         position: 'absolute',
-        bottom: 4,
-        left: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        bottom: theme.spacing.xs,
+        left: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
         minWidth: 24,
         alignItems: 'center',
@@ -758,11 +758,11 @@ const styles = StyleSheet.create({
     // Count badge
     countBadge: {
         position: 'absolute',
-        bottom: 4,
-        right: 4,
+        bottom: theme.spacing.xs,
+        right: theme.spacing.xs,
         backgroundColor: theme.colors.accent,
-        paddingHorizontal: 5,
-        paddingVertical: 2,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
         minWidth: 20,
         alignItems: 'center',
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
         right: 0,
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 3,
+        gap: theme.spacing.xxs,
     },
     levelDot: {
         width: 5,

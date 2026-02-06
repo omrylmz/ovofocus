@@ -81,6 +81,7 @@ function BarChartBar({ value, maxValue, label, index }: {
 
 export function BarChart({ data, title, language = 'en' }: BarChartProps) {
     const maxValue = useMemo(() => {
+        if (data.length === 0) return 1;
         const max = Math.max(...data.map(d => d.sessions));
         return max > 0 ? max : 1;
     }, [data]);
@@ -183,7 +184,7 @@ const barStyles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.text,
         fontWeight: theme.fontWeight.bold,
-        marginTop: 4,
+        marginTop: theme.spacing.xs,
     },
     barValueZero: {
         color: theme.colors.textSecondary,
@@ -368,6 +369,7 @@ interface TrendChartProps {
 
 export function TrendChart({ data, title, language = 'en' }: TrendChartProps) {
     const maxValue = useMemo(() => {
+        if (data.length === 0) return 1;
         const max = Math.max(...data.map(d => d.totalMinutes));
         return max > 0 ? max : 1;
     }, [data]);
@@ -500,7 +502,7 @@ const trendStyles = StyleSheet.create({
         fontSize: 10,
         color: theme.colors.text,
         fontWeight: theme.fontWeight.bold,
-        marginBottom: 4,
+        marginBottom: theme.spacing.xs,
     },
     pointBar: {
         width: 40,
@@ -510,7 +512,7 @@ const trendStyles = StyleSheet.create({
     pointLabel: {
         fontSize: 10,
         color: theme.colors.textSecondary,
-        marginTop: 4,
+        marginTop: theme.spacing.xs,
     },
 });
 

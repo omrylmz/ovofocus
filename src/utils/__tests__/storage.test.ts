@@ -273,7 +273,7 @@ describe('Storage Utility', () => {
 
       expect(progress.completedSessions).toBe(0);
       expect(progress.goalAchieved).toBe(false);
-      expect(progress.date).toBe(new Date().toISOString().split('T')[0]);
+      expect(progress.date).toBe((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })());
     });
 
     it('should increment daily progress', async () => {
@@ -1037,7 +1037,7 @@ describe('Storage Utility', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       await AsyncStorage.setItem(STORAGE_KEYS.DAILY_PROGRESS, JSON.stringify({
-        date: yesterday.toISOString().split('T')[0],
+        date: `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`,
         completedSessions: 5,
         goalAchieved: true,
       }));
@@ -1046,7 +1046,7 @@ describe('Storage Utility', () => {
 
       expect(progress.completedSessions).toBe(0);
       expect(progress.goalAchieved).toBe(false);
-      expect(progress.date).toBe(new Date().toISOString().split('T')[0]);
+      expect(progress.date).toBe((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })());
     });
 
     it('should handle incrementDailyProgress errors gracefully', async () => {

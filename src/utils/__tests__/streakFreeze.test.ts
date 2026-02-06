@@ -75,7 +75,7 @@ describe('Streak Freeze Utility', () => {
     });
 
     it('should return true when freeze used today', async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       await AsyncStorage.setItem('@ovofocus/streak_freeze', JSON.stringify({
         freezeCount: 1,
         lastFreezeUsedDate: today,
@@ -105,7 +105,7 @@ describe('Streak Freeze Utility', () => {
     });
 
     it('should return false when freeze already used today', async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       await AsyncStorage.setItem('@ovofocus/streak_freeze', JSON.stringify({
         freezeCount: 2,
         lastFreezeUsedDate: today,
@@ -128,7 +128,7 @@ describe('Streak Freeze Utility', () => {
 
       const data = await getStreakFreezeData();
       expect(data.freezeCount).toBe(1);
-      expect(data.lastFreezeUsedDate).toBe(new Date().toISOString().split('T')[0]);
+      expect(data.lastFreezeUsedDate).toBe((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })());
     });
   });
 
@@ -201,7 +201,7 @@ describe('Streak Freeze Utility', () => {
     });
 
     it('should return false when freeze already used today', async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       await AsyncStorage.setItem('@ovofocus/streak_freeze', JSON.stringify({
         freezeCount: 1,
         lastFreezeUsedDate: today,

@@ -79,6 +79,8 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
     const backgroundStartTimeRef = useRef<number | null>(null);
     const previousAppStateRef = useRef<AppStateStatus>(AppState.currentState);
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const quickReturnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const warningClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Calculate effective tolerance
     const progressMultiplier = getProgressMultiplier(progress);
@@ -127,7 +129,8 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                 if (timeDiff <= QUICK_RETURN_THRESHOLD) {
                     setIsQuickReturn(true);
                     // Auto-clear quick return flag after 3 seconds
-                    setTimeout(() => setIsQuickReturn(false), 3000);
+                    if (quickReturnTimeoutRef.current) clearTimeout(quickReturnTimeoutRef.current);
+                    quickReturnTimeoutRef.current = setTimeout(() => setIsQuickReturn(false), 3000);
                 }
 
                 // If returned within tolerance, clear the warning after a brief display
@@ -136,7 +139,8 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                     (baseTolerance * getProgressMultiplier(progress)) + getStreakBonus(currentStreak) + shieldBonus
                 );
                 if (timeDiff < currentEffectiveTolerance) {
-                    setTimeout(() => setTimeInBackground(0), 1500);
+                    if (warningClearTimeoutRef.current) clearTimeout(warningClearTimeoutRef.current);
+                    warningClearTimeoutRef.current = setTimeout(() => setTimeInBackground(0), 1500);
                 }
 
                 backgroundStartTimeRef.current = null;
@@ -154,6 +158,12 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
             if (checkIntervalRef.current) {
                 clearInterval(checkIntervalRef.current);
             }
+            if (quickReturnTimeoutRef.current) {
+                clearTimeout(quickReturnTimeoutRef.current);
+            }
+            if (warningClearTimeoutRef.current) {
+                clearTimeout(warningClearTimeoutRef.current);
+            }
         };
     }, [handleAppStateChange]);
 
@@ -167,6 +177,14 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                 clearInterval(checkIntervalRef.current);
                 checkIntervalRef.current = null;
             }
+            if (quickReturnTimeoutRef.current) {
+                clearTimeout(quickReturnTimeoutRef.current);
+                quickReturnTimeoutRef.current = null;
+            }
+            if (warningClearTimeoutRef.current) {
+                clearTimeout(warningClearTimeoutRef.current);
+                warningClearTimeoutRef.current = null;
+            }
         }
     }, [isSessionActive]);
 
@@ -178,6 +196,14 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
         if (checkIntervalRef.current) {
             clearInterval(checkIntervalRef.current);
             checkIntervalRef.current = null;
+        }
+        if (quickReturnTimeoutRef.current) {
+            clearTimeout(quickReturnTimeoutRef.current);
+            quickReturnTimeoutRef.current = null;
+        }
+        if (warningClearTimeoutRef.current) {
+            clearTimeout(warningClearTimeoutRef.current);
+            warningClearTimeoutRef.current = null;
         }
     }, []);
 

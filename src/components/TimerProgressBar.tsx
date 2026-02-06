@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     },
     timerRow: {
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: defaultTheme.spacing.sm,
         position: 'relative',
     },
     timer: {
@@ -451,19 +451,19 @@ const styles = StyleSheet.create({
     progressInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
-        gap: 12,
+        marginTop: defaultTheme.spacing.xs,
+        gap: defaultTheme.spacing.sm,
     },
     progressText: {
-        fontSize: 14,
+        fontSize: defaultTheme.fontSize.sm,
         fontWeight: defaultTheme.fontWeight.semibold,
     },
     pausedIndicator: {
-        fontSize: 11,
+        fontSize: defaultTheme.fontSize.xs,
         fontWeight: defaultTheme.fontWeight.bold,
         color: defaultTheme.colors.warning,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
+        paddingHorizontal: defaultTheme.spacing.sm,
+        paddingVertical: defaultTheme.spacing.xxs,
         borderRadius: defaultTheme.borderRadius.round,
         overflow: 'hidden',
     },
@@ -503,9 +503,9 @@ const styles = StyleSheet.create({
     segmentContainer: {
         flex: 1,
         flexDirection: 'row',
-        paddingHorizontal: 3,
-        paddingVertical: 3,
-        gap: 2,
+        paddingHorizontal: defaultTheme.spacing.xxs,
+        paddingVertical: defaultTheme.spacing.xxs,
+        gap: defaultTheme.spacing.xxs,
     },
     segment: {
         flex: 1,

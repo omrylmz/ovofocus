@@ -152,6 +152,7 @@ function AnimalDetailModalComponent({
         return state.collection
             .filter(a => a.id === animal.id)
             .map(a => a.collectedAt)
+            .filter(date => date != null && !isNaN(new Date(date).getTime()))
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
             .slice(0, 5); // Show last 5 collections
     }, [animal, state.collection]);
@@ -1526,10 +1527,10 @@ const styles = StyleSheet.create({
     interactionStatItem: {
         alignItems: 'center',
         flexDirection: 'row',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     interactionStatIcon: {
-        fontSize: 14,
+        fontSize: theme.fontSize.sm,
     },
     interactionStatValue: {
         fontSize: theme.fontSize.sm,

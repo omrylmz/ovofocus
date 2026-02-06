@@ -215,11 +215,17 @@ const initialState: GameState = {
         // Egg customization default
         selectedEggStyle: 'classic',
     },
-    dailyProgress: {
-        date: new Date().toISOString().split('T')[0],
-        completedSessions: 0,
-        goalAchieved: false,
-    },
+    dailyProgress: (() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return {
+            date: `${year}-${month}-${day}`,
+            completedSessions: 0,
+            goalAchieved: false,
+        };
+    })(),
     isLoading: true,
     loadError: null,
     isPaused: false,
@@ -274,6 +280,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         case 'PAUSE_SESSION':
             // Guard: don't increment if already paused (prevents double-pause race condition)
             if (state.isPaused) return state;
+            // Guard: don't allow pausing beyond the configured limit
+            if (state.pauseCount >= state.settings.maxPausesPerSession) return state;
             return {
                 ...state,
                 isPaused: true,
@@ -425,6 +433,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(gameReducer, initialState);
     // Track the current session duration for persistence
     const sessionDurationRef = useRef<number>(0);
+    // Lock to prevent concurrent completeSession calls (ref survives across renders)
+    const isCompletingRef = useRef(false);
 
     // Load data on mount
     useEffect(() => {
@@ -467,6 +477,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
                 if (restoreResult.status === 'restored') {
                     // Session can be restored - store data for UI to handle
+                    // Set the duration ref so the persistence effect writes the correct value
+                    sessionDurationRef.current = restoreResult.session.duration;
                     dispatch({
                         type: 'RESTORE_SESSION',
                         payload: {
@@ -696,14 +708,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
-        // Guard against double completion - prevents race condition when called twice in quick succession
-        if (state.sessionState !== 'active') {
-            console.warn('[completeSession] Called when session not active, ignoring. Current state:', state.sessionState);
+        // Ref-based lock prevents concurrent calls within the same render cycle.
+        // React state (sessionState) is stale within a render, so two calls can both see 'active'.
+        // The ref updates immediately and is shared across all closures.
+        if (isCompletingRef.current) {
+            console.warn('[completeSession] Already completing, ignoring concurrent call.');
+            // A prior call already dispatched COMPLETE_SESSION, so currentAnimal is set
             return { animal: state.currentAnimal as Animal, updatedStats: state.stats };
         }
 
+        // Guard against calling when not active (e.g., session already completed/failed)
+        if (state.sessionState !== 'active') {
+            console.warn('[completeSession] Called when session not active, ignoring. Current state:', state.sessionState);
+            // currentAnimal is only set when sessionState is 'completed' (from a prior call).
+            // For 'idle'/'failed' states, generate a fallback to prevent null crash in caller.
+            const fallbackAnimal = state.currentAnimal ?? getRandomAnimal();
+            return { animal: fallbackAnimal, updatedStats: state.stats };
+        }
+
+        isCompletingRef.current = true;
+
         const animal = getRandomAnimal();
-        const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
         // Capture previous state for potential rollback
         const previousCollection = [...state.collection];
@@ -769,9 +795,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Log error for debugging
             console.error('[completeSession] Failed to persist session data:', error);
 
-            // Rollback all state to maintain consistency
-            // Note: We keep sessionState as 'completed' since the user did complete their focus session
-            // but we restore the previous collection/stats/progress since persistence failed
+            // Rollback all state to maintain consistency including sessionState,
+            // so the user can retry or the session isn't stuck in 'completed' without persisted data
             dispatch({ type: 'SET_COLLECTION', payload: previousCollection });
             dispatch({ type: 'UPDATE_STATS', payload: previousStats });
             dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: previousDailyProgress });
@@ -782,6 +807,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             console.warn('[completeSession] Session completed but storage failed. Animal awarded for this session but may not persist.');
 
             return { animal, updatedStats: previousStats };
+        } finally {
+            isCompletingRef.current = false;
         }
     };
 
@@ -812,19 +839,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const updateUserSettings = async (newSettings: Partial<Settings>) => {
+        const previousSettings = { ...state.settings };
         dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });
         try {
             await updateSettings(newSettings);
         } catch (error) {
-            console.error('[updateUserSettings] Failed to persist settings:', error);
-            // Settings persistence failed - UI shows new settings but won't persist on restart
-            // This is a non-critical failure, so we don't rollback the UI state
+            console.error('[updateUserSettings] Failed to persist settings, rolling back:', error);
+            // Rollback to previous settings so UI stays in sync with storage
+            dispatch({ type: 'UPDATE_SETTINGS', payload: previousSettings });
         }
     };
 
     const toggleFavorite = async (animalId: string) => {
-        const updatedFavorites = await toggleFavoriteStorage(animalId);
-        dispatch({ type: 'TOGGLE_FAVORITE', payload: updatedFavorites });
+        // Optimistic update for responsive UI
+        const previousFavorites = [...state.favorites];
+        const optimisticFavorites = previousFavorites.includes(animalId)
+            ? previousFavorites.filter(id => id !== animalId)
+            : [...previousFavorites, animalId];
+        dispatch({ type: 'TOGGLE_FAVORITE', payload: optimisticFavorites });
+
+        // Persist — toggleFavoriteStorage returns old favorites on error
+        const actualFavorites = await toggleFavoriteStorage(animalId);
+        // Sync state if storage result differs from optimistic (i.e., storage failed)
+        const matches = actualFavorites.length === optimisticFavorites.length
+            && actualFavorites.every(id => optimisticFavorites.includes(id));
+        if (!matches) {
+            dispatch({ type: 'TOGGLE_FAVORITE', payload: actualFavorites });
+        }
     };
 
     const setGestureHintsSeen = async () => {

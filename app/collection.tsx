@@ -196,7 +196,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         flexDirection: 'row',
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
-        padding: 4,
+        padding: theme.spacing.xs,
     },
     sortSegment: {
         flex: 1,

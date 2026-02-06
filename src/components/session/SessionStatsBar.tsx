@@ -753,11 +753,11 @@ const styles = StyleSheet.create({
     statIconValueRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
         overflow: 'visible', // Prevent emoji clipping
     },
     statIcon: {
-        fontSize: 16,
+        fontSize: theme.fontSize.md,
         lineHeight: 20, // Explicit line height to prevent clipping
         textAlign: 'center',
     },
@@ -770,10 +770,10 @@ const styles = StyleSheet.create({
     // Inline BEST badge (compact)
     bestBadgeInline: {
         backgroundColor: theme.colors.legendary,
-        paddingHorizontal: 4,
+        paddingHorizontal: theme.spacing.xs,
         paddingVertical: 1,
         borderRadius: theme.borderRadius.xs,
-        marginLeft: 2,
+        marginLeft: theme.spacing.xxs,
     },
     bestBadgeInlineText: {
         fontSize: 8,
@@ -786,11 +786,11 @@ const styles = StyleSheet.create({
     dailyGoalCompact: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: theme.spacing.xs,
     },
     progressDotsRow: {
         flexDirection: 'row',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     progressDotCompact: {
         width: 8,
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     pillValueRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     pillValue: {
         fontSize: theme.fontSize.lg,
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
     pillLabel: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: -2,
+        marginTop: -theme.spacing.xxs,
         maxWidth: 80,
     },
     trendArrow: {
@@ -842,11 +842,11 @@ const styles = StyleSheet.create({
     // Best badge styles (for detailed view)
     bestBadge: {
         position: 'absolute',
-        top: -4,
-        right: 4,
+        top: -theme.spacing.xs,
+        right: theme.spacing.xs,
         backgroundColor: theme.colors.legendary,
         paddingHorizontal: theme.spacing.xs,
-        paddingVertical: 2,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
         ...theme.shadows.small,
     },
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     focusTimeLabel: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: -2,
+        marginTop: -theme.spacing.xxs,
         maxWidth: 80,
     },
 
@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     },
     dailyProgressSegments: {
         flexDirection: 'row',
-        gap: 3,
+        gap: theme.spacing.xxs,
     },
     progressSegment: {
         width: 12,
@@ -1023,15 +1023,15 @@ const styles = StyleSheet.create({
     statCardLabel: {
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        marginTop: 2,
+        marginTop: theme.spacing.xxs,
     },
     statCardBestBadge: {
         position: 'absolute',
         top: theme.spacing.xs,
         right: theme.spacing.xs,
         backgroundColor: theme.colors.legendary,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xxs,
         borderRadius: theme.borderRadius.sm,
     },
     statCardBestText: {

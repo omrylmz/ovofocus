@@ -243,11 +243,12 @@ export default function HomeScreen() {
     const [activeShieldBonus, setActiveShieldBonus] = useState(0);
     const [emergencyPauseUsed, setEmergencyPauseUsed] = useState(false);
     const emergencyPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    // Refs to store latest function references for emergency pause auto-resume callback
+    // Refs to store latest function references and state for emergency pause auto-resume callback
     // This prevents stale closures in setTimeout
     const startTimerRef = useRef<() => void>(() => {});
     const resumeSessionRef = useRef<() => void>(() => {});
     const hapticsEnabledRef = useRef(state.settings.hapticsEnabled);
+    const sessionStateRef = useRef(state.sessionState);
 
     // Daily reward states
     const [showDailyRewardModal, setShowDailyRewardModal] = useState(false);
@@ -467,13 +468,14 @@ export default function HomeScreen() {
         }
     }, [isPomodoroMode, pomodoroTimer, regularTimer]);
 
-    // Keep refs updated with latest function references for emergency pause callback
+    // Keep refs updated with latest function references and state for emergency pause callback
     // This prevents stale closure issues in setTimeout
     useEffect(() => {
         startTimerRef.current = startTimer;
         resumeSessionRef.current = resumeSession;
         hapticsEnabledRef.current = state.settings.hapticsEnabled;
-    }, [startTimer, resumeSession, state.settings.hapticsEnabled]);
+        sessionStateRef.current = state.sessionState;
+    }, [startTimer, resumeSession, state.settings.hapticsEnabled, state.sessionState]);
 
     // Sync Pomodoro phase state for UI
     useEffect(() => {
@@ -678,12 +680,13 @@ export default function HomeScreen() {
         }
     }, [timeRemaining, state.sessionState, state.isPaused, isRunning, isPomodoroMode, pomodoroPhase, state.settings.language]);
 
-    // Reset announced warnings when session starts or resets
+    // Reset announced warnings when session resets or pauses
+    // Clearing on pause ensures warnings re-announce if the timer passes the same threshold again after resume
     useEffect(() => {
-        if (state.sessionState === 'idle') {
+        if (state.sessionState === 'idle' || state.isPaused) {
             announcedWarningsRef.current.clear();
         }
-    }, [state.sessionState]);
+    }, [state.sessionState, state.isPaused]);
 
     // Handler functions
     const handleActivateShield = async (shield: ShieldItem) => {
@@ -718,6 +721,11 @@ export default function HomeScreen() {
             // Use refs to get latest function references to avoid stale closures
             const autoResumeDuration = state.settings.emergencyPauseDuration * 1000;
             emergencyPauseTimeoutRef.current = setTimeout(() => {
+                // Guard: only auto-resume if session is still active (not failed/completed/idle)
+                if (sessionStateRef.current !== 'active') {
+                    console.warn('[emergencyPause] Auto-resume skipped: session is', sessionStateRef.current);
+                    return;
+                }
                 startTimerRef.current();
                 resumeSessionRef.current();
                 if (hapticsEnabledRef.current) {
@@ -818,6 +826,10 @@ export default function HomeScreen() {
         // Only reset the session state (which completeSession already handled)
         if (!isPomodoroMode) {
             resetTimer();
+        } else {
+            // Reset local Pomodoro phase to 'work' so the indicator doesn't show
+            // a stale break phase while the session is idle
+            setPomodoroPhase('work');
         }
         resetSession();
     };

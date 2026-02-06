@@ -195,6 +195,13 @@ export async function getCollectionSafe(): Promise<StorageResult<CollectedAnimal
 
 export async function addToCollection(animal: Animal, sessionId: string): Promise<CollectedAnimal[]> {
     const collection = await getCollection();
+
+    // Prevent duplicate entries from concurrent or retried calls with the same sessionId
+    if (collection.some(a => a.sessionId === sessionId)) {
+        console.warn('[Storage] Duplicate sessionId detected, skipping addToCollection:', sessionId);
+        return collection;
+    }
+
     const newAnimal: CollectedAnimal = {
         ...animal,
         collectedAt: new Date().toISOString(),
@@ -303,20 +310,23 @@ export async function updateStats(updates: Partial<Stats>): Promise<Stats> {
 export async function incrementSession(completed: boolean, focusMinutes: number): Promise<Stats> {
     try {
         const stats = await getStats();
-        const today = new Date().toISOString().split('T')[0];
-        const lastDate = stats.lastSessionDate?.split('T')[0];
+        const today = getLocalDateString(new Date());
+        const lastLocalDate = stats.lastSessionDate
+            ? getLocalDateString(new Date(stats.lastSessionDate))
+            : null;
 
         // Check if streak continues
         // Note: Failed sessions should NOT break streaks. Streaks only break when
         // an entire calendar day passes without any completed sessions.
+        // Important: All date comparisons use local time so streaks align with the user's calendar day.
         let newStreak = stats.currentStreak;
         if (completed) {
-            if (lastDate === today) {
-                // Same day, keep streak
-            } else if (lastDate && isYesterday(lastDate)) {
-                // Previous day, increment streak
+            if (lastLocalDate === today) {
+                // Same local day, keep streak
+            } else if (stats.lastSessionDate && isYesterday(stats.lastSessionDate)) {
+                // Previous local day, increment streak
                 newStreak = stats.currentStreak + 1;
-            } else if (!lastDate || isMoreThanOneDayAgo(lastDate)) {
+            } else if (!stats.lastSessionDate || isMoreThanOneDayAgo(stats.lastSessionDate)) {
                 // No previous session OR more than one day has passed - start fresh
                 newStreak = 1;
             }
@@ -536,7 +546,7 @@ export async function toggleFavorite(animalId: string): Promise<string[]> {
 
 // Daily Progress
 function getTodayString(): string {
-    return new Date().toISOString().split('T')[0];
+    return getLocalDateString(new Date());
 }
 
 export async function getDailyProgress(): Promise<DailyProgress> {
@@ -717,9 +727,9 @@ function calculateHappinessDecay(interaction: AnimalInteraction): number {
 
     const lastTime = Math.max(...times);
     const now = Date.now();
-    const daysSinceInteraction = Math.floor((now - lastTime) / (1000 * 60 * 60 * 24));
+    const daysSinceInteraction = (now - lastTime) / (1000 * 60 * 60 * 24);
 
-    if (daysSinceInteraction <= 0) return interaction.happiness;
+    if (daysSinceInteraction < 1) return interaction.happiness;
 
     const decay = daysSinceInteraction * INTERACTION_CONSTANTS.DAILY_DECAY;
     return Math.max(INTERACTION_CONSTANTS.MIN_HAPPINESS, interaction.happiness - decay);
@@ -728,6 +738,7 @@ function calculateHappinessDecay(interaction: AnimalInteraction): number {
 function getCooldownRemaining(lastTime: string | null, cooldownHours: number): number {
     if (!lastTime) return 0;
     const lastTimeMs = new Date(lastTime).getTime();
+    if (isNaN(lastTimeMs)) return 0;
     const cooldownMs = cooldownHours * 60 * 60 * 1000;
     const remaining = cooldownMs - (Date.now() - lastTimeMs);
     return Math.max(0, remaining);
@@ -1055,6 +1066,20 @@ export async function restoreActiveSession(): Promise<SessionRestoreResult> {
             return { status: 'error', error: 'Invalid session data' };
         }
 
+        // Validate additional fields to guard against corrupted storage
+        if (typeof session.pauseCount !== 'number' || session.pauseCount < 0) {
+            session.pauseCount = 0;
+        }
+        if (typeof session.accumulatedPauseTime !== 'number' || session.accumulatedPauseTime < 0) {
+            session.accumulatedPauseTime = 0;
+        }
+        if (typeof session.focusDuration !== 'number' || session.focusDuration <= 0) {
+            session.focusDuration = Math.round(session.duration / 60);
+        }
+        if (typeof session.isPaused !== 'boolean') {
+            session.isPaused = false;
+        }
+
         const now = Date.now();
         const startTime = new Date(session.startTime).getTime();
 
@@ -1104,6 +1129,8 @@ export async function restoreActiveSession(): Promise<SessionRestoreResult> {
 }
 
 // Achievements
+let isUnlockingAchievement = false;
+
 export async function getUnlockedAchievements(): Promise<UnlockedAchievement[]> {
     try {
         const data = await AsyncStorage.getItem(STORAGE_KEYS.ACHIEVEMENTS);
@@ -1115,6 +1142,12 @@ export async function getUnlockedAchievements(): Promise<UnlockedAchievement[]> 
 }
 
 export async function unlockAchievement(achievementId: string): Promise<UnlockedAchievement[]> {
+    if (isUnlockingAchievement) {
+        // Another unlock is in progress — re-check after it finishes
+        await new Promise(resolve => setTimeout(resolve, 50));
+        return unlockAchievement(achievementId);
+    }
+    isUnlockingAchievement = true;
     try {
         const achievements = await getUnlockedAchievements();
         // Check if already unlocked
@@ -1131,6 +1164,8 @@ export async function unlockAchievement(achievementId: string): Promise<Unlocked
     } catch (error) {
         console.error('[Storage] Failed to unlock achievement:', error);
         return await getUnlockedAchievements();
+    } finally {
+        isUnlockingAchievement = false;
     }
 }
 
