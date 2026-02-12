@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: theme.borderRadius.round,
-        opacity: 0.3,
+        opacity: theme.opacity.medium,
     },
     emojiContainer: {
         width: 120,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: theme.borderRadius.xs,
-        opacity: 0.5,
+        opacity: theme.opacity.disabled,
     },
     dotTopLeft: {
         top: 20,

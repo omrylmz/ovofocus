@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
     },
     sparkleParticle: {
         position: 'absolute',
-        fontSize: 24,
+        fontSize: theme.fontSize.xl,
     },
     floatingEmojiContainer: {
         position: 'absolute',
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     },
     floatingEmoji: {
         position: 'absolute',
-        fontSize: 32,
+        fontSize: theme.fontSize.xxl,
     },
     glow: {
         position: 'absolute',
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
         ...theme.shadows.large,
     },
     icon: {
-        fontSize: 72,
+        fontSize: theme.fontSize.timer, // ~72px, intentionally oversized celebration icon
     },
     title: {
         fontSize: theme.fontSize.xxl,
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
     },
     value: {
-        fontSize: 64,
+        fontSize: 64, // Intentionally oversized celebration value, no matching token
         fontWeight: theme.fontWeight.bold,
         textShadowColor: 'rgba(255, 230, 109, 0.5)',
         textShadowOffset: { width: 0, height: 4 },

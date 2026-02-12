@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     pixelAccent: {
         width: 4,
         height: 3,
-        borderRadius: 1,
+        borderRadius: theme.borderRadius.xxs,
         opacity: 0.6,
     },
     pixelAccentMiddle: {

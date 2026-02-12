@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 12,
         height: 12,
-        borderRadius: 6,
+        borderRadius: theme.borderRadius.sm,
         opacity: 0.25,
     },
     encouragementContainer: {

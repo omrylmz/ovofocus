@@ -190,7 +190,7 @@ const barStyles = StyleSheet.create({
         color: theme.colors.textSecondary,
     },
     barLabel: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         color: theme.colors.textSecondary,
     },
     barLabelToday: {
@@ -499,7 +499,7 @@ const trendStyles = StyleSheet.create({
         marginBottom: theme.spacing.xs,
     },
     pointValue: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         color: theme.colors.text,
         fontWeight: theme.fontWeight.bold,
         marginBottom: theme.spacing.xs,
@@ -510,7 +510,7 @@ const trendStyles = StyleSheet.create({
         minHeight: 4,
     },
     pointLabel: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         color: theme.colors.textSecondary,
         marginTop: theme.spacing.xs,
     },

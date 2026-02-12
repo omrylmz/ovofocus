@@ -61,7 +61,7 @@ export const scaledFontSize = (size: number, minSize?: number): number => {
  * Ensures category-appropriate minimum sizes are respected
  */
 export const getTypographySize = (
-  category: 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'tiny'
+  category: 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'tiny' | 'micro'
 ): number => {
   const sizes = {
     display: { base: 72, min: MIN_FONT_SIZES.display },
@@ -71,6 +71,7 @@ export const getTypographySize = (
     body: { base: 16, min: MIN_FONT_SIZES.body },
     caption: { base: 14, min: MIN_FONT_SIZES.caption },
     tiny: { base: 12, min: MIN_FONT_SIZES.tiny },
+    micro: { base: 10, min: 8 },
   };
 
   const { base, min } = sizes[category];
@@ -89,6 +90,7 @@ export const typography = {
     body: getTypographySize('body'),        // Regular text (min 14px)
     caption: getTypographySize('caption'),  // Secondary text (min 11px)
     tiny: getTypographySize('tiny'),        // Badges, labels (min 10px)
+    micro: getTypographySize('micro'),      // Smallest text, stat badges (min 8px)
   },
 
   // Font weights (consistent naming)
@@ -184,6 +186,8 @@ export const theme = {
     hint: 0.7,
     subtle: 0.15,
     medium: 0.3,
+    strong: 0.8,
+    overlay: 0.6,
   },
 
   spacing: {
@@ -209,6 +213,7 @@ export const theme = {
   // Legacy fontSize - maintained for backward compatibility
   // New code should use theme.typography.sizes or scaledFontSize()
   fontSize: {
+    xxs: scaledFontSize(10, 8),                        // Stat badges, micro labels
     xs: scaledFontSize(12, MIN_FONT_SIZES.tiny),      // Badges, tiny labels
     sm: scaledFontSize(14, MIN_FONT_SIZES.caption),   // Captions, secondary text
     md: scaledFontSize(16, MIN_FONT_SIZES.body),      // Body text

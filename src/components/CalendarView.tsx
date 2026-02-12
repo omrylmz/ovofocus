@@ -107,7 +107,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         justifyContent: 'center',
     },
     stateIcon: {
-        fontSize: 48,
+        fontSize: 48, // Intentionally between h1 (32px) and display (72px) for state icon
         marginBottom: theme.spacing.md,
     },
     stateTitle: {
@@ -131,7 +131,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         gap: theme.spacing.sm,
     },
     dateIcon: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
     },
     dateText: {
         fontSize: theme.fontSize.md,
@@ -149,7 +149,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         gap: theme.spacing.xs,
     },
     sectionIcon: {
-        fontSize: 18,
+        fontSize: theme.typography.h3,
     },
     sectionTitle: {
         fontSize: theme.fontSize.md,
@@ -245,7 +245,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         padding: theme.spacing.lg,
     },
     emptyIcon: {
-        fontSize: 32,
+        fontSize: theme.typography.h1,
         marginBottom: theme.spacing.sm,
     },
     emptyText: {

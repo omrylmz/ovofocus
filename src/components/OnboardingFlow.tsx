@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: theme.borderRadius.round,
-        opacity: 0.3,
+        opacity: theme.opacity.medium,
     },
     iconContainer: {
         width: 150,
@@ -896,12 +896,12 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.lg,
     },
     stepIcon: {
-        fontSize: 80,
+        fontSize: 80, // Intentionally larger than display (72px) for onboarding hero
     },
     floatingIcon: {
         position: 'absolute',
-        fontSize: 30,
-        opacity: 0.7,
+        fontSize: theme.typography.h1, // ~32px, closest to 30px
+        opacity: theme.opacity.hint,
     },
     title: {
         fontSize: theme.fontSize.xxl,
@@ -951,7 +951,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     backButtonText: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
         color: theme.colors.text,
     },
     mainButtonContainer: {
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     timerPreviewText: {
-        fontSize: 40,
+        fontSize: 40, // Intentionally between h1 (32px) and display (72px) for timer preview
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
         fontVariant: ['tabular-nums'],
@@ -1010,7 +1010,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     gestureEmoji: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
         marginBottom: theme.spacing.xs,
     },
     gestureLabel: {
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     gestureEgg: {
-        fontSize: 50,
+        fontSize: 50, // Intentionally between h1 (32px) and display (72px) for gesture preview egg
     },
     tapIndicator: {
         position: 'absolute',
@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
         padding: theme.spacing.xs,
     },
     animalCardEmoji: {
-        fontSize: 28,
+        fontSize: theme.typography.h1, // ~32px, closest to 28px
     },
     rarityIndicator: {
         width: '60%',
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
     },
     streakNumber: {
-        fontSize: 48,
+        fontSize: 48, // Intentionally between h1 (32px) and display (72px) for streak hero number
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.legendary,
     },
@@ -1081,6 +1081,6 @@ const styles = StyleSheet.create({
         gap: theme.spacing.md,
     },
     rewardIcon: {
-        fontSize: 28,
+        fontSize: theme.typography.h1, // ~32px, closest to 28px
     },
 });

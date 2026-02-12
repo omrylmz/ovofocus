@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     shieldItemPressed: {
-        opacity: 0.7,
+        opacity: theme.opacity.hint,
     },
     rarityIndicator: {
         width: 8,

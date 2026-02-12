@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SessionState } from '../context/GameContext';
 import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
+import { theme } from '../styles/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,12 +26,12 @@ interface AnimatedBackgroundProps {
 // Color palettes for different states
 const COLORS = {
     idle: {
-        start: '#1A1A2E',
-        mid: '#16213E',
+        start: theme.colors.background,
+        mid: theme.colors.surface,
         end: '#0F0F1A',
     },
     active: {
-        start: '#1A1A2E',
+        start: theme.colors.background,
         mid: '#2A1A3E',
         end: '#1A2A3E',
     },
@@ -48,7 +49,7 @@ const COLORS = {
 
 // Collection screen palette - calm blue-teal
 const COLLECTION_COLORS = {
-    start: '#1A1A2E',
+    start: theme.colors.background,
     mid: '#1E2A40',
     end: '#162038',
 };

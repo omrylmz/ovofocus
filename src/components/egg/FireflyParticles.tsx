@@ -4,6 +4,7 @@ import Animated, {
     useAnimatedStyle,
     SharedValue,
 } from 'react-native-reanimated';
+import { theme } from '../../styles/theme';
 
 // ============================================================================
 // FIREFLY PARTICLES
@@ -117,7 +118,7 @@ function Firefly({ driver, opacityDriver, config, fallDriver }: FireflyProps) {
                         width: size,
                         height: size,
                         borderRadius: size / 2,
-                        backgroundColor: '#FFF8E7',
+                        backgroundColor: theme.colors.accent,
                     },
                 ]}
             />

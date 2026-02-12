@@ -58,7 +58,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         gap: theme.spacing.sm,
     },
     sectionIcon: {
-        fontSize: 22,
+        fontSize: theme.typography.h2,
         width: 28,
         textAlign: 'center',
     },
@@ -86,7 +86,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         gap: theme.spacing.xs,
     },
     subsectionIcon: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
     },
     subsectionTitle: {
         fontSize: theme.fontSize.md,
@@ -115,7 +115,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         backgroundColor: theme.colors.surfaceLight,
     },
     languageFlag: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
     },
     languageText: {
         fontSize: theme.fontSize.md,
@@ -147,7 +147,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         backgroundColor: theme.colors.surfaceLight,
     },
     themeIcon: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
     },
     themeText: {
         fontSize: theme.fontSize.sm,
@@ -200,7 +200,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         flex: 1,
     },
     settingRowIcon: {
-        fontSize: 18,
+        fontSize: theme.typography.h3,
     },
     settingLabel: {
         fontSize: theme.fontSize.md,
@@ -301,7 +301,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         gap: theme.spacing.sm,
     },
     statIcon: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
     },
     statLabel: {
         fontSize: theme.fontSize.md,
@@ -395,7 +395,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         backgroundColor: theme.colors.surfaceLight,
     },
     ambientSoundIcon: {
-        fontSize: 18,
+        fontSize: theme.typography.h3,
     },
     ambientSoundText: {
         fontSize: theme.fontSize.sm,
@@ -454,7 +454,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         gap: theme.spacing.sm,
     },
     dangerZoneWarningIcon: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
     },
     dangerZoneWarningText: {
         fontSize: theme.fontSize.sm,
@@ -486,7 +486,7 @@ const createStyles = (theme: Theme, screenWidth: number) => StyleSheet.create({
         gap: theme.spacing.sm,
     },
     deleteModalIcon: {
-        fontSize: 28,
+        fontSize: theme.typography.h1,
     },
     deleteModalTitle: {
         fontSize: theme.fontSize.xl,

@@ -35,9 +35,9 @@ interface EggProps {
 
 const WARNING_COLORS = {
     0: theme.colors.accent,
-    1: '#FFD93D', // Yellow
-    2: '#FF8C00', // Orange
-    3: '#FF4444', // Red
+    1: theme.colors.accent,   // Yellow warning
+    2: theme.colors.warning,  // Orange warning
+    3: theme.colors.error,    // Red warning
 };
 
 // ==========================================================================
@@ -1458,7 +1458,7 @@ const styles = StyleSheet.create({
     shimmerClip: {
         position: 'absolute',
         overflow: 'hidden',
-        borderRadius: 999,
+        borderRadius: theme.borderRadius.round,
     },
     shimmerSweep: {
         position: 'absolute',

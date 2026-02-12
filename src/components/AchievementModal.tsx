@@ -407,6 +407,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         overflow: 'visible',
         zIndex: 1, // Confetti above card
+        elevation: 1,
         pointerEvents: 'none',
     },
     confettiParticle: {
@@ -430,6 +431,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1, // Stars above glow
+        elevation: 1,
         pointerEvents: 'none',
     },
     starParticle: {
@@ -443,10 +445,12 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.round,
         top: 20,
         zIndex: 0, // Glow behind everything
+        elevation: 0,
     },
     badgeContainer: {
         marginBottom: theme.spacing.lg,
         zIndex: 2, // Badge above decorative elements
+        elevation: 2,
     },
     badge: {
         width: 120,
@@ -464,6 +468,7 @@ const styles = StyleSheet.create({
     textContainer: {
         alignItems: 'center',
         zIndex: 3, // Text above badge
+        elevation: 3,
     },
     unlockedText: {
         fontSize: theme.fontSize.sm,
@@ -501,13 +506,14 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
         marginTop: theme.spacing.lg,
-        opacity: 0.6,
+        opacity: theme.opacity.overlay,
     },
     buttonsContainer: {
         flexDirection: 'row',
         marginTop: theme.spacing.xl,
         gap: theme.spacing.md,
         zIndex: 4, // Buttons always on top
+        elevation: 4,
     },
     buttonSpacer: {
         width: theme.spacing.md,

@@ -4,6 +4,7 @@ import Animated, {
     useAnimatedStyle,
     SharedValue,
 } from 'react-native-reanimated';
+import { theme } from '../../styles/theme';
 
 // ============================================================================
 // EMBER PARTICLES
@@ -155,7 +156,7 @@ function Ember({ driver, opacityDriver, riseHeight, config }: EmberProps) {
                             width: size,
                             height: size,
                             borderRadius: size / 2,
-                            backgroundColor: '#FFF5E0',
+                            backgroundColor: theme.colors.accent,
                         },
                     ]}
                 />

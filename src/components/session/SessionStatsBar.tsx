@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
         marginLeft: theme.spacing.xxs,
     },
     bestBadgeInlineText: {
-        fontSize: 8,
+        fontSize: theme.typography.micro,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
         letterSpacing: theme.typographyConfig.letterSpacing.wide,
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
         gap: theme.spacing.xs,
     },
     pillIcon: {
-        fontSize: 20,
+        fontSize: theme.typography.h3,
     },
     pillTextContainer: {
         alignItems: 'flex-start',
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
         ...theme.shadows.small,
     },
     bestBadgeText: {
-        fontSize: 8,
+        fontSize: theme.typography.micro,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
         letterSpacing: theme.typographyConfig.letterSpacing.wide,
@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
         opacity: 0,
     },
     focusTimeIcon: {
-        fontSize: 18,
+        fontSize: theme.typography.h3,
     },
     focusTimeTextContainer: {
         alignItems: 'flex-start',
@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
         gap: theme.spacing.xs,
     },
     dailyProgressIcon: {
-        fontSize: 14,
+        fontSize: theme.typography.caption,
     },
     dailyProgressSegments: {
         flexDirection: 'row',
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.legendary,
     },
     statCardIcon: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
         marginBottom: theme.spacing.xs,
     },
     statCardValue: {
@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
     },
     statCardBestText: {
-        fontSize: 8,
+        fontSize: theme.typography.micro,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
         letterSpacing: theme.typographyConfig.letterSpacing.wide,

@@ -93,9 +93,9 @@ export function StreakBadge({ streak, size = 'medium' }: StreakBadgeProps) {
     }));
 
     const sizes = {
-        small: { container: 32, emoji: 16, text: 10 },
-        medium: { container: 48, emoji: 24, text: 14 },
-        large: { container: 64, emoji: 32, text: 18 },
+        small: { container: 32, emoji: theme.fontSize.md, text: theme.typography.micro },
+        medium: { container: 48, emoji: theme.fontSize.xl, text: theme.fontSize.sm },
+        large: { container: 64, emoji: theme.fontSize.xxl, text: theme.fontSize.lg },
     };
 
     const currentSize = sizes[size];

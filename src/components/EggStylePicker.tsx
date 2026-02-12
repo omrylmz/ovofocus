@@ -350,7 +350,7 @@ const createCardStyles = (theme: Theme) =>
             backgroundColor: theme.colors.surfaceLight,
         },
         cardLocked: {
-            opacity: 0.7,
+            opacity: theme.opacity.hint,
         },
         eggPreviewContainer: {
             width: 70,

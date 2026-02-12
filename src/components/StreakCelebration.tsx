@@ -243,6 +243,7 @@ const styles = StyleSheet.create({
         top: '40%',
         alignItems: 'center',
         zIndex: 0, // Particles behind content
+        elevation: 0,
         pointerEvents: 'none',
     },
     fireParticle: {
@@ -252,6 +253,7 @@ const styles = StyleSheet.create({
         fontSize: 80,
         marginBottom: theme.spacing.lg,
         zIndex: 1, // Icon above particles
+        elevation: 1,
     },
     title: {
         fontSize: theme.fontSize.xxl,
@@ -260,11 +262,13 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         textAlign: 'center',
         zIndex: 2, // Title above icon
+        elevation: 2,
     },
     numberContainer: {
         alignItems: 'center',
         marginBottom: theme.spacing.lg,
         zIndex: 3, // Number above title
+        elevation: 3,
     },
     number: {
         fontSize: 72,
@@ -285,5 +289,6 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         textAlign: 'center',
         zIndex: 4, // Subtitle above all
+        elevation: 4,
     },
 });

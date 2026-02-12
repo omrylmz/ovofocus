@@ -542,7 +542,7 @@ function getSizeStyles(size: 'small' | 'medium' | 'large', customWidth?: number)
             name: theme.fontSize.xs,
             lockIcon: 12,
             levelBadge: { paddingHorizontal: 4, paddingVertical: 1 },
-            levelBadgeText: { fontSize: 8 },
+            levelBadgeText: { fontSize: theme.typography.micro },
         },
         medium: {
             width: 100,
@@ -553,7 +553,7 @@ function getSizeStyles(size: 'small' | 'medium' | 'large', customWidth?: number)
             name: theme.fontSize.sm,
             lockIcon: 16,
             levelBadge: { paddingHorizontal: 6, paddingVertical: 2 },
-            levelBadgeText: { fontSize: 10 },
+            levelBadgeText: { fontSize: theme.typography.micro },
         },
         large: {
             width: 140,
@@ -564,7 +564,7 @@ function getSizeStyles(size: 'small' | 'medium' | 'large', customWidth?: number)
             name: theme.fontSize.md,
             lockIcon: 20,
             levelBadge: { paddingHorizontal: 8, paddingVertical: 3 },
-            levelBadgeText: { fontSize: 12 },
+            levelBadgeText: { fontSize: theme.fontSize.xs },
         },
     };
 
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     silhouetteEmoji: {
-        opacity: 0.15,
+        opacity: theme.opacity.subtle,
         marginBottom: theme.spacing.xs,
     },
     lockIconContainer: {
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     lockIcon: {
-        opacity: 0.6,
+        opacity: theme.opacity.overlay,
     },
     name: {
         fontWeight: theme.fontWeight.semibold,
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.xxs,
     },
     xpText: {
-        fontSize: 8,
+        fontSize: theme.typography.micro, // ~8px
         color: theme.colors.textSecondary,
         textAlign: 'center',
         marginTop: theme.spacing.xxs,
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.xxs,
     },
     rarityText: {
-        fontSize: 8,
+        fontSize: theme.typography.micro, // ~8px
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
         textShadowColor: 'rgba(255, 255, 255, 0.3)',
@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     rarityHintText: {
-        fontSize: 10,
+        fontSize: theme.typography.micro, // ~10px
         fontWeight: theme.fontWeight.bold,
     },
     // Level badge
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     levelBadgeText: {
-        fontSize: 9,
+        fontSize: theme.typography.micro, // ~9px
         fontWeight: theme.fontWeight.bold,
     },
     // Count badge
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     countText: {
-        fontSize: 9,
+        fontSize: theme.typography.micro, // ~9px
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
     },

@@ -45,10 +45,10 @@ function getLevelProgress(count: number) {
 // Get happiness level color
 function getHappinessColor(level: 'sad' | 'neutral' | 'happy' | 'ecstatic'): string {
     switch (level) {
-        case 'sad': return '#FF6B6B';      // Red
-        case 'neutral': return '#FFD93D';   // Yellow
-        case 'happy': return '#6BCB77';     // Green
-        case 'ecstatic': return '#4ECDC4';  // Teal/rainbow
+        case 'sad': return theme.colors.primary;      // Red
+        case 'neutral': return '#FFD93D';              // Yellow (unique shade)
+        case 'happy': return '#6BCB77';                // Green (unique shade)
+        case 'ecstatic': return theme.colors.secondary; // Teal/rainbow
     }
 }
 
@@ -1185,7 +1185,7 @@ const styles = StyleSheet.create({
         elevation: theme.zIndex.floating,
     },
     closeText: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
         color: theme.colors.textSecondary,
     },
     favoriteButton: {
@@ -1206,7 +1206,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.xl,
     },
     favoriteText: {
-        fontSize: 28,
+        fontSize: theme.typography.h1, // ~32px, closest to 28px
     },
     animalWrapper: {
         marginBottom: theme.spacing.md,
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     animalEmoji: {
-        fontSize: 64,
+        fontSize: 64, // Intentionally between h1 (32) and display (72), no matching token
     },
     nameContainer: {
         alignItems: 'center',
@@ -1309,7 +1309,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
     },
     latestBadgeText: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.background,
     },
@@ -1411,7 +1411,7 @@ const styles = StyleSheet.create({
         gap: theme.spacing.xs,
     },
     happinessEmoji: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
     },
     happinessValue: {
         fontSize: theme.fontSize.sm,
@@ -1455,14 +1455,14 @@ const styles = StyleSheet.create({
         minWidth: 60,
     },
     interactionButtonDisabled: {
-        opacity: 0.5,
+        opacity: theme.opacity.disabled,
     },
     interactionIcon: {
-        fontSize: 22,
+        fontSize: theme.typography.h2, // ~24px, closest to 22px
         marginBottom: theme.spacing.xxs,
     },
     interactionIconSmall: {
-        fontSize: 18,
+        fontSize: theme.typography.h3, // ~20px, closest to 18px
         marginBottom: theme.spacing.xxs,
     },
     interactionLabel: {
@@ -1471,17 +1471,17 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
     },
     interactionLabelSmall: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         fontWeight: theme.fontWeight.semibold,
         color: theme.colors.text,
     },
     cooldownText: {
-        fontSize: 9,
+        fontSize: theme.typography.micro, // ~10px, closest to 9px
         color: theme.colors.textSecondary,
         marginTop: 2,
     },
     cooldownTextSmall: {
-        fontSize: 8,
+        fontSize: theme.typography.micro,
         color: theme.colors.textSecondary,
         marginTop: 1,
     },
@@ -1490,7 +1490,7 @@ const styles = StyleSheet.create({
         top: 0,
         left: '50%',
         marginLeft: -8,
-        fontSize: 16,
+        fontSize: theme.typography.body,
     },
     floatingIconContainer: {
         position: 'absolute',
@@ -1502,7 +1502,7 @@ const styles = StyleSheet.create({
         elevation: theme.zIndex.floating,
     },
     floatingIcon: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
     },
     interactionStatsContainer: {
         marginTop: theme.spacing.md,

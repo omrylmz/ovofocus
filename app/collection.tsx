@@ -109,7 +109,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         marginTop: theme.spacing.lg,
     },
     searchIcon: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
         marginRight: theme.spacing.sm,
     },
     searchInput: {
@@ -122,7 +122,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         padding: theme.spacing.sm,
     },
     searchClearText: {
-        fontSize: 14,
+        fontSize: theme.typography.caption,
         color: theme.colors.textSecondary,
     },
     // Filter section container with label and badge
@@ -260,7 +260,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         alignItems: 'center',
     },
     statEmoji: {
-        fontSize: 24,
+        fontSize: theme.typography.h2,
         marginBottom: theme.spacing.xs,
     },
     statValue: {
@@ -280,7 +280,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         paddingHorizontal: theme.spacing.xs,
     },
     sectionHeaderPressed: {
-        opacity: 0.7,
+        opacity: theme.opacity.hint,
     },
     sectionDot: {
         width: 12,
@@ -305,7 +305,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         justifyContent: 'center',
     },
     chevron: {
-        fontSize: 16,
+        fontSize: theme.typography.body,
         color: theme.colors.textSecondary,
     },
     // Animal grid styles
@@ -327,7 +327,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         backgroundColor: theme.colors.surface,
     },
     expandAllButtonPressed: {
-        opacity: 0.7,
+        opacity: theme.opacity.hint,
     },
     expandAllText: {
         fontSize: theme.fontSize.sm,
@@ -335,7 +335,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
         fontWeight: theme.fontWeight.medium,
     },
     expandAllIcon: {
-        fontSize: 12,
+        fontSize: theme.typography.tiny,
         marginLeft: theme.spacing.xs,
         color: theme.colors.textSecondary,
     },

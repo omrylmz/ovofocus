@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
         top: 2,
         bottom: 2,
         width: 3,
-        borderRadius: 1,
+        borderRadius: defaultTheme.borderRadius.xxs,
         opacity: 0.5,
     },
     scanline: {

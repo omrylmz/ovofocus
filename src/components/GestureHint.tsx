@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: theme.zIndex.modal,
+        elevation: theme.zIndex.modal,
     },
     backdropPressable: {
         flex: 1,
@@ -381,6 +382,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         alignItems: 'center',
         zIndex: theme.zIndex.tooltip,
+        elevation: theme.zIndex.tooltip,
     },
     inlineHintTop: {
         bottom: '100%',

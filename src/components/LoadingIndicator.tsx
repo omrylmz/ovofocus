@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: theme.zIndex.overlay,
+        elevation: theme.zIndex.overlay,
     },
     container: {
         alignItems: 'center',

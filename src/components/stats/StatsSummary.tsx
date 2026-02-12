@@ -72,7 +72,7 @@ const cardStyles = StyleSheet.create({
         borderColor: theme.colors.accent,
     },
     icon: {
-        fontSize: 24,
+        fontSize: theme.fontSize.xl,
         marginBottom: theme.spacing.xs,
     },
     value: {
@@ -87,7 +87,7 @@ const cardStyles = StyleSheet.create({
         marginTop: theme.spacing.xxs,
     },
     subtitle: {
-        fontSize: 10,
+        fontSize: theme.typography.micro,
         color: theme.colors.secondary,
         textAlign: 'center',
         marginTop: theme.spacing.xxs,

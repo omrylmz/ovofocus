@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
         opacity: theme.opacity.disabled,
     },
     disabledText: {
-        opacity: 0.8,
+        opacity: theme.opacity.strong,
     },
 });
 

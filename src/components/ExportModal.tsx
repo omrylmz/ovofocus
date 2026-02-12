@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
         color: theme.colors.textSecondary,
     },
     successContainer: {
-        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+        backgroundColor: 'rgba(76, 175, 80, 0.2)', // Base color matches theme.colors.success (#4CAF50)
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         alignItems: 'center',
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.medium,
     },
     errorContainer: {
-        backgroundColor: 'rgba(255, 82, 82, 0.2)',
+        backgroundColor: 'rgba(255, 82, 82, 0.2)', // Base color matches theme.colors.error (#FF5252)
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         alignItems: 'center',
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.medium,
     },
     warningsContainer: {
-        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+        backgroundColor: 'rgba(255, 193, 7, 0.1)', // Base color matches theme.colors.warning (#FFC107)
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.md,

@@ -399,15 +399,15 @@ function HatchModalComponent({ visible, animal, onClose, language = 'en' }: Hatc
 }
 
 function getConfettiColors(rarity: Rarity): string[] {
-    const baseColors = ['#FFE66D', '#FF6B6B', '#4ECDC4', '#BA68C8', '#4FC3F7'];
+    const baseColors = [theme.colors.accent, theme.colors.primary, theme.colors.secondary, theme.colors.epic, theme.colors.rare];
 
     switch (rarity) {
         case 'legendary':
-            return ['#FFD700', '#FFA500', '#FFE66D', '#FFFF00', '#FFD700', '#FFA500', '#FFE66D', '#FFFF00', '#FFD700', '#FFA500', '#FFE66D', '#FFFF00', '#FFD700', '#FFA500', '#FFE66D'];
+            return [theme.colors.legendary, theme.colors.warning, theme.colors.accent, '#FFFF00', theme.colors.legendary, theme.colors.warning, theme.colors.accent, '#FFFF00', theme.colors.legendary, theme.colors.warning, theme.colors.accent, '#FFFF00', theme.colors.legendary, theme.colors.warning, theme.colors.accent];
         case 'epic':
-            return ['#BA68C8', '#9C27B0', '#E1BEE7', '#7B1FA2', '#BA68C8', '#9C27B0', '#E1BEE7', '#7B1FA2', '#BA68C8', '#9C27B0', '#E1BEE7', '#7B1FA2'];
+            return [theme.colors.epic, '#9C27B0', '#E1BEE7', '#7B1FA2', theme.colors.epic, '#9C27B0', '#E1BEE7', '#7B1FA2', theme.colors.epic, '#9C27B0', '#E1BEE7', '#7B1FA2'];
         case 'rare':
-            return ['#4FC3F7', '#03A9F4', '#81D4FA', '#0288D1', '#4FC3F7', '#03A9F4', '#81D4FA', '#0288D1'];
+            return [theme.colors.rare, '#03A9F4', theme.colors.rare, '#0288D1', theme.colors.rare, '#03A9F4', theme.colors.rare, '#0288D1'];
         default:
             return baseColors;
     }
@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         overflow: 'visible',
         zIndex: 1, // Confetti above aura
+        elevation: 1,
         pointerEvents: 'none', // Don't block touches
     },
     confettiParticle: {
@@ -452,10 +453,11 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         zIndex: 2, // Emoji particles above confetti
+        elevation: 2,
         pointerEvents: 'none',
     },
     particleText: {
-        fontSize: 40,
+        fontSize: 40, // Intentionally between h1 (32px) and display (72px) for celebration particles
         textAlign: 'center',
     },
     aura: {
@@ -464,10 +466,12 @@ const styles = StyleSheet.create({
         height: 240,
         borderRadius: theme.borderRadius.round,
         zIndex: 0, // Aura behind everything
+        elevation: 0,
     },
     animalContainer: {
         marginBottom: theme.spacing.lg,
         zIndex: 3, // Animal above decorative elements
+        elevation: 3,
     },
     animalCircle: {
         width: 150,
@@ -493,12 +497,13 @@ const styles = StyleSheet.create({
         top: -20,
     },
     animalEmoji: {
-        fontSize: 80,
+        fontSize: 80, // Intentionally larger than display (72px) for celebration emoji
     },
     textContainer: {
         alignItems: 'center',
         marginBottom: theme.spacing.md,
         zIndex: 4, // Text above animal
+        elevation: 4,
     },
     congratsText: {
         fontSize: theme.fontSize.xl,
@@ -534,6 +539,7 @@ const styles = StyleSheet.create({
         maxWidth: 300,
         marginBottom: theme.spacing.md,
         zIndex: 5, // Notes input above everything
+        elevation: 5,
     },
     notesHeader: {
         flexDirection: 'row',
@@ -570,6 +576,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         marginTop: theme.spacing.sm,
         zIndex: 6, // Button always on top
+        elevation: 6,
     },
 });
 

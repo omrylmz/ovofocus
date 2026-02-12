@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     },
     freezeIconEmpty: {
         color: theme.colors.textSecondary,
-        opacity: 0.3,
+        opacity: theme.opacity.medium,
     },
     // Compact styles
     compactContainer: {

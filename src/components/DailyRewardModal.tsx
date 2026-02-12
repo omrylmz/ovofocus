@@ -363,11 +363,12 @@ const styles = StyleSheet.create({
         top: '30%',
         alignItems: 'center',
         zIndex: 1, // Particles above glow
+        elevation: 1,
         pointerEvents: 'none',
     },
     sparkleParticle: {
         position: 'absolute',
-        fontSize: 24,
+        fontSize: theme.fontSize.xl,
     },
     glow: {
         position: 'absolute',
@@ -376,18 +377,21 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.round,
         top: '20%',
         zIndex: 0, // Glow behind everything
+        elevation: 0,
     },
     iconContainer: {
         marginBottom: theme.spacing.lg,
         zIndex: 2, // Icon above decorative elements
+        elevation: 2,
     },
     rewardIcon: {
-        fontSize: 100,
+        fontSize: 100, // Intentionally oversized reward emoji
     },
     textContainer: {
         alignItems: 'center',
         marginBottom: theme.spacing.lg,
         zIndex: 3, // Text above icon
+        elevation: 3,
     },
     title: {
         fontSize: theme.fontSize.xxl,
@@ -429,6 +433,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: theme.spacing.xl,
         zIndex: 4, // Day bar above text
+        elevation: 4,
     },
     dayBarLabel: {
         fontSize: theme.fontSize.md,
@@ -459,16 +464,17 @@ const styles = StyleSheet.create({
         transform: [{ scale: 1.1 }],
     },
     dayDotCheck: {
-        fontSize: 14,
+        fontSize: theme.fontSize.sm,
         color: theme.colors.text,
     },
     dayDotNumber: {
-        fontSize: 12,
+        fontSize: theme.fontSize.xs,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
     },
     buttonContainer: {
         marginTop: theme.spacing.md,
         zIndex: 5, // Button always on top
+        elevation: 5,
     },
 });
