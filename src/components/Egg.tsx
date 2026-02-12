@@ -20,6 +20,10 @@ import { EggStyle, getDefaultEggStyle, getEggStyleById } from '../data/eggStyles
 import { StyledEgg } from './StyledEgg';
 import { useAppStateAnimation } from '../hooks/useAppStateAnimation';
 import { useResponsive } from '../hooks/useResponsive';
+import { FireflyParticles } from './egg/FireflyParticles';
+import { GroundShadow } from './egg/GroundShadow';
+import { PulseRings } from './egg/PulseRings';
+import { EmberParticles } from './egg/EmberParticles';
 
 interface EggProps {
     sessionState: SessionState;
@@ -507,6 +511,9 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     const warningGlowSize = Math.round(styledEggSize * 1.5);
     const auraMaxSize = Math.round(styledEggSize * 1.8);
     const containerHeight = Math.round(styledEggSize * 1.25);
+    const pulseRingMaxSize = Math.round(styledEggSize * 2.2);
+    const shadowWidth = Math.round(styledEggSize * 0.7);
+    const shadowOffsetY = Math.round(styledEggSize * 0.55);
 
     // Get the current egg style
     const currentEggStyle = useMemo(() => {
@@ -549,6 +556,18 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     const idleParticleOpacity = useSharedValue(0);  // Idle floating particles
 
     // ======================================================================
+    // SHARED VALUES — Enchanted effects
+    // ======================================================================
+    const levitation = useSharedValue(0);
+    const heartbeatScale = useSharedValue(0);
+    const fireflyOpacity = useSharedValue(0);
+    const fireflyFall = useSharedValue(0);
+    const pulseRingCycle = useSharedValue(0);
+    const pulseRingOpacity = useSharedValue(0);
+    const emberCycle = useSharedValue(0);
+    const emberOpacity = useSharedValue(0);
+
+    // ======================================================================
     // IDLE STATE — Gentle breathing + subtle shimmer
     // ======================================================================
     useEffect(() => {
@@ -565,18 +584,32 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                     -1,
                     true
                 );
-                // Breathing scale
+                // Asymmetric breathing scale
                 scale.value = withSequence(
                     withTiming(1, { duration: 200 }),
                     withRepeat(
                         withSequence(
-                            withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                            withTiming(0.98, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                            withTiming(1.03, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+                            withTiming(0.97, { duration: 1800, easing: Easing.inOut(Easing.ease) })
                         ),
                         -1,
                         true
                     )
                 );
+
+                // Levitation float
+                levitation.value = withRepeat(
+                    withSequence(
+                        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    ),
+                    -1,
+                    true
+                );
+
+                // Firefly activation
+                fireflyOpacity.value = withTiming(0.6, { duration: 1000 });
+                fireflyFall.value = 0;
 
                 // Subtle idle shimmer — slow sweep every 4 seconds
                 idleShimmer.value = withRepeat(
@@ -600,6 +633,9 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 cancelAnimation(wobble);
                 idleShimmer.value = 0;
                 idleParticleOpacity.value = withTiming(0, { duration: 300 });
+                cancelAnimation(levitation);
+                levitation.value = 0;
+                fireflyOpacity.value = withTiming(0, { duration: 300 });
             }
 
             // Ambient warm glow that breathes in sync with the egg
@@ -631,6 +667,9 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             orbitOpacity.value = withTiming(0, { duration: 400 });
             risingOpacity.value = withTiming(0, { duration: 400 });
             auraOpacity.value = withTiming(0, { duration: 400 });
+            pulseRingOpacity.value = withTiming(0, { duration: 400 });
+            emberOpacity.value = withTiming(0, { duration: 400 });
+            heartbeatScale.value = withTiming(0, { duration: 300 });
 
             return () => {
                 cancelAnimation(wobble);
@@ -639,6 +678,8 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 cancelAnimation(orbitAngle);
                 cancelAnimation(glowOpacity);
                 cancelAnimation(glowScale);
+                cancelAnimation(levitation);
+                cancelAnimation(fireflyOpacity);
             };
         }
     }, [sessionState, isAppActive]);
@@ -739,6 +780,67 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             idleShimmer.value = 0;
             idleParticleOpacity.value = withTiming(0, { duration: 200 });
 
+            // === ENCHANTED EFFECTS ===
+
+            // Heartbeat — realistic lub-dub pattern, BPM increases with progress
+            const heartbeatBPM = 40 + progress * 60;
+            const heartbeatDuration = 60000 / heartbeatBPM;
+            heartbeatScale.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: heartbeatDuration * 0.15, easing: Easing.out(Easing.ease) }),
+                    withTiming(0.5, { duration: heartbeatDuration * 0.1 }),
+                    withTiming(0.8, { duration: heartbeatDuration * 0.1, easing: Easing.out(Easing.ease) }),
+                    withTiming(0, { duration: heartbeatDuration * 0.65, easing: Easing.in(Easing.ease) })
+                ),
+                -1,
+                false
+            );
+
+            // Firefly brightening
+            fireflyOpacity.value = withTiming(0.3 + progress * 0.7, { duration: 500 });
+
+            // Pulse rings at 25%+
+            if (progress > 0.25) {
+                const pulseSpeed = Math.max(1500, 3500 - progress * 2500);
+                pulseRingCycle.value = withRepeat(
+                    withTiming(1, { duration: pulseSpeed, easing: Easing.linear }),
+                    -1,
+                    false
+                );
+                pulseRingOpacity.value = withTiming(
+                    Math.min(0.8, (progress - 0.25) * 1.5),
+                    { duration: 600 }
+                );
+            } else {
+                pulseRingOpacity.value = withTiming(0, { duration: 300 });
+            }
+
+            // Embers at 50%+
+            if (progress > 0.5) {
+                const emberSpeed = Math.max(2000, 4000 - progress * 3000);
+                emberCycle.value = withRepeat(
+                    withTiming(1, { duration: emberSpeed, easing: Easing.linear }),
+                    -1,
+                    false
+                );
+                emberOpacity.value = withTiming(
+                    Math.min(1, (progress - 0.5) * 2.5),
+                    { duration: 500 }
+                );
+            } else {
+                emberOpacity.value = withTiming(0, { duration: 300 });
+            }
+
+            // Levitation dampens during active
+            levitation.value = withRepeat(
+                withSequence(
+                    withTiming(Math.max(0.3, 1 - progress * 0.7), { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                ),
+                -1,
+                true
+            );
+
             return () => {
                 cancelAnimation(wobble);
                 cancelAnimation(pulseValue);
@@ -747,6 +849,10 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 cancelAnimation(risingCycle);
                 cancelAnimation(auraCycle);
                 cancelAnimation(shimmerCycle);
+                cancelAnimation(heartbeatScale);
+                cancelAnimation(pulseRingCycle);
+                cancelAnimation(emberCycle);
+                cancelAnimation(levitation);
             };
         }
     }, [sessionState, progress]);
@@ -885,9 +991,10 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
     // ANIMATED STYLES
     // ======================================================================
 
-    const animatedEggStyle = useAnimatedStyle(() => {
+    const heartbeatEggStyle = useAnimatedStyle(() => {
         const safeOpacity = Math.max(0.01, opacity.value);
-        const safeScale = Math.max(0.1, scale.value * (1 + pulseValue.value * 0.05));
+        const heartbeat = 1 + heartbeatScale.value * 0.04;
+        const safeScale = Math.max(0.1, scale.value * (1 + pulseValue.value * 0.05) * heartbeat);
         return {
             transform: [
                 { rotate: `${wobble.value + anxiousShake.value}deg` },
@@ -908,6 +1015,12 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
 
     const warningGlowStyle = useAnimatedStyle(() => ({
         opacity: warningPulse.value * 0.8,
+    }));
+
+    const levitationStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: -levitation.value * 8 },
+        ],
     }));
 
     // ======================================================================
@@ -1125,7 +1238,7 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             )}
 
             {/* === LAYER 7: The Egg itself === */}
-            <Animated.View style={[styles.eggContainer, animatedEggStyle]}>
+            <Animated.View style={[styles.eggContainer, heartbeatEggStyle]}>
                 <View style={styles.eggSvgContainer}>
                     <StyledEgg
                         eggStyle={currentEggStyle}
