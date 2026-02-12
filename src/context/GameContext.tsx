@@ -291,9 +291,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
         case 'EMERGENCY_PAUSE':
             // Emergency pause sets isPaused but doesn't increment pauseCount
+            // No pauseCount guard — emergency pause is a power-up that works regardless of regular pause limit
             if (state.isPaused) return state;
-            // Guard: don't allow emergency pause if max pauses already reached
-            if (state.pauseCount >= state.settings.maxPausesPerSession) return state;
             return {
                 ...state,
                 isPaused: true,
