@@ -144,7 +144,7 @@ interface FireflyParticlesProps {
     fallDriver?: SharedValue<number>;
 }
 
-export function FireflyParticles({
+export const FireflyParticles = React.memo(function FireflyParticles({
     driver,
     opacityDriver,
     eggSize,
@@ -156,17 +156,16 @@ export function FireflyParticles({
         const baseRx = eggSize * 0.5;
         const baseRy = eggSize * 0.4;
 
+        // 8 fireflies at ~45° intervals for even coverage with varied radii
         return [
             { phase: 0,   rx: baseRx * 0.85, ry: baseRy * 0.90, size: 3.5, color, twinkleFreq: 2.3, driftSpeed: 0.7, cx: 0,  cy: -eggSize * 0.05 },
-            { phase: 36,  rx: baseRx * 1.10, ry: baseRy * 0.75, size: 2.5, color: secondaryColor, twinkleFreq: 3.1, driftSpeed: 0.55, cx: eggSize * 0.08, cy: eggSize * 0.03 },
-            { phase: 72,  rx: baseRx * 0.70, ry: baseRy * 1.05, size: 4.0, color, twinkleFreq: 1.8, driftSpeed: 0.8, cx: -eggSize * 0.06, cy: -eggSize * 0.10 },
-            { phase: 108, rx: baseRx * 1.00, ry: baseRy * 0.85, size: 3.0, color: secondaryColor, twinkleFreq: 2.7, driftSpeed: 0.65, cx: eggSize * 0.04, cy: eggSize * 0.07 },
-            { phase: 144, rx: baseRx * 0.95, ry: baseRy * 1.10, size: 2.0, color, twinkleFreq: 3.5, driftSpeed: 0.9, cx: -eggSize * 0.10, cy: 0 },
+            { phase: 45,  rx: baseRx * 1.10, ry: baseRy * 0.75, size: 2.5, color: secondaryColor, twinkleFreq: 3.1, driftSpeed: 0.55, cx: eggSize * 0.08, cy: eggSize * 0.03 },
+            { phase: 90,  rx: baseRx * 0.70, ry: baseRy * 1.05, size: 4.0, color, twinkleFreq: 1.8, driftSpeed: 0.8, cx: -eggSize * 0.06, cy: -eggSize * 0.10 },
+            { phase: 135, rx: baseRx * 1.00, ry: baseRy * 0.85, size: 3.0, color: secondaryColor, twinkleFreq: 2.7, driftSpeed: 0.65, cx: eggSize * 0.04, cy: eggSize * 0.07 },
             { phase: 180, rx: baseRx * 1.15, ry: baseRy * 0.80, size: 3.5, color: secondaryColor, twinkleFreq: 2.0, driftSpeed: 0.6, cx: 0, cy: -eggSize * 0.08 },
-            { phase: 216, rx: baseRx * 0.80, ry: baseRy * 0.95, size: 2.5, color, twinkleFreq: 2.9, driftSpeed: 0.75, cx: eggSize * 0.07, cy: eggSize * 0.05 },
-            { phase: 252, rx: baseRx * 1.05, ry: baseRy * 1.00, size: 3.0, color: secondaryColor, twinkleFreq: 1.6, driftSpeed: 0.5, cx: -eggSize * 0.03, cy: -eggSize * 0.04 },
-            { phase: 288, rx: baseRx * 0.90, ry: baseRy * 0.70, size: 4.0, color, twinkleFreq: 3.3, driftSpeed: 0.85, cx: eggSize * 0.05, cy: eggSize * 0.02 },
-            { phase: 324, rx: baseRx * 0.75, ry: baseRy * 1.15, size: 2.0, color: secondaryColor, twinkleFreq: 2.5, driftSpeed: 0.7, cx: -eggSize * 0.08, cy: eggSize * 0.06 },
+            { phase: 225, rx: baseRx * 0.80, ry: baseRy * 0.95, size: 2.5, color, twinkleFreq: 2.9, driftSpeed: 0.75, cx: eggSize * 0.07, cy: eggSize * 0.05 },
+            { phase: 270, rx: baseRx * 0.90, ry: baseRy * 0.70, size: 3.5, color, twinkleFreq: 3.3, driftSpeed: 0.85, cx: eggSize * 0.05, cy: eggSize * 0.02 },
+            { phase: 315, rx: baseRx * 0.75, ry: baseRy * 1.15, size: 2.5, color: secondaryColor, twinkleFreq: 2.5, driftSpeed: 0.7, cx: -eggSize * 0.08, cy: eggSize * 0.06 },
         ];
     }, [eggSize, color, secondaryColor]);
 
@@ -183,7 +182,7 @@ export function FireflyParticles({
             ))}
         </View>
     );
-}
+});
 
 // ============================================================================
 // STYLES

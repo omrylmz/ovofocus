@@ -26,7 +26,7 @@ interface GroundShadowProps {
     color?: string;
 }
 
-export function GroundShadow({
+export const GroundShadow = React.memo(function GroundShadow({
     levitationDriver,
     baseWidth,
     offsetY,
@@ -76,7 +76,7 @@ export function GroundShadow({
             />
         </View>
     );
-}
+});
 
 // ============================================================================
 // STYLES

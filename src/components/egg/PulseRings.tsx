@@ -116,7 +116,7 @@ interface PulseRingsProps {
     count?: number;
 }
 
-export function PulseRings({
+export const PulseRings = React.memo(function PulseRings({
     driver,
     opacityDriver,
     maxSize,
@@ -146,7 +146,7 @@ export function PulseRings({
             ))}
         </View>
     );
-}
+});
 
 // ============================================================================
 // STYLES

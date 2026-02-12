@@ -181,7 +181,7 @@ interface EmberParticlesProps {
     secondaryColor: string;
 }
 
-export function EmberParticles({
+export const EmberParticles = React.memo(function EmberParticles({
     driver,
     opacityDriver,
     eggSize,
@@ -192,17 +192,15 @@ export function EmberParticles({
     const riseHeight = eggSize * 0.85;
 
     const embers = useMemo<EmberConfig[]>(() => {
-        // 8 embers with staggered phases across 0.0 to 0.92
+        // 6 embers with even phase spacing for consistent visual density
         const spread = eggSize * 0.25;
         return [
             { phase: 0.00, startX: -spread * 0.6,  wobbleAmp: 6,  size: 3.5, color },
-            { phase: 0.13, startX: spread * 0.4,    wobbleAmp: -5, size: 3.0, color: secondaryColor },
-            { phase: 0.26, startX: -spread * 0.2,   wobbleAmp: 8,  size: 4.0, color },
-            { phase: 0.39, startX: spread * 0.8,    wobbleAmp: -7, size: 2.5, color: secondaryColor },
-            { phase: 0.52, startX: -spread * 0.9,   wobbleAmp: 5,  size: 3.0, color },
-            { phase: 0.65, startX: spread * 0.3,    wobbleAmp: -9, size: 3.5, color: secondaryColor },
-            { phase: 0.78, startX: -spread * 0.5,   wobbleAmp: 7,  size: 2.5, color },
-            { phase: 0.92, startX: spread * 0.6,    wobbleAmp: -6, size: 4.0, color: secondaryColor },
+            { phase: 0.17, startX: spread * 0.4,    wobbleAmp: -5, size: 3.0, color: secondaryColor },
+            { phase: 0.33, startX: -spread * 0.2,   wobbleAmp: 8,  size: 4.0, color },
+            { phase: 0.50, startX: spread * 0.8,    wobbleAmp: -7, size: 3.0, color: secondaryColor },
+            { phase: 0.67, startX: -spread * 0.9,   wobbleAmp: 5,  size: 3.5, color },
+            { phase: 0.83, startX: spread * 0.3,    wobbleAmp: -9, size: 3.0, color: secondaryColor },
         ];
     }, [eggSize, color, secondaryColor]);
 
@@ -219,7 +217,7 @@ export function EmberParticles({
             ))}
         </View>
     );
-}
+});
 
 // ============================================================================
 // STYLES
