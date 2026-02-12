@@ -64,7 +64,16 @@ function getTimestamp(): string {
  */
 export async function exportToJSON(): Promise<string> {
     const data = await gatherExportData();
-    const jsonString = JSON.stringify(data, null, 2);
+
+    let jsonString: string;
+    try {
+        jsonString = JSON.stringify(data, null, 2);
+    } catch (error) {
+        throw new Error(
+            `Failed to serialize export data: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+    }
+
     const filename = `ovofocus_backup_${getTimestamp()}.json`;
     const file = new File(Paths.cache, filename);
 
@@ -200,6 +209,8 @@ export async function exportAndShare(format: 'json' | 'csv'): Promise<void> {
     // Clean up the temp file after sharing
     // Note: We use a longer delay (10s) to ensure the share dialog has fully read the file
     // on slower devices or when sharing to apps that take time to process
+    // Limitation: If the app is killed before this timeout fires, the temp file will remain
+    // in the cache directory. Expo's cache directory is periodically cleaned by the OS.
     setTimeout(async () => {
         try {
             const file = new File(fileUri);

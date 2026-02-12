@@ -23,12 +23,20 @@ export function ThemeProvider({ children, themeMode }: ThemeProviderProps) {
         const colorScheme: 'light' | 'dark' | null = systemColorScheme === 'light' || systemColorScheme === 'dark'
             ? systemColorScheme
             : null;
-        const activeTheme = getTheme(themeMode, colorScheme);
+
+        let resolvedTheme: Theme;
+        try {
+            resolvedTheme = getTheme(themeMode, colorScheme);
+        } catch (error) {
+            console.error('[ThemeContext] Failed to resolve theme, using default:', error);
+            resolvedTheme = darkTheme;
+        }
+
         const isDarkMode = themeMode === 'dark' ||
             (themeMode === 'system' && colorScheme !== 'light');
 
         return {
-            theme: activeTheme,
+            theme: resolvedTheme,
             isDarkMode,
             themeMode,
         };

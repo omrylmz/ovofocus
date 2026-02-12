@@ -7,6 +7,7 @@ import Animated, {
     withSequence,
     withTiming,
     Easing,
+    cancelAnimation,
 } from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 
@@ -72,6 +73,12 @@ export function StreakBadge({ streak, size = 'medium' }: StreakBadgeProps) {
                 true
             );
         }
+
+        return () => {
+            cancelAnimation(flameScale);
+            cancelAnimation(flameSway);
+            cancelAnimation(flameOpacity);
+        };
     }, [streak]);
 
     const flameStyle = useAnimatedStyle(() => ({

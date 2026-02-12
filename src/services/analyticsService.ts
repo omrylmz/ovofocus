@@ -198,9 +198,12 @@ class AnalyticsService {
     private performanceQueue: PerformanceMetric[] = [];
     private currentSession: AnalyticsSession | null = null;
     private providers: AnalyticsProvider[] = [];
+    private providerFailures: Map<string, number> = new Map();
+    private disabledProviders: Set<string> = new Set();
 
     // Configuration
     private readonly MAX_QUEUE_SIZE = 100;
+    private readonly MAX_PROVIDER_FAILURES = 5;
     private readonly MAX_PERFORMANCE_QUEUE_SIZE = 50;
 
     constructor() {
@@ -299,6 +302,8 @@ class AnalyticsService {
      */
     public removeProvider(providerName: string): void {
         this.providers = this.providers.filter(p => p.name !== providerName);
+        this.providerFailures.delete(providerName);
+        this.disabledProviders.delete(providerName);
     }
 
     /**
@@ -347,11 +352,18 @@ class AnalyticsService {
      */
     private async sendToProviders(event: AnalyticsEvent): Promise<void> {
         for (const provider of this.providers) {
-            if (provider.isEnabled()) {
+            if (provider.isEnabled() && !this.disabledProviders.has(provider.name)) {
                 try {
                     await provider.trackEvent(event);
+                    this.providerFailures.set(provider.name, 0);
                 } catch (error) {
-                    console.warn(`[Analytics] Failed to send event to ${provider.name}:`, error);
+                    const failures = (this.providerFailures.get(provider.name) || 0) + 1;
+                    this.providerFailures.set(provider.name, failures);
+                    console.warn(`[Analytics] Failed to send event to ${provider.name} (${failures}/${this.MAX_PROVIDER_FAILURES}):`, error);
+                    if (failures >= this.MAX_PROVIDER_FAILURES) {
+                        console.warn(`[Analytics] Provider ${provider.name} disabled after ${this.MAX_PROVIDER_FAILURES} consecutive failures`);
+                        this.disabledProviders.add(provider.name);
+                    }
                 }
             }
         }
@@ -492,11 +504,18 @@ class AnalyticsService {
      */
     private async sendPerformanceToProviders(metric: PerformanceMetric): Promise<void> {
         for (const provider of this.providers) {
-            if (provider.isEnabled()) {
+            if (provider.isEnabled() && !this.disabledProviders.has(provider.name)) {
                 try {
                     await provider.trackPerformance(metric);
+                    this.providerFailures.set(provider.name, 0);
                 } catch (error) {
-                    console.warn(`[Analytics] Failed to send metric to ${provider.name}:`, error);
+                    const failures = (this.providerFailures.get(provider.name) || 0) + 1;
+                    this.providerFailures.set(provider.name, failures);
+                    console.warn(`[Analytics] Failed to send metric to ${provider.name} (${failures}/${this.MAX_PROVIDER_FAILURES}):`, error);
+                    if (failures >= this.MAX_PROVIDER_FAILURES) {
+                        console.warn(`[Analytics] Provider ${provider.name} disabled after ${this.MAX_PROVIDER_FAILURES} consecutive failures`);
+                        this.disabledProviders.add(provider.name);
+                    }
                 }
             }
         }

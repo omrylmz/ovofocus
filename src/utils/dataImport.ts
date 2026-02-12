@@ -154,17 +154,13 @@ function isValidStats(item: unknown): item is Stats {
         return false;
     }
 
-    // Non-negative validation
-    if (
-        totalSessions < 0 ||
-        completedSessions < 0 ||
-        failedSessions < 0 ||
-        totalFocusMinutes < 0 ||
-        currentStreak < 0 ||
-        bestStreak < 0
-    ) {
-        return false;
-    }
+    // Sanitize negative values to 0 instead of rejecting
+    if (totalSessions < 0) stats.totalSessions = 0;
+    if (completedSessions < 0) stats.completedSessions = 0;
+    if (failedSessions < 0) stats.failedSessions = 0;
+    if (totalFocusMinutes < 0) stats.totalFocusMinutes = 0;
+    if (currentStreak < 0) stats.currentStreak = 0;
+    if (bestStreak < 0) stats.bestStreak = 0;
 
     // Logical validation: completed + failed should not exceed total sessions
     if (completedSessions + failedSessions > totalSessions) {
@@ -261,26 +257,35 @@ export function parseBackupFile(content: string): ValidationResult {
  * @param data The validated export data to restore
  */
 export async function restoreFromBackup(data: ExportData): Promise<ImportResult> {
+    // Backup existing data before overwrite
+    let backup: readonly [string, string | null][] = [];
     try {
-        // Store all data atomically
+        const keys = [STORAGE_KEYS.COLLECTION, STORAGE_KEYS.STATS, STORAGE_KEYS.SETTINGS, STORAGE_KEYS.FAVORITES];
+        backup = await AsyncStorage.multiGet(keys);
+    } catch (backupError) {
+        console.warn('[DataImport] Could not backup existing data:', backupError);
+    }
+
+    try {
         await AsyncStorage.multiSet([
             [STORAGE_KEYS.COLLECTION, JSON.stringify(data.collection)],
             [STORAGE_KEYS.STATS, JSON.stringify(data.stats)],
             [STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings)],
             [STORAGE_KEYS.FAVORITES, JSON.stringify(data.favorites || [])],
         ]);
-
-        return {
-            success: true,
-            message: 'Data restored successfully',
-            importedAt: new Date().toISOString(),
-        };
+        return { success: true, message: 'Data restored successfully', importedAt: new Date().toISOString() };
     } catch (error) {
         console.error('[DataImport] Error restoring backup:', error);
-        return {
-            success: false,
-            message: 'Failed to restore data. Please try again.',
-        };
+        // Attempt rollback to previous data
+        try {
+            const rollbackPairs = backup.filter((pair): pair is [string, string] => pair[1] !== null);
+            if (rollbackPairs.length > 0) {
+                await AsyncStorage.multiSet(rollbackPairs);
+            }
+        } catch (rollbackError) {
+            console.error('[DataImport] Rollback also failed:', rollbackError);
+        }
+        return { success: false, message: 'Failed to restore data. Please try again.' };
     }
 }
 

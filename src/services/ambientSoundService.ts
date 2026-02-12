@@ -218,12 +218,24 @@ class AmbientSoundService {
     private isInitializing: boolean = false;
     private generatedSounds: Map<AmbientSoundType, string> = new Map();
     private failedSounds: Set<AmbientSoundType> = new Set();
+    private initPromise: Promise<void> | null = null;
 
     /**
      * Initialize the ambient sound service
      */
     async initialize(): Promise<void> {
-        if (this.isInitialized || this.isInitializing) return;
+        if (this.isInitialized) return;
+        if (this.initPromise) return this.initPromise;
+
+        this.initPromise = this._doInitialize();
+        try {
+            await this.initPromise;
+        } finally {
+            this.initPromise = null;
+        }
+    }
+
+    private async _doInitialize(): Promise<void> {
         this.isInitializing = true;
 
         try {
@@ -233,6 +245,7 @@ class AmbientSoundService {
                 shouldDuckAndroid: false,
             });
             this.isInitialized = true;
+            this.failedSounds.clear();
         } catch (error) {
             console.warn('[AmbientSoundService] Failed to initialize:', error);
         } finally {
@@ -270,10 +283,12 @@ class AmbientSoundService {
     async setVolume(volume: number): Promise<void> {
         this.volume = Math.max(0, Math.min(100, volume)) / 100;
 
+        // Invalidate cached sounds since they were generated at the old volume
+        this.generatedSounds.clear();
+        // Clear failed sounds to allow retry at new volume
+        this.failedSounds.clear();
+
         // Update currently playing sound if any
-        // Note: No need to clear generatedSounds cache since:
-        // - Current sound volume is updated via setVolumeAsync()
-        // - New sounds will use this.volume automatically when generated
         if (this.currentSound && this.isPlaying) {
             try {
                 await this.currentSound.setVolumeAsync(this.volume);

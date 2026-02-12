@@ -10,6 +10,7 @@ import {
     StyleSheet,
     Modal,
     Pressable,
+    ScrollView,
     ActivityIndicator,
     Alert,
 } from 'react-native';
@@ -374,7 +375,9 @@ export function ExportModal({ visible, onClose, language = 'en', onDataRestored 
                         </Pressable>
                     </View>
 
-                    {importStatus === 'confirming' ? renderImportSummary() : renderMainContent()}
+                    <ScrollView style={{ flex: 1 }} bounces={false}>
+                        {importStatus === 'confirming' ? renderImportSummary() : renderMainContent()}
+                    </ScrollView>
                 </Animated.View>
             </Animated.View>
         </Modal>
@@ -394,6 +397,7 @@ const styles = StyleSheet.create({
     modalContainer: {
         width: '90%',
         maxWidth: 400,
+        maxHeight: '70%',
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.lg,
         overflow: 'hidden',

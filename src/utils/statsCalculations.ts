@@ -66,9 +66,19 @@ function getDayNameTR(date: Date, short = false): string {
     return days[date.getDay()];
 }
 
+// Helper function to get day name in Spanish
+function getDayNameES(date: Date, short = false): string {
+    const days = short
+        ? ['Dom', 'Lun', 'Mar', 'Mi\u00e9', 'Jue', 'Vie', 'S\u00e1b']
+        : ['Domingo', 'Lunes', 'Martes', 'Mi\u00e9rcoles', 'Jueves', 'Viernes', 'S\u00e1bado'];
+    return days[date.getDay()];
+}
+
 // Get localized day name
 export function getLocalizedDayName(date: Date, language: 'en' | 'tr' | 'es', short = false): string {
-    return language === 'tr' ? getDayNameTR(date, short) : getDayName(date, short);
+    if (language === 'tr') return getDayNameTR(date, short);
+    if (language === 'es') return getDayNameES(date, short);
+    return getDayName(date, short);
 }
 
 // Helper to get start of day
@@ -309,7 +319,7 @@ export function calculateStatsSummary(
 ): StatsSummary {
     // Calculate average session duration from actual stats, fallback to 25 minutes
     const averageSessionDuration = stats.completedSessions > 0
-        ? Math.round(stats.totalFocusMinutes / stats.completedSessions)
+        ? Math.round(stats.totalFocusMinutes / Math.max(1, stats.completedSessions))
         : 25;
 
     // Pass average duration to helper functions for accurate calculations

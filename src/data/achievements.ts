@@ -345,6 +345,7 @@ export function checkCollectionMilestone(
     totalAnimalsCount: number,
     unlockedIds: string[]
 ): Achievement | null {
+    if (totalAnimalsCount <= 0) return null;
     const percent = Math.floor((collectedUniqueCount / totalAnimalsCount) * 100);
 
     for (const milestone of COLLECTION_PERCENTAGES) {

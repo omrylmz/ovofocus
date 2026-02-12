@@ -19,9 +19,13 @@ export function useReducedMotion(): boolean {
 
     useEffect(() => {
         // Get initial system preference
-        AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-            setSystemReducedMotion(enabled);
-        });
+        AccessibilityInfo.isReduceMotionEnabled()
+            .then((enabled) => {
+                setSystemReducedMotion(enabled);
+            })
+            .catch((error) => {
+                console.warn('[useReducedMotion] Failed to get initial state:', error);
+            });
 
         // Listen for changes to system preference
         const subscription = AccessibilityInfo.addEventListener(

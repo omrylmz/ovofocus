@@ -81,6 +81,11 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const quickReturnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const warningClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // Calculate effective tolerance
     const progressMultiplier = getProgressMultiplier(progress);
@@ -130,7 +135,9 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                     setIsQuickReturn(true);
                     // Auto-clear quick return flag after 3 seconds
                     if (quickReturnTimeoutRef.current) clearTimeout(quickReturnTimeoutRef.current);
-                    quickReturnTimeoutRef.current = setTimeout(() => setIsQuickReturn(false), 3000);
+                    quickReturnTimeoutRef.current = setTimeout(() => {
+                        if (isMountedRef.current) setIsQuickReturn(false);
+                    }, 3000);
                 }
 
                 // If returned within tolerance, clear the warning after a brief display
@@ -140,7 +147,9 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                 );
                 if (timeDiff < currentEffectiveTolerance) {
                     if (warningClearTimeoutRef.current) clearTimeout(warningClearTimeoutRef.current);
-                    warningClearTimeoutRef.current = setTimeout(() => setTimeInBackground(0), 1500);
+                    warningClearTimeoutRef.current = setTimeout(() => {
+                        if (isMountedRef.current) setTimeInBackground(0);
+                    }, 1500);
                 }
 
                 backgroundStartTimeRef.current = null;

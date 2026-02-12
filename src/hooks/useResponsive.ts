@@ -107,16 +107,15 @@ export function useResponsive(): ResponsiveValues {
   // elements and safe areas. Then distribute proportionally.
   // ==========================================================================
 
-  const availableContentHeight = screenHeight
-    - HEADER_HEIGHT
-    - STATS_BAR_HEIGHT
-    - safeAreaTop
-    - safeAreaBottom;
+  const availableContentHeight = Math.max(
+    100,
+    screenHeight - HEADER_HEIGHT - STATS_BAR_HEIGHT - safeAreaTop - safeAreaBottom
+  );
 
   // Proportional section heights
   const timerSectionHeight = Math.round(availableContentHeight * TIMER_SECTION_RATIO);
   const eggSectionHeight = Math.round(availableContentHeight * EGG_SECTION_RATIO);
-  const controlsSectionHeight = Math.round(availableContentHeight * CONTROLS_SECTION_RATIO);
+  const controlsSectionHeight = availableContentHeight - timerSectionHeight - eggSectionHeight;
 
   // ==========================================================================
   // ELEMENT SIZES (based on section heights, not screen width)

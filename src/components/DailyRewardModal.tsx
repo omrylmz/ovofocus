@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -104,6 +104,11 @@ export function DailyRewardModal({
     onClaim,
     language = 'en',
 }: DailyRewardModalProps) {
+    const onClaimRef = useRef(onClaim);
+    useEffect(() => {
+        onClaimRef.current = onClaim;
+    });
+
     const backgroundOpacity = useSharedValue(0);
     const iconScale = useSharedValue(0);
     const iconRotation = useSharedValue(0);
@@ -329,7 +334,7 @@ export function DailyRewardModal({
                     <Animated.View style={[styles.buttonContainer, buttonStyle]}>
                         <PixelButton
                             title={t('claimReward', language)}
-                            onPress={onClaim}
+                            onPress={() => onClaimRef.current()}
                             variant="primary"
                             size="large"
                             icon="🎁"

@@ -292,6 +292,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         case 'EMERGENCY_PAUSE':
             // Emergency pause sets isPaused but doesn't increment pauseCount
             if (state.isPaused) return state;
+            // Guard: don't allow emergency pause if max pauses already reached
+            if (state.pauseCount >= state.settings.maxPausesPerSession) return state;
             return {
                 ...state,
                 isPaused: true,
@@ -321,6 +323,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'failed',
                 currentAnimal: null,
+                isPaused: false,
+                pauseCount: 0,
                 sessionStartTime: null,
                 sessionPausedAt: null,
                 accumulatedPauseTime: 0,
@@ -563,6 +567,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const pauseSession = () => {
+        // Guard: don't announce or calculate if already paused (prevents off-by-one on rapid tap)
+        if (state.isPaused) return;
+
         // Calculate remaining pauses (maxPauses - currentPauseCount - 1 because we're about to use one)
         const pausesRemaining = state.settings.maxPausesPerSession - state.pauseCount - 1;
 
@@ -571,10 +578,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             payload: { pausedAt: new Date().toISOString() },
         });
 
-        // Announce pause to screen readers (only if not already paused)
-        if (!state.isPaused) {
-            announceSessionPause(Math.max(0, pausesRemaining), state.settings.language);
-        }
+        // Announce pause to screen readers
+        announceSessionPause(Math.max(0, pausesRemaining), state.settings.language);
     };
 
     const emergencyPause = () => {
@@ -585,6 +590,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const resumeSession = () => {
+        if (state.sessionState !== 'active') {
+            console.warn('[resumeSession] Called when session not active, ignoring.');
+            return;
+        }
+
         // Calculate accumulated pause time
         let newAccumulatedPauseTime = state.accumulatedPauseTime;
         if (state.sessionPausedAt) {
@@ -800,11 +810,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'SET_COLLECTION', payload: previousCollection });
             dispatch({ type: 'UPDATE_STATS', payload: previousStats });
             dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: previousDailyProgress });
+            // Transition sessionState from 'completed' to 'failed' so it doesn't get stuck
+            dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes: 0 } });
 
             // Still return the animal so the user sees a reward for completing their session
             // This provides graceful degradation - user experience continues even if storage fails
             // The animal just won't be persisted to their permanent collection
-            console.warn('[completeSession] Session completed but storage failed. Animal awarded for this session but may not persist.');
+            console.warn('[completeSession] Session completed but storage failed. State rolled back to failed.');
 
             return { animal, updatedStats: previousStats };
         } finally {
@@ -845,7 +857,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             await updateSettings(newSettings);
         } catch (error) {
             console.error('[updateUserSettings] Failed to persist settings, rolling back:', error);
-            // Rollback to previous settings so UI stays in sync with storage
+            // Rollback to previous settings so UI stays in sync with storage.
+            // This rollback dispatch reverses the optimistic update above,
+            // which may cause a brief flicker but ensures UI/storage consistency.
             dispatch({ type: 'UPDATE_SETTINGS', payload: previousSettings });
         }
     };
@@ -861,9 +875,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // Persist — toggleFavoriteStorage returns old favorites on error
         const actualFavorites = await toggleFavoriteStorage(animalId);
         // Sync state if storage result differs from optimistic (i.e., storage failed)
-        const matches = actualFavorites.length === optimisticFavorites.length
-            && actualFavorites.every(id => optimisticFavorites.includes(id));
-        if (!matches) {
+        // Use Set-based comparison to avoid O(n^2) every/includes pattern
+        const actualSet = new Set(actualFavorites);
+        const optimisticSet = new Set(optimisticFavorites);
+        const needsRollback = actualSet.size !== optimisticSet.size ||
+            [...actualSet].some(id => !optimisticSet.has(id));
+        if (needsRollback) {
             dispatch({ type: 'TOGGLE_FAVORITE', payload: actualFavorites });
         }
     };

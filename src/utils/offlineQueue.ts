@@ -215,13 +215,7 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
      * Processes a single queue item with retry logic
      */
     async function processItem(item: QueueItem): Promise<ProcessResult> {
-        const success = await executeOperation(item);
-
-        if (success) {
-            return { success: true, item };
-        }
-
-        // Operation failed, check if we should retry
+        // Check max retries before attempting execution to avoid head-of-line blocking
         if (item.retryCount >= config.maxRetries) {
             queueLogger.warn('Max retries exceeded, dropping item', {
                 itemId: item.id,
@@ -235,6 +229,12 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
                 item,
                 error: `Max retries (${config.maxRetries}) exceeded`,
             };
+        }
+
+        const success = await executeOperation(item);
+
+        if (success) {
+            return { success: true, item };
         }
 
         return {

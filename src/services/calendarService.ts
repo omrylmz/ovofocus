@@ -372,6 +372,12 @@ export async function deleteFocusBlock(eventId: string): Promise<boolean> {
     if (!cal) return false;
 
     try {
+        const permStatus = await getCalendarPermissionStatus();
+        if (permStatus !== 'granted') {
+            console.log('[CalendarService] Calendar permission not granted for deletion');
+            return false;
+        }
+
         await cal.deleteEventAsync(eventId);
         return true;
     } catch (error) {

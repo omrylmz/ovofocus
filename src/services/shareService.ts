@@ -289,6 +289,10 @@ class ShareService {
                 shareContent.url = imageUri;
             }
 
+            if (Platform.OS === 'android' && imageUri) {
+                console.log('[ShareService] Image sharing not supported on Android, sharing text only');
+            }
+
             if (Platform.OS === 'ios') {
                 shareContent.title = this.config.appName;
             }

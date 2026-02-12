@@ -513,7 +513,7 @@ function CollectionPreview({ isActive }: { isActive: boolean }) {
             <View style={styles.collectionPreview}>
                 {animals.map((animal, index) => (
                     <CollectionAnimalCard
-                        key={index}
+                        key={`emoji-${animal.emoji}-${animal.rarity}`}
                         emoji={animal.emoji}
                         color={animal.color}
                         delay={index * 100}

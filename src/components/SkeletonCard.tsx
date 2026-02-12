@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     },
     shimmerGradient: {
         flex: 1,
-        width: '50%',
+        width: '50%', // Half-width shimmer gradient for natural sweep effect
     },
 
     // SkeletonGrid styles

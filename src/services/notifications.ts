@@ -304,8 +304,16 @@ export async function scheduleStreakReminder(
     }
 
     try {
-        const hasPermission = await requestNotificationPermissions();
-        if (!hasPermission) return;
+        // Check if permissions are already denied before requesting
+        const { status } = await notif.getPermissionsAsync();
+        if (status === 'denied') {
+            console.log('[Notifications] Permission denied, skipping streak reminder');
+            return;
+        }
+        if (status !== 'granted') {
+            const granted = await requestNotificationPermissions();
+            if (!granted) return;
+        }
 
         // Cancel any existing streak reminder first
         await cancelStreakReminder();
@@ -434,8 +442,16 @@ export async function scheduleDailyGoalReminder(
     }
 
     try {
-        const hasPermission = await requestNotificationPermissions();
-        if (!hasPermission) return;
+        // Check if permissions are already denied before requesting
+        const { status } = await notif.getPermissionsAsync();
+        if (status === 'denied') {
+            console.log('[Notifications] Permission denied, skipping daily goal reminder');
+            return;
+        }
+        if (status !== 'granted') {
+            const granted = await requestNotificationPermissions();
+            if (!granted) return;
+        }
 
         // Cancel any existing daily goal reminder first
         await cancelDailyGoalReminder();
@@ -566,8 +582,16 @@ export async function scheduleReengagementNotification(
     }
 
     try {
-        const hasPermission = await requestNotificationPermissions();
-        if (!hasPermission) return;
+        // Check if permissions are already denied before requesting
+        const { status } = await notif.getPermissionsAsync();
+        if (status === 'denied') {
+            console.log('[Notifications] Permission denied, skipping reengagement notification');
+            return;
+        }
+        if (status !== 'granted') {
+            const granted = await requestNotificationPermissions();
+            if (!granted) return;
+        }
 
         // Cancel any existing re-engagement notification first
         await cancelReengagementNotification();

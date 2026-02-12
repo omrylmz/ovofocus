@@ -5,7 +5,7 @@
  * Handles loading states, error states, and refreshing calendar data.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     isCalendarAvailable,
     requestCalendarPermissions,
@@ -206,8 +206,11 @@ export function useCalendar(options: UseCalendarOptions = {}): UseCalendarReturn
     }, [refresh]);
 
     // Auto-load on mount if enabled
+    const hasAutoLoadedRef = useRef(false);
+
     useEffect(() => {
-        if (autoLoad) {
+        if (autoLoad && !hasAutoLoadedRef.current) {
+            hasAutoLoadedRef.current = true;
             loadCalendarData();
         }
     }, [autoLoad, loadCalendarData]);

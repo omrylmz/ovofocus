@@ -721,7 +721,8 @@ function calculateHappinessDecay(interaction: AnimalInteraction): number {
         interaction.lastTalkTime,
     ]
         .filter(Boolean)
-        .map(t => new Date(t!).getTime());
+        .map(t => new Date(t!).getTime())
+        .filter(t => !isNaN(t));
 
     if (times.length === 0) return interaction.happiness;
 
@@ -738,7 +739,7 @@ function calculateHappinessDecay(interaction: AnimalInteraction): number {
 function getCooldownRemaining(lastTime: string | null, cooldownHours: number): number {
     if (!lastTime) return 0;
     const lastTimeMs = new Date(lastTime).getTime();
-    if (isNaN(lastTimeMs)) return 0;
+    if (isNaN(lastTimeMs)) return cooldownHours * 60 * 60 * 1000;
     const cooldownMs = cooldownHours * 60 * 60 * 1000;
     const remaining = cooldownMs - (Date.now() - lastTimeMs);
     return Math.max(0, remaining);
