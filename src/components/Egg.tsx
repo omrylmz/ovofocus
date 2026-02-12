@@ -947,6 +947,37 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 withTiming(0, { duration: 500 })
             );
             auraCycle.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) });
+
+            // === Enchanted effects: cinematic hatch ===
+
+            // Kill levitation — egg should feel planted before explosion
+            cancelAnimation(levitation);
+            levitation.value = withTiming(0, { duration: 100 });
+
+            // Fireflies flash bright then vanish
+            fireflyOpacity.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withDelay(400, withTiming(0, { duration: 300 }))
+            );
+
+            // Pulse rings — one massive burst outward
+            pulseRingOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withDelay(200, withTiming(0, { duration: 500 }))
+            );
+            pulseRingCycle.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) });
+
+            // Embers — explosive upward burst
+            emberOpacity.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withDelay(400, withTiming(0, { duration: 400 }))
+            );
+
+            // One final massive heartbeat then stop
+            heartbeatScale.value = withSequence(
+                withTiming(1, { duration: 100 }),
+                withTiming(0, { duration: 200 })
+            );
         }
     }, [sessionState]);
 
@@ -984,6 +1015,21 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             risingOpacity.value = withTiming(0, { duration: 300 });
             auraOpacity.value = withTiming(0, { duration: 300 });
             idleParticleOpacity.value = withTiming(0, { duration: 200 });
+
+            // === Enchanted effects: warmth draining sorrow ===
+
+            // Kill levitation — egg becomes heavy
+            cancelAnimation(levitation);
+            levitation.value = withTiming(0, { duration: 200 });
+
+            // Fireflies extinguish and fall downward (staggered emotional effect)
+            fireflyFall.value = withTiming(1, { duration: 1200, easing: Easing.in(Easing.quad) });
+            fireflyOpacity.value = withTiming(0, { duration: 1500 });
+
+            // Kill all warm effects immediately
+            pulseRingOpacity.value = withTiming(0, { duration: 200 });
+            emberOpacity.value = withTiming(0, { duration: 200 });
+            heartbeatScale.value = withTiming(0, { duration: 200 });
         }
     }, [sessionState]);
 
@@ -1094,6 +1140,15 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
             }
             accessibilityState={{ busy: sessionState === 'active' }}
         >
+            {/* === LAYER 0: Ground shadow (sells levitation) === */}
+            {sessionState !== 'completed' && (
+                <GroundShadow
+                    levitationDriver={levitation}
+                    baseWidth={shadowWidth}
+                    offsetY={shadowOffsetY}
+                />
+            )}
+
             {/* === LAYER 1: Aura rings (behind everything) === */}
             {(sessionState === 'active' || sessionState === 'completed') && (
                 <View style={styles.auraContainer} pointerEvents="none">
@@ -1122,6 +1177,17 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         thickness={1}
                     />
                 </View>
+            )}
+
+            {/* === LAYER 1b: Pulse rings (warm energy waves) === */}
+            {(sessionState === 'active' || sessionState === 'completed') && (
+                <PulseRings
+                    driver={pulseRingCycle}
+                    opacityDriver={pulseRingOpacity}
+                    maxSize={pulseRingMaxSize}
+                    color={eggColor}
+                    count={3}
+                />
             )}
 
             {/* === LAYER 2: Outer glow (active: bright, idle: soft ambient) === */}
@@ -1172,6 +1238,18 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                         }
                     ]}
                     pointerEvents="none"
+                />
+            )}
+
+            {/* === LAYER 4b: Firefly particles (Ghibli magic) === */}
+            {sessionState !== 'completed' && (
+                <FireflyParticles
+                    driver={orbitAngle}
+                    opacityDriver={fireflyOpacity}
+                    eggSize={styledEggSize}
+                    color={eggColor}
+                    secondaryColor={eggSecondary}
+                    fallDriver={sessionState === 'failed' ? fireflyFall : undefined}
                 />
             )}
 
@@ -1237,55 +1315,68 @@ export function Egg({ sessionState, progress = 0, language = 'en', warningLevel 
                 </View>
             )}
 
+            {/* === LAYER 6b: Ember particles (campfire sparks) === */}
+            {sessionState === 'active' && (
+                <EmberParticles
+                    driver={emberCycle}
+                    opacityDriver={emberOpacity}
+                    eggSize={styledEggSize}
+                    color={eggColor}
+                    secondaryColor={eggSecondary}
+                />
+            )}
+
             {/* === LAYER 7: The Egg itself === */}
-            <Animated.View style={[styles.eggContainer, heartbeatEggStyle]}>
-                <View style={styles.eggSvgContainer}>
-                    <StyledEgg
-                        eggStyle={currentEggStyle}
-                        size={styledEggSize}
-                        showPattern={true}
-                        glowColor={eggColor}
-                        glowIntensity={
-                            sessionState === 'completed' ? 0.8
-                            : sessionState === 'failed' ? 0
-                            : progress * 0.5
-                        }
-                        crackProgress={
-                            sessionState === 'completed' ? 1.0
-                            : sessionState === 'failed' ? 0.85
-                            : sessionState === 'active' ? progress
-                            : 0
-                        }
-                    />
-                    {/* Shimmer sweep overlay (clipped to egg bounds) */}
-                    {sessionState !== 'failed' && (
-                        <View style={[
-                            styles.shimmerClip,
-                            {
-                                width: styledEggSize,
-                                height: styledEggSize * 1.2,
+            <Animated.View style={levitationStyle}>
+                <Animated.View style={[styles.eggContainer, heartbeatEggStyle]}>
+                    <View style={styles.eggSvgContainer}>
+                        <StyledEgg
+                            eggStyle={currentEggStyle}
+                            size={styledEggSize}
+                            showPattern={true}
+                            glowColor={eggColor}
+                            glowIntensity={
+                                sessionState === 'completed' ? 0.8
+                                : sessionState === 'failed' ? 0
+                                : progress * 0.5
                             }
-                        ]}>
-                            <ShimmerSweep
-                                driver={sessionState === 'active' ? shimmerCycle : idleShimmer}
-                                eggWidth={styledEggSize}
-                                eggHeight={styledEggSize * 1.2}
-                                color="#FFFFFF"
-                            />
-                        </View>
-                    )}
-                    {/* Dim overlay for failed state */}
-                    {sessionState === 'failed' && (
-                        <View style={[
-                            styles.failedOverlay,
-                            {
-                                width: styledEggSize,
-                                height: styledEggSize * 1.2,
-                                borderRadius: styledEggSize / 2,
-                            },
-                        ]} />
-                    )}
-                </View>
+                            crackProgress={
+                                sessionState === 'completed' ? 1.0
+                                : sessionState === 'failed' ? 0.85
+                                : sessionState === 'active' ? progress
+                                : 0
+                            }
+                        />
+                        {/* Shimmer sweep overlay (clipped to egg bounds) */}
+                        {sessionState !== 'failed' && (
+                            <View style={[
+                                styles.shimmerClip,
+                                {
+                                    width: styledEggSize,
+                                    height: styledEggSize * 1.2,
+                                }
+                            ]}>
+                                <ShimmerSweep
+                                    driver={sessionState === 'active' ? shimmerCycle : idleShimmer}
+                                    eggWidth={styledEggSize}
+                                    eggHeight={styledEggSize * 1.2}
+                                    color="#FFFFFF"
+                                />
+                            </View>
+                        )}
+                        {/* Dim overlay for failed state */}
+                        {sessionState === 'failed' && (
+                            <View style={[
+                                styles.failedOverlay,
+                                {
+                                    width: styledEggSize,
+                                    height: styledEggSize * 1.2,
+                                    borderRadius: styledEggSize / 2,
+                                },
+                            ]} />
+                        )}
+                    </View>
+                </Animated.View>
             </Animated.View>
 
             {/* === LAYER 8: Status text === */}
