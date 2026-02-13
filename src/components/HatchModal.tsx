@@ -9,6 +9,7 @@ import Animated, {
     withTiming,
     withRepeat,
     Easing,
+    cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../styles/theme';
@@ -55,6 +56,14 @@ const ConfettiParticle = React.memo(function ConfettiParticle({ delay, startX, c
             withSpring(1.2),
             withDelay(1000, withSpring(0.5))
         ));
+
+        return () => {
+            cancelAnimation(translateY);
+            cancelAnimation(translateX);
+            cancelAnimation(rotate);
+            cancelAnimation(opacity);
+            cancelAnimation(scale);
+        };
     }, []);
 
     const style = useAnimatedStyle(() => ({

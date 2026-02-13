@@ -272,7 +272,7 @@ export default function HomeScreen() {
             count,
         }));
         return calculateCollectionBonuses(collectionForBonus);
-    }, [state.collection]);
+    }, [state.collection.length]);
 
     // Pomodoro state
     const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>('work');
@@ -327,7 +327,10 @@ export default function HomeScreen() {
             default:
                 return null;
         }
-    }, [state.pendingMilestone, state.settings.language, i18n]);
+    // Using state.settings.language instead of i18n for stable dependency -
+    // i18n function reference may change on re-renders but only produces different
+    // results when language changes
+    }, [state.pendingMilestone, state.settings.language]);
 
     // Debug mode: 10 seconds, Normal: 25 minutes (with focus bonus applied)
     const baseDuration = state.settings.debugMode ? 10 : state.settings.focusDuration * 60;
@@ -607,14 +610,17 @@ export default function HomeScreen() {
     }, [state.isLoading, state.settings.hasCompletedOnboarding]);
 
     // Handle quick return toast
+    // Only show if the session has been running for at least 5 seconds to avoid
+    // false positives when the app briefly backgrounds at session start
     useEffect(() => {
-        if (isQuickReturn && state.sessionState === 'active') {
+        const elapsedSeconds = progress * duration;
+        if (isQuickReturn && state.sessionState === 'active' && elapsedSeconds >= 5) {
             setShowQuickReturnToast(true);
             if (state.settings.hapticsEnabled) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         }
-    }, [isQuickReturn, state.sessionState, state.settings.hapticsEnabled]);
+    }, [isQuickReturn, state.sessionState, state.settings.hapticsEnabled, progress, duration]);
 
     // Handle warning level haptic feedback
     useEffect(() => {
@@ -680,10 +686,11 @@ export default function HomeScreen() {
         }
     }, [timeRemaining, state.sessionState, state.isPaused, isRunning, isPomodoroMode, pomodoroPhase, state.settings.language]);
 
-    // Reset announced warnings when session resets or pauses
+    // Reset announced warnings when session resets, pauses, or completes
     // Clearing on pause ensures warnings re-announce if the timer passes the same threshold again after resume
+    // Clearing on completed ensures a fresh set for the next session
     useEffect(() => {
-        if (state.sessionState === 'idle' || state.isPaused) {
+        if (state.sessionState === 'idle' || state.isPaused || state.sessionState === 'completed') {
             announcedWarningsRef.current.clear();
         }
     }, [state.sessionState, state.isPaused]);
@@ -789,6 +796,9 @@ export default function HomeScreen() {
                     style: 'destructive',
                     onPress: () => {
                         stopTimer();
+                        // Stop ambient sound immediately so it doesn't continue
+                        // playing during the fail animation/state
+                        ambientSoundService.stop();
                         failSession(elapsedMinutes);
                         audioManager.playSound('session_fail');
                         if (state.settings.hapticsEnabled) {
@@ -821,14 +831,15 @@ export default function HomeScreen() {
         setShowHatchModal(false);
         setHatchedAnimal(null);
 
-        // In Pomodoro mode, don't reset the timer after work session completes
-        // The phase has already transitioned to break, so we want to preserve progress
-        // Only reset the session state (which completeSession already handled)
+        // In Pomodoro mode, reset the timer for the next phase so auto-resume works correctly
+        // The pomodoroTimer.reset() resets phase to 'work' and clears counters,
+        // ensuring the timer is properly prepared for the next session start
         if (!isPomodoroMode) {
             resetTimer();
         } else {
-            // Reset local Pomodoro phase to 'work' so the indicator doesn't show
-            // a stale break phase while the session is idle
+            // Reset the Pomodoro timer fully so the next start begins a fresh work phase
+            pomodoroTimer.reset();
+            // Sync local phase state to 'work' so the indicator reflects the reset
             setPomodoroPhase('work');
         }
         resetSession();

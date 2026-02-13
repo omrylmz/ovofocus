@@ -527,6 +527,8 @@ export default function CollectionScreen() {
     const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Filter and search state
+    // State resets naturally on unmount since this is a formSheet modal (presentation: 'formSheet')
+    // that unmounts when dismissed. No manual cleanup needed.
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
     const [activeSort, setActiveSort] = useState<SortOption>('rarity');
@@ -645,6 +647,7 @@ export default function CollectionScreen() {
     const isLoading = state.isLoading;
 
     // Calculate skeleton count based on numColumns (fill 2-3 rows)
+    // 3 rows of skeletons covers most screen sizes
     const skeletonCount = useMemo(() => numColumns * 3, [numColumns]);
 
     // Build the list data for FlashList
@@ -811,7 +814,8 @@ export default function CollectionScreen() {
             case 'filter-header': {
                 // Calculate active filter count for badge
                 const activeFilterCount = (activeFilter !== 'all' ? 1 : 0) +
-                    (searchQuery.trim() ? 1 : 0);
+                    (searchQuery.trim() ? 1 : 0) +
+                    (activeSort !== 'rarity' ? 1 : 0);
 
                 return (
                     <View>
@@ -823,6 +827,7 @@ export default function CollectionScreen() {
                                 placeholder={i18n('searchPlaceholder')}
                                 placeholderTextColor={theme.colors.textSecondary}
                                 value={searchQuery}
+                                // Search is immediate since collection size is bounded (~100 animals max)
                                 onChangeText={setSearchQuery}
                                 autoCapitalize="none"
                                 autoCorrect={false}

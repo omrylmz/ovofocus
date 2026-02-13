@@ -814,6 +814,7 @@ export default function SettingsScreen() {
                         <View style={styles.divider} />
 
                         {/* Background Tolerance */}
+                        {/* TODO: Add UI for emergencyPauseDuration configuration (currently defaults to 60s) */}
                         <View style={styles.subsection}>
                             <SubsectionHeader styles={styles} icon="🛡️" title={i18n('tolerance')} />
                             <Text style={styles.settingDescription}>{i18n('toleranceDesc')}</Text>

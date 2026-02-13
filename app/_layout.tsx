@@ -27,16 +27,16 @@ function ThemedLayout({ isLoading }: { isLoading: boolean }) {
         const cleanupAppStateListener = initializeAppStateListener();
 
         // Handle notification responses (when user taps notification)
-        const notificationSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+        const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
             // Navigate to collection when notification is tapped
             router.push('/collection');
-        }).remove;
+        });
 
         // Cleanup on unmount
         return () => {
             audioManager.cleanup();
             cleanupAppStateListener();
-            notificationSubscription?.();
+            subscription?.remove();
         };
     }, [router]);
 

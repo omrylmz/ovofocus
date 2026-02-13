@@ -362,6 +362,7 @@ class AnalyticsService {
                     console.warn(`[Analytics] Failed to send event to ${provider.name} (${failures}/${this.MAX_PROVIDER_FAILURES}):`, error);
                     if (failures >= this.MAX_PROVIDER_FAILURES) {
                         console.warn(`[Analytics] Provider ${provider.name} disabled after ${this.MAX_PROVIDER_FAILURES} consecutive failures`);
+                        // Disabled providers stay disabled for this session to prevent cascading failures. Re-enabled on next app launch.
                         this.disabledProviders.add(provider.name);
                     }
                 }
@@ -514,6 +515,7 @@ class AnalyticsService {
                     console.warn(`[Analytics] Failed to send metric to ${provider.name} (${failures}/${this.MAX_PROVIDER_FAILURES}):`, error);
                     if (failures >= this.MAX_PROVIDER_FAILURES) {
                         console.warn(`[Analytics] Provider ${provider.name} disabled after ${this.MAX_PROVIDER_FAILURES} consecutive failures`);
+                        // Disabled providers stay disabled for this session to prevent cascading failures. Re-enabled on next app launch.
                         this.disabledProviders.add(provider.name);
                     }
                 }

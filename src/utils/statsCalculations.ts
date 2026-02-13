@@ -319,7 +319,7 @@ export function calculateStatsSummary(
 ): StatsSummary {
     // Calculate average session duration from actual stats, fallback to 25 minutes
     const averageSessionDuration = stats.completedSessions > 0
-        ? Math.round(stats.totalFocusMinutes / Math.max(1, stats.completedSessions))
+        ? Math.round(stats.totalFocusMinutes / stats.completedSessions)
         : 25;
 
     // Pass average duration to helper functions for accurate calculations

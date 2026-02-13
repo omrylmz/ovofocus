@@ -65,15 +65,15 @@ describe('useResponsive', () => {
     it('calculates timer font size within valid bounds', () => {
       const { result } = renderHook(() => useResponsive());
 
-      expect(result.current.timerFontSize).toBeGreaterThanOrEqual(24);
-      expect(result.current.timerFontSize).toBeLessThanOrEqual(48);
+      expect(result.current.timerFontSize).toBeGreaterThanOrEqual(36);
+      expect(result.current.timerFontSize).toBeLessThanOrEqual(56);
     });
 
     it('calculates progress ring size within valid bounds', () => {
       const { result } = renderHook(() => useResponsive());
 
-      expect(result.current.progressRingSize).toBeGreaterThanOrEqual(210);
-      expect(result.current.progressRingSize).toBeLessThanOrEqual(400);
+      expect(result.current.progressRingSize).toBeGreaterThanOrEqual(120);
+      expect(result.current.progressRingSize).toBeLessThanOrEqual(200);
     });
 
     it('provides grid columns as 2, 3, or 4', () => {

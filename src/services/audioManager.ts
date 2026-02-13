@@ -462,7 +462,7 @@ class AudioManager {
             const config = SOUND_CONFIG[type];
             if (!config) {
                 console.warn(`Unknown sound type: ${type}`);
-                return;
+                return; // Signal failure — no config found for this sound type
             }
 
             // Check for cached sound
@@ -498,6 +498,19 @@ class AudioManager {
             );
 
             this.soundCache.set(type, newSound);
+
+            // Limit cache size to prevent unbounded memory growth
+            const MAX_CACHE_SIZE = 10;
+            if (this.soundCache.size > MAX_CACHE_SIZE) {
+                const firstKey = this.soundCache.keys().next().value;
+                if (firstKey) {
+                    const oldSound = this.soundCache.get(firstKey);
+                    if (oldSound) {
+                        await oldSound.unloadAsync().catch(() => {});
+                        this.soundCache.delete(firstKey);
+                    }
+                }
+            }
 
             // Note: We intentionally don't set up a playback status update callback
             // to avoid memory leaks. The sound is cached and reused, so cleanup

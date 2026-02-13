@@ -74,8 +74,14 @@ export function validateImportData(data: unknown): ValidationResult {
     // Validate stats
     if (!importData.stats) {
         errors.push('Missing stats data');
-    } else if (!isValidStats(importData.stats)) {
-        errors.push('Invalid stats data structure');
+    } else {
+        // Sanitize before validation — clamp negative values to 0
+        if (typeof importData.stats === 'object' && importData.stats !== null) {
+            sanitizeStats(importData.stats as Record<string, unknown>);
+        }
+        if (!isValidStats(importData.stats)) {
+            errors.push('Invalid stats data structure');
+        }
     }
 
     // Validate settings
@@ -125,8 +131,22 @@ function isValidCollectedAnimal(item: unknown): item is CollectedAnimal {
 }
 
 /**
+ * Sanitizes stats by clamping negative numeric fields to 0.
+ * Must be called before validation to ensure data is in a valid state.
+ */
+function sanitizeStats(item: Record<string, unknown>): void {
+    if (typeof item.totalSessions === 'number' && item.totalSessions < 0) item.totalSessions = 0;
+    if (typeof item.completedSessions === 'number' && item.completedSessions < 0) item.completedSessions = 0;
+    if (typeof item.failedSessions === 'number' && item.failedSessions < 0) item.failedSessions = 0;
+    if (typeof item.totalFocusMinutes === 'number' && item.totalFocusMinutes < 0) item.totalFocusMinutes = 0;
+    if (typeof item.currentStreak === 'number' && item.currentStreak < 0) item.currentStreak = 0;
+    if (typeof item.bestStreak === 'number' && item.bestStreak < 0) item.bestStreak = 0;
+}
+
+/**
  * Type guard for Stats
- * Validates that all numeric fields are non-negative and logically consistent
+ * Validates that all numeric fields are non-negative and logically consistent.
+ * This function ONLY checks validity — call sanitizeStats() first to clamp negatives.
  */
 function isValidStats(item: unknown): item is Stats {
     if (!item || typeof item !== 'object') return false;
@@ -154,13 +174,11 @@ function isValidStats(item: unknown): item is Stats {
         return false;
     }
 
-    // Sanitize negative values to 0 instead of rejecting
-    if (totalSessions < 0) stats.totalSessions = 0;
-    if (completedSessions < 0) stats.completedSessions = 0;
-    if (failedSessions < 0) stats.failedSessions = 0;
-    if (totalFocusMinutes < 0) stats.totalFocusMinutes = 0;
-    if (currentStreak < 0) stats.currentStreak = 0;
-    if (bestStreak < 0) stats.bestStreak = 0;
+    // Non-negative validation (after sanitization, these should pass)
+    if (totalSessions < 0 || completedSessions < 0 || failedSessions < 0 ||
+        totalFocusMinutes < 0 || currentStreak < 0 || bestStreak < 0) {
+        return false;
+    }
 
     // Logical validation: completed + failed should not exceed total sessions
     if (completedSessions + failedSessions > totalSessions) {
@@ -283,7 +301,19 @@ export async function restoreFromBackup(data: ExportData): Promise<ImportResult>
                 await AsyncStorage.multiSet(rollbackPairs);
             }
         } catch (rollbackError) {
-            console.error('[DataImport] Rollback also failed:', rollbackError);
+            // Rollback failed — data may be in a corrupted/partial state
+            const rollbackKeys = backup.map(([key]) => key).join(', ');
+            console.error(
+                '[DataImport] CRITICAL: Rollback failed after restore error. ' +
+                'Data may be corrupted. ' +
+                `Original error: ${error instanceof Error ? error.message : String(error)}. ` +
+                `Rollback error: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}. ` +
+                `Affected keys: ${rollbackKeys}`
+            );
+            return {
+                success: false,
+                message: 'Failed to restore data and rollback failed. Your data may be in an inconsistent state. Please try restoring from backup again or clear app data.',
+            };
         }
         return { success: false, message: 'Failed to restore data. Please try again.' };
     }

@@ -10,6 +10,7 @@ import { useTheme } from '../src/context/ThemeContext';
 import { AnimatedBackground } from '../src/components/AnimatedBackground';
 import { FloatingParticles } from '../src/components/FloatingParticles';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadingIndicator } from '../src/components/LoadingIndicator';
 
 // Stats components
 import { StatsSummaryComponent } from '../src/components/stats/StatsSummary';
@@ -118,6 +119,11 @@ export default function StatsScreen() {
         calculateCompletionRate(state.stats),
         [state.stats]
     );
+
+    // Show loading state while data is being fetched
+    if (state.isLoading) {
+        return <LoadingIndicator />;
+    }
 
     // Check if user has any data
     const hasData = state.stats.totalSessions > 0;

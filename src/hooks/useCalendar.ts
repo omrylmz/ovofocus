@@ -102,6 +102,12 @@ export function useCalendar(options: UseCalendarOptions = {}): UseCalendarReturn
         workHoursEnd = 18,
     } = options;
 
+    // H2: Use refs for config to avoid infinite loop in loadCalendarData
+    const configRef = useRef({ minSlotDuration, workHoursStart, workHoursEnd });
+    useEffect(() => {
+        configRef.current = { minSlotDuration, workHoursStart, workHoursEnd };
+    });
+
     // State
     const [isAvailable, setIsAvailable] = useState(false);
     const [permissionStatus, setPermissionStatus] = useState<CalendarPermissionStatus>('undetermined');
@@ -170,12 +176,14 @@ export function useCalendar(options: UseCalendarOptions = {}): UseCalendarReturn
             const todayEvents = await getTodayEvents();
             setEvents(todayEvents);
 
+            // H2: Use configRef to avoid dependency on config values that may change each render
+            const { minSlotDuration: minDur, workHoursStart: whStart, workHoursEnd: whEnd } = configRef.current;
             // Load available slots
             const slots = await getAvailableSlots(
                 new Date(),
-                minSlotDuration,
-                workHoursStart,
-                workHoursEnd
+                minDur,
+                whStart,
+                whEnd
             );
             setAvailableSlots(slots);
         } catch (err) {
@@ -184,7 +192,8 @@ export function useCalendar(options: UseCalendarOptions = {}): UseCalendarReturn
         } finally {
             setIsLoading(false);
         }
-    }, [minSlotDuration, workHoursStart, workHoursEnd]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Refresh data
     const refresh = useCallback(async (): Promise<void> => {
@@ -208,12 +217,17 @@ export function useCalendar(options: UseCalendarOptions = {}): UseCalendarReturn
     // Auto-load on mount if enabled
     const hasAutoLoadedRef = useRef(false);
 
+    // H3: Reset auto-load flag when config changes so data can be reloaded
+    useEffect(() => {
+        hasAutoLoadedRef.current = false;
+    }, [minSlotDuration, workHoursStart, workHoursEnd]);
+
     useEffect(() => {
         if (autoLoad && !hasAutoLoadedRef.current) {
             hasAutoLoadedRef.current = true;
             loadCalendarData();
         }
-    }, [autoLoad, loadCalendarData]);
+    }, [autoLoad, loadCalendarData, minSlotDuration, workHoursStart, workHoursEnd]);
 
     return {
         // State

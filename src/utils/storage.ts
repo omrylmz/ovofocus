@@ -87,6 +87,10 @@ export interface PersistedSession {
     pausedAt: string | null;     // ISO timestamp when paused (if isPaused is true)
     accumulatedPauseTime: number; // Total time spent paused in milliseconds
     focusDuration: number;       // Focus duration setting in minutes (for stats)
+    // Pomodoro state for session restoration
+    isPomodoroMode?: boolean;
+    pomodoroPhase?: string;                // 'work' | 'break' | 'longBreak'
+    pomodoroWorkSessionsCompleted?: number;
 }
 
 // Discriminated union for session restore results
@@ -273,7 +277,13 @@ export async function getAnimalNotesSafe(animalId: string): Promise<AnimalNotesR
 export async function getStats(): Promise<Stats> {
     try {
         const data = await AsyncStorage.getItem(STORAGE_KEYS.STATS);
-        return data ? { ...defaultStats, ...JSON.parse(data) } : defaultStats;
+        if (!data) return defaultStats;
+        const parsed = { ...defaultStats, ...JSON.parse(data) };
+        // Validate lastSessionDate — reset to null if unparseable
+        if (parsed.lastSessionDate && isNaN(new Date(parsed.lastSessionDate).getTime())) {
+            parsed.lastSessionDate = null;
+        }
+        return parsed;
     } catch (error) {
         console.error('[Storage] Failed to read stats:', error);
         return defaultStats;
@@ -284,7 +294,13 @@ export async function getStats(): Promise<Stats> {
 export async function getStatsSafe(): Promise<StorageResult<Stats>> {
     try {
         const data = await AsyncStorage.getItem(STORAGE_KEYS.STATS);
-        return { success: true, data: data ? { ...defaultStats, ...JSON.parse(data) } : defaultStats };
+        if (!data) return { success: true, data: defaultStats };
+        const parsed = { ...defaultStats, ...JSON.parse(data) };
+        // Validate lastSessionDate — reset to null if unparseable
+        if (parsed.lastSessionDate && isNaN(new Date(parsed.lastSessionDate).getTime())) {
+            parsed.lastSessionDate = null;
+        }
+        return { success: true, data: parsed };
     } catch (error) {
         console.error('[Storage] Failed to read stats:', error);
         return {
@@ -320,8 +336,16 @@ export async function incrementSession(completed: boolean, focusMinutes: number)
         // an entire calendar day passes without any completed sessions.
         // Important: All date comparisons use local time so streaks align with the user's calendar day.
         let newStreak = stats.currentStreak;
+
+        // Validate lastSessionDate before using it for streak logic
+        const lastDate = stats.lastSessionDate ? new Date(stats.lastSessionDate) : null;
+        const lastDateInvalid = lastDate !== null && isNaN(lastDate.getTime());
+
         if (completed) {
-            if (lastLocalDate === today) {
+            if (lastDateInvalid) {
+                // Invalid date — treat as new streak
+                newStreak = 1;
+            } else if (lastLocalDate === today) {
                 // Same local day, keep streak
             } else if (stats.lastSessionDate && isYesterday(stats.lastSessionDate)) {
                 // Previous local day, increment streak
@@ -478,7 +502,7 @@ export async function updateSettings(updates: Partial<Settings>): Promise<Settin
         return updated;
     } catch (error) {
         console.error('[Storage] Failed to update settings:', error);
-        return await getSettings();
+        throw error; // Let caller handle rollback
     }
 }
 
@@ -739,7 +763,7 @@ function calculateHappinessDecay(interaction: AnimalInteraction): number {
 function getCooldownRemaining(lastTime: string | null, cooldownHours: number): number {
     if (!lastTime) return 0;
     const lastTimeMs = new Date(lastTime).getTime();
-    if (isNaN(lastTimeMs)) return cooldownHours * 60 * 60 * 1000;
+    if (isNaN(lastTimeMs)) return 0; // Invalid timestamp — allow interaction
     const cooldownMs = cooldownHours * 60 * 60 * 1000;
     const remaining = cooldownMs - (Date.now() - lastTimeMs);
     return Math.max(0, remaining);
@@ -1061,7 +1085,7 @@ export async function restoreActiveSession(): Promise<SessionRestoreResult> {
         }
 
         // Validate session data
-        if (!session.startTime || typeof session.duration !== 'number' || session.duration <= 0) {
+        if (!session.startTime || typeof session.duration !== 'number' || session.duration <= 0 || session.duration > 7200) {
             console.warn('[Storage] Invalid session data, clearing...');
             await clearActiveSession();
             return { status: 'error', error: 'Invalid session data' };
@@ -1098,6 +1122,10 @@ export async function restoreActiveSession(): Promise<SessionRestoreResult> {
             // Session was paused when app was killed
             // Elapsed time = (pausedAt - startTime) - accumulatedPauseTime
             const pausedAt = new Date(session.pausedAt).getTime();
+            if (isNaN(pausedAt)) {
+                await clearActiveSession();
+                return { status: 'error' as const, error: 'Invalid pausedAt timestamp' };
+            }
             elapsedMs = (pausedAt - startTime) - session.accumulatedPauseTime;
         } else {
             // Session was running when app was killed
@@ -1142,11 +1170,11 @@ export async function getUnlockedAchievements(): Promise<UnlockedAchievement[]> 
     }
 }
 
-export async function unlockAchievement(achievementId: string): Promise<UnlockedAchievement[]> {
+export async function unlockAchievement(achievementId: string, retryCount = 0): Promise<UnlockedAchievement[]> {
     if (isUnlockingAchievement) {
-        // Another unlock is in progress — re-check after it finishes
-        await new Promise(resolve => setTimeout(resolve, 50));
-        return unlockAchievement(achievementId);
+        if (retryCount >= 3) return await getUnlockedAchievements(); // Give up after 3 retries
+        await new Promise(resolve => setTimeout(resolve, 50 * (retryCount + 1))); // Exponential backoff
+        return unlockAchievement(achievementId, retryCount + 1);
     }
     isUnlockingAchievement = true;
     try {

@@ -125,8 +125,8 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
         ...initialConfig,
     };
 
-    // Processing state
-    let isProcessing = false;
+    // Processing state - promise-based lock to prevent race conditions
+    let processingPromise: Promise<number> | null = null;
 
     /**
      * Loads the queue from AsyncStorage
@@ -286,73 +286,78 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
          * @returns Number of successfully processed items
          */
         async processQueue(): Promise<number> {
-            if (isProcessing) {
-                queueLogger.debug('Queue processing already in progress, skipping');
-                return 0;
+            if (processingPromise) {
+                queueLogger.debug('Queue processing already in progress, awaiting existing');
+                return processingPromise;
             }
 
-            isProcessing = true;
-            let successCount = 0;
+            processingPromise = (async (): Promise<number> => {
+                let successCount = 0;
+
+                try {
+                    let queue = await loadQueue();
+
+                    if (queue.length === 0) {
+                        queueLogger.debug('Queue is empty, nothing to process');
+                        return 0;
+                    }
+
+                    queueLogger.info('Starting queue processing', {
+                        queueLength: queue.length,
+                    });
+
+                    const remainingItems: QueueItem[] = [];
+
+                    for (const item of queue) {
+                        const result = await processItem(item);
+
+                        if (result.success) {
+                            successCount++;
+                        } else if (item.retryCount < config.maxRetries) {
+                            // Increment retry count and keep in queue
+                            const updatedItem: QueueItem = {
+                                ...item,
+                                retryCount: item.retryCount + 1,
+                            };
+                            remainingItems.push(updatedItem);
+
+                            // Apply backoff delay before processing next item
+                            const backoffDelay = calculateBackoffDelay(
+                                item.retryCount,
+                                config.baseRetryIntervalMs
+                            );
+                            queueLogger.debug('Applying backoff delay', {
+                                itemId: item.id,
+                                delayMs: backoffDelay,
+                                retryCount: item.retryCount + 1,
+                            });
+                            await delay(backoffDelay);
+                        }
+                        // If max retries exceeded, item is dropped (not added to remainingItems)
+                    }
+
+                    // Update the queue with remaining items
+                    await saveQueue(remainingItems);
+
+                    queueLogger.info('Queue processing completed', {
+                        successCount,
+                        remainingItems: remainingItems.length,
+                        droppedItems: queue.length - successCount - remainingItems.length,
+                    });
+
+                    return successCount;
+                } catch (error) {
+                    queueLogger.error('Queue processing failed', {
+                        error: error instanceof Error ? error.message : String(error),
+                    });
+                    return successCount;
+                }
+            })();
 
             try {
-                let queue = await loadQueue();
-
-                if (queue.length === 0) {
-                    queueLogger.debug('Queue is empty, nothing to process');
-                    return 0;
-                }
-
-                queueLogger.info('Starting queue processing', {
-                    queueLength: queue.length,
-                });
-
-                const remainingItems: QueueItem[] = [];
-
-                for (const item of queue) {
-                    const result = await processItem(item);
-
-                    if (result.success) {
-                        successCount++;
-                    } else if (item.retryCount < config.maxRetries) {
-                        // Increment retry count and keep in queue
-                        const updatedItem: QueueItem = {
-                            ...item,
-                            retryCount: item.retryCount + 1,
-                        };
-                        remainingItems.push(updatedItem);
-
-                        // Apply backoff delay before processing next item
-                        const backoffDelay = calculateBackoffDelay(
-                            item.retryCount,
-                            config.baseRetryIntervalMs
-                        );
-                        queueLogger.debug('Applying backoff delay', {
-                            itemId: item.id,
-                            delayMs: backoffDelay,
-                            retryCount: item.retryCount + 1,
-                        });
-                        await delay(backoffDelay);
-                    }
-                    // If max retries exceeded, item is dropped (not added to remainingItems)
-                }
-
-                // Update the queue with remaining items
-                await saveQueue(remainingItems);
-
-                queueLogger.info('Queue processing completed', {
-                    successCount,
-                    remainingItems: remainingItems.length,
-                    droppedItems: queue.length - successCount - remainingItems.length,
-                });
-
-                return successCount;
-            } catch (error) {
-                queueLogger.error('Queue processing failed', {
-                    error: error instanceof Error ? error.message : String(error),
-                });
-                return successCount;
+                return await processingPromise;
             } finally {
-                isProcessing = false;
+                processingPromise = null;
             }
         },
 
@@ -376,7 +381,7 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
             return {
                 length: queue.length,
                 oldestItem,
-                isProcessing,
+                isProcessing: processingPromise !== null,
             };
         },
 
@@ -448,7 +453,7 @@ function createOfflineQueue(initialConfig?: Partial<OfflineQueueConfig>) {
          * Check if queue processing is currently in progress
          */
         isProcessingQueue(): boolean {
-            return isProcessing;
+            return processingPromise !== null;
         },
     };
 }

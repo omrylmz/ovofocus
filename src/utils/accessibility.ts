@@ -78,8 +78,9 @@ export function announceSessionComplete(
     rarity: string,
     language: Language
 ): void {
-    // Get localized rarity name
-    const localizedRarity = t(rarity as TranslationKey, language);
+    // Get localized rarity name with validation
+    const validRarities = ['common', 'rare', 'epic', 'legendary'];
+    const localizedRarity = validRarities.includes(rarity) ? t(rarity as TranslationKey, language) : rarity;
 
     announceLocalized('a11yAnnounceSessionCompleted', language, {
         animal: animalName,

@@ -176,6 +176,7 @@ export function calculateEffectiveDuration(
     focusBonusPercent: number,
     minDurationSeconds: number = 60
 ): number {
-    const reduction = baseDurationSeconds * (focusBonusPercent / 100);
+    const clampedBonus = Math.max(0, focusBonusPercent);
+    const reduction = baseDurationSeconds * (clampedBonus / 100);
     return Math.max(baseDurationSeconds - reduction, minDurationSeconds);
 }

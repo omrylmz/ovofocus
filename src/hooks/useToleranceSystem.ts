@@ -98,6 +98,28 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
     const warningLevel = getWarningLevel(timeInBackground, effectiveTolerance);
     const toleranceExceeded = timeInBackground >= effectiveTolerance;
 
+    // M4: Keep a ref to the latest effectiveTolerance to avoid stale closures
+    const effectiveToleranceRef = useRef(effectiveTolerance);
+    useEffect(() => {
+        effectiveToleranceRef.current = effectiveTolerance;
+    });
+
+    // L39: Consolidated cleanup helper to avoid duplicate cleanup logic
+    const cleanupTimers = useCallback(() => {
+        if (checkIntervalRef.current) {
+            clearInterval(checkIntervalRef.current);
+            checkIntervalRef.current = null;
+        }
+        if (quickReturnTimeoutRef.current) {
+            clearTimeout(quickReturnTimeoutRef.current);
+            quickReturnTimeoutRef.current = null;
+        }
+        if (warningClearTimeoutRef.current) {
+            clearTimeout(warningClearTimeoutRef.current);
+            warningClearTimeoutRef.current = null;
+        }
+    }, []);
+
     // Handle app state changes
     const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
         const prevState = previousAppStateRef.current;
@@ -140,12 +162,8 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
                     }, 3000);
                 }
 
-                // If returned within tolerance, clear the warning after a brief display
-                // This prevents the warning UI from persisting incorrectly
-                const currentEffectiveTolerance = Math.round(
-                    (baseTolerance * getProgressMultiplier(progress)) + getStreakBonus(currentStreak) + shieldBonus
-                );
-                if (timeDiff < currentEffectiveTolerance) {
+                // M4: Use ref for latest effectiveTolerance instead of recalculating
+                if (timeDiff < effectiveToleranceRef.current) {
                     if (warningClearTimeoutRef.current) clearTimeout(warningClearTimeoutRef.current);
                     warningClearTimeoutRef.current = setTimeout(() => {
                         if (isMountedRef.current) setTimeInBackground(0);
@@ -157,24 +175,16 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
         }
 
         previousAppStateRef.current = nextAppState;
-    }, [isSessionActive, isPaused, baseTolerance, progress, currentStreak, shieldBonus]);
+    }, [isSessionActive, isPaused, cleanupTimers]);
 
     // Subscribe to app state changes
     useEffect(() => {
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => {
             subscription.remove();
-            if (checkIntervalRef.current) {
-                clearInterval(checkIntervalRef.current);
-            }
-            if (quickReturnTimeoutRef.current) {
-                clearTimeout(quickReturnTimeoutRef.current);
-            }
-            if (warningClearTimeoutRef.current) {
-                clearTimeout(warningClearTimeoutRef.current);
-            }
+            cleanupTimers();
         };
-    }, [handleAppStateChange]);
+    }, [handleAppStateChange, cleanupTimers]);
 
     // Reset when session becomes inactive
     useEffect(() => {
@@ -182,39 +192,17 @@ export function useToleranceSystem(config: ToleranceConfig): UseToleranceSystemR
             setTimeInBackground(0);
             setIsQuickReturn(false);
             backgroundStartTimeRef.current = null;
-            if (checkIntervalRef.current) {
-                clearInterval(checkIntervalRef.current);
-                checkIntervalRef.current = null;
-            }
-            if (quickReturnTimeoutRef.current) {
-                clearTimeout(quickReturnTimeoutRef.current);
-                quickReturnTimeoutRef.current = null;
-            }
-            if (warningClearTimeoutRef.current) {
-                clearTimeout(warningClearTimeoutRef.current);
-                warningClearTimeoutRef.current = null;
-            }
+            cleanupTimers();
         }
-    }, [isSessionActive]);
+    }, [isSessionActive, cleanupTimers]);
 
     // Reset tolerance state
     const resetTolerance = useCallback(() => {
         setTimeInBackground(0);
         setIsQuickReturn(false);
         backgroundStartTimeRef.current = null;
-        if (checkIntervalRef.current) {
-            clearInterval(checkIntervalRef.current);
-            checkIntervalRef.current = null;
-        }
-        if (quickReturnTimeoutRef.current) {
-            clearTimeout(quickReturnTimeoutRef.current);
-            quickReturnTimeoutRef.current = null;
-        }
-        if (warningClearTimeoutRef.current) {
-            clearTimeout(warningClearTimeoutRef.current);
-            warningClearTimeoutRef.current = null;
-        }
-    }, []);
+        cleanupTimers();
+    }, [cleanupTimers]);
 
     return {
         warningLevel,

@@ -668,6 +668,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     lockIcon: {
         opacity: theme.opacity.overlay,
@@ -707,6 +709,8 @@ const styles = StyleSheet.create({
         right: theme.spacing.xs,
         borderRadius: theme.borderRadius.sm,
         overflow: 'hidden',
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     rarityBadgeGradient: {
         paddingHorizontal: theme.spacing.xs,
@@ -730,6 +734,8 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
         borderWidth: 1,
         backgroundColor: 'transparent',
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     rarityHintText: {
         fontSize: theme.typography.micro, // ~10px
@@ -746,6 +752,8 @@ const styles = StyleSheet.create({
         minWidth: 24,
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     maxLevelBadgeStyle: {
         borderWidth: 1,
@@ -766,6 +774,8 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
         minWidth: 20,
         alignItems: 'center',
+        zIndex: theme.zIndex.floating,
+        elevation: theme.zIndex.floating,
     },
     countText: {
         fontSize: theme.typography.micro, // ~9px
@@ -781,6 +791,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         gap: theme.spacing.xxs,
+        zIndex: theme.zIndex.base,
+        elevation: theme.zIndex.base,
     },
     levelDot: {
         width: 5,

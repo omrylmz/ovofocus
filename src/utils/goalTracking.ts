@@ -460,7 +460,7 @@ export function isGoalExpired(goal: Goal): boolean {
  * @returns Progress percentage (0-100)
  */
 export function getGoalProgressPercentage(goal: Goal): number {
-    if (goal.target === 0) return 100;
+    if (goal.target === 0) return 0;
     const percentage = (goal.progress / goal.target) * 100;
     return Math.min(100, Math.round(percentage));
 }

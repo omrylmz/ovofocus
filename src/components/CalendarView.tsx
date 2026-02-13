@@ -554,6 +554,8 @@ export function CalendarView({
                                 selectedSlot === slot && styles.slotCardSelected,
                             ]}
                             onPress={() => setSelectedSlot(slot)}
+                            accessibilityLabel={`${language === 'tr' ? 'Zaman dilimi' : 'Time slot'}: ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}, ${formatDuration(slot.duration)}`}
+                            accessibilityHint={language === 'tr' ? 'Odaklanma blogu planlamak icin secin' : 'Select to schedule a focus block'}
                         >
                             <View style={styles.slotHeader}>
                                 <Text style={styles.slotTime}>
@@ -613,7 +615,7 @@ export function CalendarView({
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
             <Animated.View style={[styles.overlay, backgroundStyle]}>
-                <Pressable style={styles.backdropPressable} onPress={onClose} />
+                <Pressable style={styles.backdropPressable} onPress={onClose} accessibilityLabel="Close calendar view" />
                 <Animated.View style={[styles.modalContainer, modalStyle]}>
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>

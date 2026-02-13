@@ -135,7 +135,7 @@ export async function checkDailyReward(): Promise<{
     // If it's still the same day and not claimed, show reward
     if (state.lastLoginDate && isToday(state.lastLoginDate) && !state.todayRewardClaimed) {
         const currentDay = state.consecutiveLoginDays;
-        const reward = REWARD_CYCLE[currentDay - 1] || REWARD_CYCLE[0];
+        const reward = REWARD_CYCLE[((currentDay - 1) % REWARD_CYCLE.length + REWARD_CYCLE.length) % REWARD_CYCLE.length] || REWARD_CYCLE[0];
         return {
             isNewDay: false,
             currentDay,
@@ -162,7 +162,7 @@ export async function checkDailyReward(): Promise<{
         isStreakContinued = false;
     }
 
-    const reward = REWARD_CYCLE[newConsecutiveDays - 1];
+    const reward = REWARD_CYCLE[((newConsecutiveDays - 1) % REWARD_CYCLE.length + REWARD_CYCLE.length) % REWARD_CYCLE.length] || REWARD_CYCLE[0];
 
     return {
         isNewDay: true,

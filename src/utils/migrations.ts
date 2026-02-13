@@ -90,6 +90,10 @@ export const migrations: Migration[] = [
                     ...defaultFields,
                     ...existingSettings,
                 };
+                // Don't override user's explicit language choice
+                if (existingSettings.language) {
+                    migratedSettings.language = existingSettings.language;
+                }
 
                 // Save the migrated settings
                 await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(migratedSettings));

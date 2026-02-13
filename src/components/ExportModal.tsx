@@ -360,7 +360,7 @@ export function ExportModal({ visible, onClose, language = 'en', onDataRestored 
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
             <Animated.View style={[styles.overlay, backgroundStyle]}>
-                <Pressable style={styles.backdropPressable} onPress={onClose} />
+                <Pressable style={styles.backdropPressable} onPress={onClose} accessibilityLabel="Close export modal" />
                 <Animated.View style={[styles.modalContainer, modalStyle]}>
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>{i18n('dataBackup')}</Text>

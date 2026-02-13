@@ -45,6 +45,7 @@ export const AnimalSchema = z.object({
 
 /** Collected animal extends Animal with collection metadata */
 export const CollectedAnimalSchema = AnimalSchema.extend({
+    // Accepts ISO datetime with offset (preferred) or basic ISO format (legacy)
     collectedAt: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)),
     sessionId: z.string().min(1),
     notes: z.string().optional(),
@@ -73,7 +74,7 @@ export const StatsSchema = z.object({
     totalSessions: z.number().int().nonnegative().default(defaultStats.totalSessions),
     completedSessions: z.number().int().nonnegative().default(defaultStats.completedSessions),
     failedSessions: z.number().int().nonnegative().default(defaultStats.failedSessions),
-    totalFocusMinutes: z.number().nonnegative().default(defaultStats.totalFocusMinutes),
+    totalFocusMinutes: z.number().nonnegative().default(defaultStats.totalFocusMinutes), // Accepts fractional minutes from partial sessions
     currentStreak: z.number().int().nonnegative().default(defaultStats.currentStreak),
     bestStreak: z.number().int().nonnegative().default(defaultStats.bestStreak),
     lastSessionDate: z.string().nullable().default(defaultStats.lastSessionDate),
@@ -250,7 +251,7 @@ export const PersistedSessionSchema = z.object({
     pauseCount: z.number().int().nonnegative().default(0),
     isPaused: z.boolean().default(false),
     pausedAt: z.string().nullable().default(null), // ISO timestamp when paused
-    accumulatedPauseTime: z.number().int().nonnegative().default(0), // Total pause time in ms
+    accumulatedPauseTime: z.number().int().nonnegative().default(0), // Total pause time in ms; upper bound validated during restore in storage.ts
     focusDuration: z.number().int().positive(), // Focus duration setting in minutes
 });
 

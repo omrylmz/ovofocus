@@ -280,6 +280,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         case 'PAUSE_SESSION':
             // Guard: don't increment if already paused (prevents double-pause race condition)
             if (state.isPaused) return state;
+            // Guard: reject corrupted negative pauseCount (should never happen, but defensive)
+            if (state.pauseCount < 0) return state;
             // Guard: don't allow pausing beyond the configured limit
             if (state.pauseCount >= state.settings.maxPausesPerSession) return state;
             return {
@@ -312,6 +314,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 sessionState: 'completed',
                 currentAnimal: action.payload.animal,
+                isPaused: false,
+                pauseCount: 0,
                 sessionStartTime: null,
                 sessionPausedAt: null,
                 accumulatedPauseTime: 0,
@@ -438,6 +442,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const sessionDurationRef = useRef<number>(0);
     // Lock to prevent concurrent completeSession calls (ref survives across renders)
     const isCompletingRef = useRef(false);
+    // Lock to prevent concurrent failSession calls
+    const isFailingRef = useRef(false);
 
     // Load data on mount
     useEffect(() => {
@@ -489,6 +495,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
                             remainingTime: restoreResult.remainingTime,
                         },
                     });
+                    // TODO: Pomodoro state (isPomodoroMode, pomodoroPhase, pomodoroWorkSessionsCompleted)
+                    // is available in restoreResult.session if persisted, but must be consumed by
+                    // usePomodoroTimer hook in app/index.tsx via restoredSession state.
                     console.log(`[GameContext] Session can be restored with ${restoreResult.remainingTime}s remaining`);
                 } else if (restoreResult.status === 'expired') {
                     // Session expired while app was killed - record as failed
@@ -519,6 +528,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     pausedAt: state.sessionPausedAt,
                     accumulatedPauseTime: state.accumulatedPauseTime,
                     focusDuration: state.settings.focusDuration,
+                    // TODO: Pomodoro state (isPomodoroMode, pomodoroPhase, pomodoroWorkSessionsCompleted)
+                    // is managed by usePomodoroTimer hook in app/index.tsx, not in GameContext.
+                    // To persist Pomodoro state across app kills, the hook would need to write
+                    // these fields into the persisted session data separately, or GameContext
+                    // would need to be extended to track Pomodoro phase state.
                 };
                 const saved = await saveActiveSession(sessionData);
                 if (!saved) {
@@ -582,6 +596,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const emergencyPause = () => {
+        // Guard: only allow emergency pause when session is active
+        if (state.sessionState !== 'active') return;
+
         dispatch({
             type: 'EMERGENCY_PAUSE',
             payload: { pausedAt: new Date().toISOString() },
@@ -594,13 +611,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Calculate accumulated pause time
+        // Calculate accumulated pause time, guarding against negative values
+        // (could happen if system clock changed or pausedAt timestamp is corrupted)
         let newAccumulatedPauseTime = state.accumulatedPauseTime;
         if (state.sessionPausedAt) {
             const pausedAt = new Date(state.sessionPausedAt).getTime();
             const now = Date.now();
             newAccumulatedPauseTime += (now - pausedAt);
         }
+        newAccumulatedPauseTime = Math.max(0, newAccumulatedPauseTime);
         dispatch({
             type: 'RESUME_SESSION',
             payload: { accumulatedPauseTime: newAccumulatedPauseTime },
@@ -717,6 +736,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const completeSession = async (focusMinutes: number): Promise<CompleteSessionResult> => {
+        // Validate focusMinutes to prevent NaN/Infinity/negative values from corrupting stats
+        if (typeof focusMinutes !== 'number' || !isFinite(focusMinutes) || focusMinutes < 0) {
+            focusMinutes = 0;
+        }
+
         // Ref-based lock prevents concurrent calls within the same render cycle.
         // React state (sessionState) is stale within a render, so two calls can both see 'active'.
         // The ref updates immediately and is shared across all closures.
@@ -740,7 +764,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const animal = getRandomAnimal();
         const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
-        // Capture previous state for potential rollback
+        // Capture previous state for potential rollback.
+        // This is safe because isCompletingRef prevents any parallel completeSession calls
+        // from dispatching between our COMPLETE_SESSION and the async storage operations.
+        // The only dispatches that could interleave are from other actions (e.g., settings),
+        // but those don't affect collection/stats/dailyProgress, so rollback stays consistent.
         const previousCollection = [...state.collection];
         const previousStats = { ...state.stats };
         const previousDailyProgress = { ...state.dailyProgress };
@@ -756,6 +784,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             const updatedStats = await incrementSession(true, focusMinutes);
             dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
 
+            // TODO: midnight reset handled in storage.incrementDailyProgress — if the current
+            // date differs from state.dailyProgress.date, storage resets the count before incrementing.
             const updatedDailyProgress = await incrementDailyProgress(state.settings.dailyGoal);
             dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: updatedDailyProgress });
 
@@ -801,21 +831,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
             return { animal, updatedStats };
         } catch (error) {
-            // Log error for debugging
-            console.error('[completeSession] Failed to persist session data:', error);
+            // Wrap catch body in its own try-catch to guarantee the finally block
+            // executes even if rollback dispatches or logging throw unexpectedly
+            try {
+                // Log error for debugging
+                console.error('[completeSession] Failed to persist session data:', error);
 
-            // Rollback all state to maintain consistency including sessionState,
-            // so the user can retry or the session isn't stuck in 'completed' without persisted data
-            dispatch({ type: 'SET_COLLECTION', payload: previousCollection });
-            dispatch({ type: 'UPDATE_STATS', payload: previousStats });
-            dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: previousDailyProgress });
-            // Transition sessionState from 'completed' to 'failed' so it doesn't get stuck
-            dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes: 0 } });
+                // Rollback all state to maintain consistency including sessionState,
+                // so the user can retry or the session isn't stuck in 'completed' without persisted data
+                dispatch({ type: 'SET_COLLECTION', payload: previousCollection });
+                dispatch({ type: 'UPDATE_STATS', payload: previousStats });
+                dispatch({ type: 'UPDATE_DAILY_PROGRESS', payload: previousDailyProgress });
+                // Transition sessionState from 'completed' to 'failed' so it doesn't get stuck
+                dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes: 0 } });
 
-            // Still return the animal so the user sees a reward for completing their session
-            // This provides graceful degradation - user experience continues even if storage fails
-            // The animal just won't be persisted to their permanent collection
-            console.warn('[completeSession] Session completed but storage failed. State rolled back to failed.');
+                // Still return the animal so the user sees a reward for completing their session
+                // This provides graceful degradation - user experience continues even if storage fails
+                // The animal just won't be persisted to their permanent collection
+                console.warn('[completeSession] Session completed but storage failed. State rolled back to failed.');
+            } catch (rollbackError) {
+                console.error('[completeSession] Rollback also failed:', rollbackError);
+            }
 
             return { animal, updatedStats: previousStats };
         } finally {
@@ -824,31 +860,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const failSession = async (focusMinutes: number): Promise<void> => {
+        // Ref-based lock prevents concurrent failSession calls (same pattern as completeSession)
+        if (isFailingRef.current) {
+            console.warn('[failSession] Already failing, ignoring concurrent call.');
+            return;
+        }
+
         // Guard against calling failSession when not in active state
         if (state.sessionState !== 'active') {
             console.warn('[failSession] Called when session not active, ignoring. Current state:', state.sessionState);
             return;
         }
 
-        dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes } });
+        isFailingRef.current = true;
 
         try {
-            const updatedStats = await incrementSession(false, focusMinutes);
-            dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
-        } catch (error) {
-            console.error('[failSession] Failed to persist stats:', error);
-            // Stats update failed but session state is already set to failed
-            // This is acceptable - the UI state is correct even if persistence failed
-        }
+            dispatch({ type: 'FAIL_SESSION', payload: { focusMinutes } });
 
-        // Announce session failure to screen readers
-        announceSessionFailed(state.settings.language);
+            try {
+                const updatedStats = await incrementSession(false, focusMinutes);
+                dispatch({ type: 'UPDATE_STATS', payload: updatedStats });
+            } catch (error) {
+                console.error('[failSession] Failed to persist stats:', error);
+                // Stats update failed but session state is already set to failed
+                // This is acceptable - the UI state is correct even if persistence failed
+            }
+
+            // Announce session failure to screen readers
+            announceSessionFailed(state.settings.language);
+        } finally {
+            isFailingRef.current = false;
+        }
     };
 
     const resetSession = () => {
         dispatch({ type: 'RESET_SESSION' });
     };
 
+    // Note: optimistic update may cause brief flicker on error rollback.
+    // This is a known limitation — the alternative (waiting for persistence before updating UI)
+    // would make settings feel sluggish. The flicker only occurs on storage failures.
     const updateUserSettings = async (newSettings: Partial<Settings>) => {
         const previousSettings = { ...state.settings };
         dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });

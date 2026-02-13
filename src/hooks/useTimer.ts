@@ -79,9 +79,18 @@ export function useTimer({ duration, onComplete, onTick }: UseTimerOptions): Use
     useEffect(() => {
         if (!isRunning) return;
 
+        // H1: Clear any existing interval before creating a new one
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+
         intervalRef.current = setInterval(() => {
+            // M1: Guard against startTimeRef not being set yet
+            if (!startTimeRef.current) return;
+
             const now = Date.now();
-            const elapsed = Math.floor((now - (startTimeRef.current || now)) / 1000);
+            const elapsed = Math.floor((now - startTimeRef.current) / 1000);
             const remaining = Math.max(0, pausedTimeRef.current - elapsed);
 
             setTimeRemaining(remaining);

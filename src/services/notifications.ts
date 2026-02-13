@@ -103,8 +103,14 @@ async function getNotificationsModule() {
     return Notifications;
 }
 
+// Cache for notification permission status to avoid repeated requests
+let cachedPermissionStatus: string | null = null;
+
 // Request notification permissions
 export async function requestNotificationPermissions(): Promise<boolean> {
+    if (cachedPermissionStatus === 'denied') return false;
+    if (cachedPermissionStatus === 'granted') return true;
+
     const notif = await getNotificationsModule();
     if (!notif) return false;
 
@@ -116,6 +122,8 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             const { status } = await notif.requestPermissionsAsync();
             finalStatus = status;
         }
+
+        cachedPermissionStatus = finalStatus;
 
         if (finalStatus !== 'granted') {
             console.log('Notification permissions not granted');
@@ -462,13 +470,13 @@ export async function scheduleDailyGoalReminder(
             .replace('{remaining}', remaining.toString())
             .replace('{goal}', goalSessions.toString());
 
-        // Schedule for 2 PM today (or tomorrow if past 2 PM)
+        // Schedule for 2 PM today (or tomorrow if near or past 2 PM)
         const now = new Date();
         const triggerTime = new Date();
         triggerTime.setHours(14, 0, 0, 0);
 
-        // If it's already past 2 PM, schedule for tomorrow
-        if (now.getHours() >= 14) {
+        // Schedule for tomorrow if within 10 minutes of target time or past it
+        if (now.getHours() > 14 || (now.getHours() === 14 && now.getMinutes() > 0) || (now.getHours() === 13 && now.getMinutes() >= 50)) {
             triggerTime.setDate(triggerTime.getDate() + 1);
         }
 

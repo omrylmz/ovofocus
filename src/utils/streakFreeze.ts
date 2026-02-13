@@ -120,23 +120,33 @@ export async function checkAndAwardFreeze(currentStreak: number): Promise<number
         return 0;
     }
 
-    // Calculate the next milestone threshold
-    const nextMilestone = data.lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS;
+    let { freezeCount, lastMilestoneStreak } = data;
+    const initialFreezeCount = freezeCount;
 
-    // Check if current streak has reached the next milestone
-    if (currentStreak >= nextMilestone) {
+    // Calculate the next milestone threshold
+    let nextMilestone = lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS;
+
+    // Loop to award ALL missed milestones (e.g., if streak jumped from 0 to 21)
+    while (currentStreak >= nextMilestone && freezeCount < STREAK_FREEZE_CONSTANTS.MAX_FREEZES) {
+        freezeCount++;
+        lastMilestoneStreak = nextMilestone;
+        nextMilestone = lastMilestoneStreak + STREAK_FREEZE_CONSTANTS.STREAK_MILESTONE_DAYS;
+    }
+
+    const awarded = freezeCount - initialFreezeCount;
+
+    if (awarded > 0) {
         const updatedData: StreakFreezeData = {
             ...data,
-            freezeCount: Math.min(data.freezeCount + 1, STREAK_FREEZE_CONSTANTS.MAX_FREEZES),
-            lastMilestoneStreak: currentStreak,
+            freezeCount,
+            lastMilestoneStreak,
         };
 
         await saveStreakFreezeData(updatedData);
-        console.log(`[StreakFreeze] Freeze awarded! Streak: ${currentStreak}, Total freezes: ${updatedData.freezeCount}`);
-        return 1;
+        console.log(`[StreakFreeze] ${awarded} freeze(s) awarded! Streak: ${currentStreak}, Total freezes: ${updatedData.freezeCount}`);
     }
 
-    return 0;
+    return awarded;
 }
 
 /**

@@ -195,7 +195,7 @@ function PixelButtonComponent({
                 onPressOut={handlePressOut}
                 disabled={disabled}
                 accessible={true}
-                accessibilityRole={accessibilityRole || "button"}
+                accessibilityRole={accessibilityRole}
                 accessibilityLabel={accessibilityLabel || title}
                 accessibilityHint={accessibilityHint}
                 accessibilityState={accessibilityState ? { ...accessibilityState, disabled } : { disabled }}

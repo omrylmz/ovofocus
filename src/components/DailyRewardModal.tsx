@@ -58,6 +58,14 @@ function SparkleParticle({ delay, startX, color }: { delay: number; startX: numb
             2,
             false
         ));
+
+        return () => {
+            cancelAnimation(translateY);
+            cancelAnimation(translateX);
+            cancelAnimation(opacity);
+            cancelAnimation(scale);
+            cancelAnimation(rotation);
+        };
     }, []);
 
     const style = useAnimatedStyle(() => ({

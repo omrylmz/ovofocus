@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -185,47 +185,49 @@ function GestureHintComponent({ visible, onDismiss, language, variant = 'full' }
     }
 
     return (
-        <Animated.View
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(150)}
-            style={styles.overlay}
-        >
-            <Pressable style={styles.backdropPressable} onPress={onDismiss}>
-                <Animated.View style={styles.contentContainer}>
-                    <Animated.View style={[styles.titleContainer, titleStyle]}>
-                        <Text style={styles.titleIcon}>💡</Text>
-                        <Text style={styles.title}>
-                            {language === 'tr' ? 'Yumurta İpuçları' :
-                             language === 'es' ? 'Consejos del Huevo' :
-                             'Egg Tips'}
-                        </Text>
-                    </Animated.View>
+        <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss}>
+            <Animated.View
+                entering={FadeIn.duration(200)}
+                exiting={FadeOut.duration(150)}
+                style={styles.overlay}
+            >
+                <Pressable style={styles.backdropPressable} onPress={onDismiss}>
+                    <Animated.View style={styles.contentContainer}>
+                        <Animated.View style={[styles.titleContainer, titleStyle]}>
+                            <Text style={styles.titleIcon}>💡</Text>
+                            <Text style={styles.title}>
+                                {language === 'tr' ? 'Yumurta İpuçları' :
+                                 language === 'es' ? 'Consejos del Huevo' :
+                                 'Egg Tips'}
+                            </Text>
+                        </Animated.View>
 
-                    <View style={styles.hintsContainer}>
-                        {GESTURE_HINTS.map((hint, index) => (
-                            <AnimatedHintItem
-                                key={hint.textKey}
-                                icon={hint.icon}
-                                text={t(hint.textKey, language)}
-                                delay={index * 150}
-                                animationType={hint.animationType}
-                            />
-                        ))}
-                    </View>
+                        <View style={styles.hintsContainer}>
+                            {GESTURE_HINTS.map((hint, index) => (
+                                <AnimatedHintItem
+                                    key={hint.textKey}
+                                    icon={hint.icon}
+                                    text={t(hint.textKey, language)}
+                                    delay={index * 150}
+                                    animationType={hint.animationType}
+                                />
+                            ))}
+                        </View>
 
-                    <Animated.View
-                        entering={FadeIn.delay(500).duration(300)}
-                        style={styles.dismissHint}
-                    >
-                        <Text style={styles.dismissText}>
-                            {language === 'tr' ? 'Kapatmak için dokun' :
-                             language === 'es' ? 'Toca para cerrar' :
-                             'Tap anywhere to close'}
-                        </Text>
+                        <Animated.View
+                            entering={FadeIn.delay(500).duration(300)}
+                            style={styles.dismissHint}
+                        >
+                            <Text style={styles.dismissText}>
+                                {language === 'tr' ? 'Kapatmak için dokun' :
+                                 language === 'es' ? 'Toca para cerrar' :
+                                 'Tap anywhere to close'}
+                            </Text>
+                        </Animated.View>
                     </Animated.View>
-                </Animated.View>
-            </Pressable>
-        </Animated.View>
+                </Pressable>
+            </Animated.View>
+        </Modal>
     );
 }
 

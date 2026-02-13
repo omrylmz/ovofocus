@@ -110,9 +110,10 @@ function getTimestamp(): string {
  */
 function createLogger(initialConfig?: Partial<LoggerConfig>) {
     // Default configuration based on environment
+    const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : false;
     const defaultConfig: LoggerConfig = {
-        minLevel: __DEV__ ? 'debug' : 'warn',
-        enabled: __DEV__,
+        minLevel: isDev ? 'debug' : 'warn',
+        enabled: isDev,
         includeTimestamp: true,
         includeLevel: true,
         includeCategory: true,

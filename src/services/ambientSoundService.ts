@@ -285,8 +285,7 @@ class AmbientSoundService {
 
         // Invalidate cached sounds since they were generated at the old volume
         this.generatedSounds.clear();
-        // Clear failed sounds to allow retry at new volume
-        this.failedSounds.clear();
+        // Don't clear failedSounds on volume change — failures are not volume-related
 
         // Update currently playing sound if any
         if (this.currentSound && this.isPlaying) {

@@ -60,6 +60,14 @@ function ConfettiParticle({ delay, startX, color }: { delay: number; startX: num
             withSpring(1.2),
             withDelay(1000, withSpring(0.5))
         ));
+
+        return () => {
+            cancelAnimation(translateY);
+            cancelAnimation(translateX);
+            cancelAnimation(rotate);
+            cancelAnimation(opacity);
+            cancelAnimation(scale);
+        };
     }, [delay, startX, opacity, translateY, translateX, rotate, scale]);
 
     const style = useAnimatedStyle(() => ({
@@ -100,6 +108,13 @@ function StarParticle({ delay, angle, distance }: { delay: number; angle: number
             withSpring(1.5, { damping: 6 }),
             withDelay(400, withTiming(0.3, { duration: 300 }))
         ));
+
+        return () => {
+            cancelAnimation(translateX);
+            cancelAnimation(translateY);
+            cancelAnimation(opacity);
+            cancelAnimation(scale);
+        };
     }, [delay, angle, distance, opacity, translateX, translateY, scale]);
 
     const style = useAnimatedStyle(() => ({

@@ -81,6 +81,7 @@ function isInsideEgg(px: number, py: number, w: number, h: number, margin: numbe
 // ==========================================================================
 
 function lightenColor(hex: string, amount: number): string {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return hex;
     const num = parseInt(hex.replace('#', ''), 16);
     const r = Math.min(255, ((num >> 16) & 0xff) + Math.round(255 * amount));
     const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(255 * amount));
@@ -89,6 +90,7 @@ function lightenColor(hex: string, amount: number): string {
 }
 
 function darkenColor(hex: string, amount: number): string {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return hex;
     const num = parseInt(hex.replace('#', ''), 16);
     const r = Math.max(0, ((num >> 16) & 0xff) - Math.round(255 * amount));
     const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(255 * amount));
@@ -98,6 +100,7 @@ function darkenColor(hex: string, amount: number): string {
 
 // Add warm tint to a color (simulates subsurface scattering in organic materials)
 function warmColor(hex: string, amount: number): string {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return hex;
     const num = parseInt(hex.replace('#', ''), 16);
     const r = Math.min(255, ((num >> 16) & 0xff) + Math.round(60 * amount));
     const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(20 * amount));
@@ -107,6 +110,8 @@ function warmColor(hex: string, amount: number): string {
 
 // Mix two colors together by a ratio (0 = colorA, 1 = colorB)
 function mixColors(hexA: string, hexB: string, ratio: number): string {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hexA)) return hexA;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hexB)) return hexB;
     const a = parseInt(hexA.replace('#', ''), 16);
     const b = parseInt(hexB.replace('#', ''), 16);
     const r = Math.round(((a >> 16) & 0xff) * (1 - ratio) + ((b >> 16) & 0xff) * ratio);

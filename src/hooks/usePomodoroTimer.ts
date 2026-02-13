@@ -81,6 +81,8 @@ export function usePomodoroTimer({
 
     // Refs to track if we should auto-advance
     const shouldAutoAdvanceRef = useRef(false);
+    // M2: Ref for auto-advance timeout cleanup
+    const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // Use state instead of ref for duration so useTimer can detect changes
     const [currentDuration, setCurrentDuration] = useState(getPhaseDuration());
 
@@ -139,21 +141,33 @@ export function usePomodoroTimer({
     useEffect(() => {
         if (shouldAutoAdvanceRef.current && !timer.isRunning) {
             shouldAutoAdvanceRef.current = false;
+            // M2: Clear any existing timeout before creating a new one
+            if (autoAdvanceTimeoutRef.current) {
+                clearTimeout(autoAdvanceTimeoutRef.current);
+            }
             // Small delay before auto-starting next phase
-            const timeout = setTimeout(() => {
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+                autoAdvanceTimeoutRef.current = null;
                 timer.reset();
                 timer.start();
             }, 100);
-            return () => clearTimeout(timeout);
+            return () => {
+                if (autoAdvanceTimeoutRef.current) {
+                    clearTimeout(autoAdvanceTimeoutRef.current);
+                    autoAdvanceTimeoutRef.current = null;
+                }
+            };
         }
     }, [currentPhase, timer.isRunning, timer]);
 
-    // Reset duration when settings change (but not during active session)
+    // M3: Reset duration when settings change (but not during active session)
+    // Removed getPhaseDuration from deps to avoid re-fires on phase change
     useEffect(() => {
         if (!timer.isRunning) {
             setCurrentDuration(getPhaseDuration());
         }
-    }, [workDuration, shortBreakDuration, longBreakDuration, getPhaseDuration, timer.isRunning]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workDuration, shortBreakDuration, longBreakDuration, timer.isRunning]);
 
     // Start the pomodoro timer
     const start = useCallback(() => {

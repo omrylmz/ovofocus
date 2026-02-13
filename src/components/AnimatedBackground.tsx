@@ -82,6 +82,11 @@ export function AnimatedBackground({ sessionState, progress = 0, variant = 'sess
             -1,
             true
         );
+
+        return () => {
+            cancelAnimation(colorProgress);
+            cancelAnimation(pulseValue);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- Reanimated shared values are stable refs that don't need to be dependencies
     }, [isAppActive]);
 

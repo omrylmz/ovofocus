@@ -32,6 +32,7 @@ export function ThemeProvider({ children, themeMode }: ThemeProviderProps) {
             resolvedTheme = darkTheme;
         }
 
+        // null colorScheme (unsupported platform or not yet determined) defaults to dark
         const isDarkMode = themeMode === 'dark' ||
             (themeMode === 'system' && colorScheme !== 'light');
 

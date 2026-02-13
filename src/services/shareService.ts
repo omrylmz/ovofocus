@@ -356,10 +356,13 @@ class ShareService {
                 break;
             }
 
-            default:
-                // Type guard - should never reach here
+            default: {
+                // Exhaustive type check - TypeScript ensures this is unreachable.
+                // If a new ShareData type is added without a case, this will cause a compile error.
                 const _exhaustiveCheck: never = data;
-                message = '';
+                console.warn('[ShareService] Unknown share type encountered');
+                message = ''; // Fallback for safety — dead code in practice due to exhaustive check
+            }
         }
 
         // Add app promo and store link

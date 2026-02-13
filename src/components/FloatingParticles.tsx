@@ -126,7 +126,7 @@ export function FloatingParticles({ count = 15, isActive = false, progress = 0, 
         return Array.from({ length: count }, (_, i) => ({
             id: i,
             initialX: Math.random() * width,
-            initialY: height * 0.4 + Math.random() * height * 0.55, // Start below timer area
+            initialY: height * 0.55 + Math.random() * height * 0.4, // Start below timer area
             size: 3 + Math.random() * 5,
             duration: 6000 + Math.random() * 4000,
             delay: Math.random() * 2000,
